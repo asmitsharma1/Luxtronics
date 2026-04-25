@@ -6,6 +6,9 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 import { initializeMongoDB, disconnectMongoDB } from './db/mongodb';
 import { createProductRoutes } from './routes/products';
 
@@ -52,6 +55,20 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
     throw error;
   }
 
+  // Serve frontend build in production when dist exists.
+  const clientDistPath = path.resolve(process.cwd(), 'dist');
+  if (process.env.NODE_ENV === 'production' && existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api') || req.path === '/health') {
+        return next();
+      }
+
+      res.sendFile(path.join(clientDistPath, 'index.html'));
+    });
+  }
+
   // Error handling middleware
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error('Server error:', err);
@@ -80,7 +97,9 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
 }
 
 // Start server if this file is run directly
-if (process.argv[1].endsWith("index.ts")) {
+const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isDirectRun) {
   setupServer().catch(error => {
     console.error('Failed to start server:', error);
     process.exit(1);
