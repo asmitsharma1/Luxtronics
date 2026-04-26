@@ -136,9 +136,9 @@ const Cart = () => {
                   <span className="text-gradient">${total.toLocaleString()}</span>
                 </div>
               </div>
-              <button className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all">
+              <Link to="/checkout" className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all">
                 Checkout <ArrowRight className="h-4 w-4" />
-              </button>
+              </Link>
               <p className="text-xs text-muted-foreground text-center mt-4">
                 Free shipping on orders over $200
               </p>
