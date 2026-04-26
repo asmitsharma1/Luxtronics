@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ShoppingBag, Star } from "lucide-react";
 import type { Product } from "@/data/products";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const badgeStyles: Record<string, string> = {
   New: "bg-foreground text-background",
@@ -10,6 +11,7 @@ const badgeStyles: Record<string, string> = {
 };
 
 const ProductCard = ({ product }: { product: Product }) => {
+  const { formatPrice } = useCurrency();
   return (
     <Link
       to={`/product/${product.slug}`}
@@ -58,10 +60,10 @@ const ProductCard = ({ product }: { product: Product }) => {
 
           <div className="flex items-end justify-between pt-1.5 sm:pt-2">
             <div className="flex items-baseline gap-1.5 sm:gap-2">
-              <span className="font-display font-bold text-lg sm:text-xl">${product.price}</span>
+              <span className="font-display font-bold text-lg sm:text-xl">{formatPrice(product.price)}</span>
               {product.oldPrice && (
                 <span className="text-xs sm:text-sm text-muted-foreground line-through">
-                  ${product.oldPrice}
+                  {formatPrice(product.oldPrice)}
                 </span>
               )}
             </div>

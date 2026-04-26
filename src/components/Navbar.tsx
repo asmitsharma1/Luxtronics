@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink as RouterNavLink, useLocation } from "react-router-dom";
 import { UserButton, useUser } from "@clerk/react";
-import { Search, ShoppingBag, User, Menu, X, Zap } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency, countries } from "@/context/CurrencyContext";
 
 const links = [
   { to: "/", label: "Home" },
@@ -17,9 +18,11 @@ const links = [
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const location = useLocation();
   const { isLoaded, isSignedIn } = useUser();
   const showSignedIn = isLoaded && isSignedIn;
+  const { country, setCountry } = useCurrency();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -88,6 +91,42 @@ const Navbar = () => {
           >
             <Search className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
           </button>
+
+          {/* Currency Switcher */}
+          <div className="relative">
+            <button
+              onClick={() => setCurrencyOpen((v) => !v)}
+              className="hidden sm:flex h-9 items-center gap-1.5 rounded-full hover:bg-secondary px-3 text-sm font-medium transition-colors"
+              aria-label="Switch currency"
+            >
+              <span className="text-base leading-none">{country.flag}</span>
+              <span className="text-xs text-muted-foreground">{country.currency}</span>
+              <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform duration-200 ${currencyOpen ? "rotate-180" : ""}`} />
+            </button>
+            {currencyOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border border-white/8 bg-[hsl(0_0%_6%)] shadow-2xl overflow-hidden max-h-80 overflow-y-auto scrollbar-hidden">
+                  {countries.map((c) => (
+                    <button
+                      key={c.code}
+                      onClick={() => { setCountry(c); setCurrencyOpen(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.06] transition-colors text-sm ${
+                        country.code === c.code ? "bg-primary/10 border-l-2 border-primary" : ""
+                      }`}
+                    >
+                      <span className="text-lg">{c.flag}</span>
+                      <div className="flex-1">
+                        <p className="font-medium text-xs">{c.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{c.currency} · {c.currencySymbol}</p>
+                      </div>
+                      {country.code === c.code && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <Link
             to="/cart"
             aria-label="Cart"

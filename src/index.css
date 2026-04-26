@@ -79,12 +79,14 @@
   }
 
   html {
+    font-size: 17px;
     scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    font-size: large;
     background-image:
       radial-gradient(ellipse 800px 400px at 80% -10%, hsl(328 100% 55% / 0.08), transparent),
       radial-gradient(ellipse 600px 400px at -10% 30%, hsl(18 100% 55% / 0.06), transparent);
