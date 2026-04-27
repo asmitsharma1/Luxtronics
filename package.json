@@ -8,7 +8,7 @@
     "server:dev": "tsx watch server/index.ts",
     "sync:products": "tsx scripts/sync-products.ts",
     "sync:full": "tsx scripts/sync-full.ts",
-    "build": "vite build",
+    "build": "vite build && rm -rf build && cp -R dist build",
     "build:dev": "vite build --mode development",
     "start": "tsx server/index.ts",
     "lint": "eslint .",
