@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { existsSync } from 'fs';
+import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 dotenv.config({ path: '.env' });
@@ -20,6 +21,47 @@ const corsOrigins = (process.env.CORS_ORIGIN || '*')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+function resolveClientDistPath() {
+  const candidates = [
+    path.join(__dirname, 'dist'),
+    path.join(__dirname, 'build'),
+    path.join(process.cwd(), 'dist'),
+    path.join(process.cwd(), 'build'),
+  ];
+
+  const found = candidates.find((candidate) => existsSync(path.join(candidate, 'index.html')));
+  return found || null;
+}
+
+function ensureFrontendBuild() {
+  let clientPath = resolveClientDistPath();
+
+  if (clientPath) {
+    return clientPath;
+  }
+
+  console.log('⚠️ Frontend build not found. Running npm run build...');
+  const buildResult = spawnSync('npm', ['run', 'build'], {
+    cwd: process.cwd(),
+    env: process.env,
+    stdio: 'inherit',
+  });
+
+  if (buildResult.status !== 0) {
+    console.error('❌ Frontend build failed at startup');
+    return null;
+  }
+
+  clientPath = resolveClientDistPath();
+  if (!clientPath) {
+    console.error('❌ Build command finished but dist/build still missing');
+    return null;
+  }
+
+  console.log('✅ Frontend build generated at:', clientPath);
+  return clientPath;
+}
 
 function getWooAuthHeader() {
   if (!consumerKey || !consumerSecret) {
@@ -236,11 +278,7 @@ app.get('/api/woo/status', async (_req, res) => {
   }
 });
 
-const clientDistPath = existsSync(path.join(__dirname, 'dist'))
-  ? path.join(__dirname, 'dist')
-  : existsSync(path.join(__dirname, 'build'))
-    ? path.join(__dirname, 'build')
-    : null;
+const clientDistPath = ensureFrontendBuild();
 
 if (clientDistPath) {
   app.use(express.static(clientDistPath));
