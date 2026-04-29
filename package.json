@@ -12,7 +12,7 @@
     "sync:full": "tsx backend/scripts/sync-full.ts",
     "build": "vite build && rm -rf build && cp -R dist build",
     "build:dev": "vite build --mode development",
-    "start": "tsx backend/server/index.ts",
+    "start": "node server.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
