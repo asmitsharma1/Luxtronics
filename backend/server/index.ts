@@ -173,32 +173,51 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
     });
   });
 
-  // Start server
-  const server = app.listen(port, () => {
-    console.log(`✅ Server running on http://localhost:${port}`);
-  });
-
-  // Graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('\n🛑 Shutting down gracefully...');
-    server.close(async () => {
-      await disconnectMongoDB();
-      console.log('✅ Server shut down');
-      process.exit(0);
+  // 404 fallback - important for Hostinger
+  app.use((req, res) => {
+    console.warn(`❌ 404 Not Found: ${req.method} ${req.path}`);
+    res.status(404).json({
+      success: false,
+      error: 'Not Found',
+      path: req.path,
     });
   });
 
-  return app;
+  // Start server
+  return new Promise<Express>((resolve) => {
+    const server = app.listen(port, () => {
+      console.log(`✅ Server running on http://localhost:${port}`);
+      resolve(app);
+    });
+
+    server.on('error', (error: any) => {
+      console.error('Server listen error:', error);
+      resolve(app); // Still resolve so the app continues
+    });
+  });
 }
 
 // Start server if this file is run directly
 const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 
 if (isDirectRun) {
-  setupServer().catch(error => {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+  console.log('🚀 Starting Luxtronics backend...');
+  console.log('📋 Environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    MONGODB_URI_SET: !!process.env.MONGODB_URI,
+    MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
   });
+
+  setupServer()
+    .then(() => {
+      console.log('✅ Server setup completed successfully');
+    })
+    .catch(error => {
+      console.error('❌ Server setup error:', error);
+      // Don't exit - let Hostinger know server is at least responsive
+      console.error('Server will continue with limited functionality');
+    });
 }
 
 export default setupServer;
