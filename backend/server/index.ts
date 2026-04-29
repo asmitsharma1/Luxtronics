@@ -59,11 +59,19 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
   const wooProxyRoutes = createWooCommerceProxyRoutes();
   app.use('/api', wooProxyRoutes);
 
-  // Initialize MongoDB
+  // Initialize MongoDB with diagnostic endpoint
+  let dbInitialized = false;
+  let mongoError: string | null = null;
+  let db: any = null;
+
   try {
     console.log('🔄 Initializing MongoDB...');
-    const db = await initializeMongoDB();
+    console.log('📋 MONGODB_URI exists:', !!process.env.MONGODB_URI);
+    console.log('📋 MONGODB_DB_NAME:', process.env.MONGODB_DB_NAME);
+    
+    db = await initializeMongoDB();
     console.log('✅ MongoDB initialized successfully!');
+    dbInitialized = true;
 
     // Register API routes
     const productRoutes = createProductRoutes(db);
@@ -71,8 +79,40 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
     app.use('/api', productRoutes);
     app.use('/api', userRoutes);
   } catch (error) {
-    console.error('❌ Failed to initialize MongoDB:', error);
-    throw error;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('❌ Failed to initialize MongoDB:', errorMsg);
+    mongoError = errorMsg;
+    
+    // Add diagnostic endpoints even when MongoDB fails
+    app.get('/api/products', (req, res) => {
+      res.status(503).json({
+        success: false,
+        error: 'Database service unavailable',
+        details: mongoError,
+      });
+    });
+
+    app.get('/api/categories', (req, res) => {
+      res.status(503).json({
+        success: false,
+        error: 'Database service unavailable',
+        details: mongoError,
+      });
+    });
+
+    app.get('/api/status', (req, res) => {
+      res.status(503).json({
+        success: false,
+        error: 'MongoDB connection failed',
+        details: mongoError,
+        env: {
+          MONGODB_URI_SET: !!process.env.MONGODB_URI,
+          MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT,
+        },
+      });
+    });
   }
 
   // Serve frontend build in production.
