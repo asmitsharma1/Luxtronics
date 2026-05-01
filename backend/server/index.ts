@@ -307,6 +307,69 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
     console.log(`✅ Server running on http://localhost:${port}`);
   });
 
+  // Create WooCommerce order
+  app.post('/api/orders', async (req, res) => {
+    try {
+      const { line_items, billing, shipping } = req.body;
+
+      if (!line_items || !Array.isArray(line_items)) {
+        return res.status(400).json({
+          success: false,
+          error: 'line_items is required and must be an array',
+        });
+      }
+
+      const orderData = {
+        payment_method: 'cod', // Cash on delivery
+        payment_method_title: 'Cash on Delivery',
+        set_paid: false,
+        billing: billing || {},
+        shipping: shipping || {},
+        line_items: line_items.map((item: any) => ({
+          product_id: item.product_id,
+          variation_id: item.variation_id || 0,
+          quantity: item.quantity,
+        })),
+        shipping_lines: [
+          {
+            method_id: 'flat_rate',
+            method_title: 'Flat Rate',
+            total: '0.00',
+          },
+        ],
+      };
+
+      const orderResponse = await fetch(`${sourceUrl}/wp-json/wc/v3/orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': getWooAuthHeader(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!orderResponse.ok) {
+        const errorText = await orderResponse.text();
+        throw new Error(`WooCommerce order creation failed: ${orderResponse.status} ${errorText}`);
+      }
+
+      const order = await orderResponse.json();
+
+      res.json({
+        success: true,
+        data: order,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('Order creation error:', message);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create order',
+        details: message,
+      });
+    }
+  });
+
   void (async () => {
     try {
       console.log('🔄 Initializing MongoDB...');
