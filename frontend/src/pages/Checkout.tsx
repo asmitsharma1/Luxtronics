@@ -31,14 +31,63 @@ const Checkout = () => {
   const shipping = subtotal > 200 ? 0 : 15;
   const total = subtotal + shipping;
 
-  const handleCheckout = (e: React.FormEvent) => {
+  const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    setTimeout(() => {
+
+    try {
+      // Prepare order data
+      const lineItems = orderItems.map(item => ({
+        product_id: item.product.id,
+        variation_id: item.product.selectedVariation?.id || 0,
+        quantity: item.qty,
+      }));
+
+      const orderData = {
+        line_items: lineItems,
+        billing: {
+          first_name: 'Test',
+          last_name: 'User',
+          email: 'test@example.com',
+          phone: '+1234567890',
+          address_1: '123 Test Street',
+          city: 'Test City',
+          state: 'Test State',
+          postcode: '12345',
+          country: 'US',
+        },
+        shipping: {
+          first_name: 'Test',
+          last_name: 'User',
+          address_1: '123 Test Street',
+          city: 'Test City',
+          state: 'Test State',
+          postcode: '12345',
+          country: 'US',
+        },
+      };
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsSuccess(true);
+        setTimeout(() => navigate("/"), 3500);
+      } else {
+        throw new Error(result.error || 'Order creation failed');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Checkout failed. Please try again.');
       setIsProcessing(false);
-      setIsSuccess(true);
-      setTimeout(() => navigate("/"), 3500);
-    }, 2200);
+    }
   };
 
   const handlePayPal = () => {
