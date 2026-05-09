@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import SplashScreen from "./components/SplashScreen.tsx";
-import { CurrencyProvider, CountryInfo } from "./context/CurrencyContext.tsx";
+import { ThemeProvider } from "./context/ThemeContext.tsx";
+import { CurrencyProvider } from "./context/CurrencyContext.tsx";
 import Index from "./pages/Index.tsx";
 import Shop from "./pages/Shop.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
@@ -33,8 +32,9 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <CurrencyProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <CurrencyProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -66,8 +66,9 @@ const App = () => {
           </Routes>
           </BrowserRouter>
         </TooltipProvider>
-      </CurrencyProvider>
-    </QueryClientProvider>
+        </CurrencyProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

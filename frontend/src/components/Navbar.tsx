@@ -4,6 +4,7 @@ import { UserButton, useUser } from "@clerk/react";
 import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency, countries } from "@/context/CurrencyContext";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
   { to: "/", label: "Home" },
@@ -116,6 +117,9 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Search button */}
           <button
             id="navbar-search-btn"
