@@ -16,6 +16,7 @@ type CategoryFilter = {
 const Shop = () => {
   const [params, setParams] = useSearchParams();
   const activeCat = params.get("cat") || "all";
+  const activeSearch = params.get("q") || "";
   const [sort, setSort] = useState("featured");
   const [categories, setCategories] = useState<CategoryFilter[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -64,17 +65,30 @@ const Shop = () => {
 
   const list = useMemo(() => {
     let p = [...products];
+
+    // Filter by search query
+    if (activeSearch) {
+      const q = activeSearch.toLowerCase();
+      p = p.filter((x) =>
+        x.name.toLowerCase().includes(q) ||
+        (x.description || "").toLowerCase().includes(q) ||
+        (x.category || "").toLowerCase().includes(q)
+      );
+    }
+
+    // Filter by category
     if (activeCat !== "all") {
       const selectedCategory = categories.find((c) => c.slug === activeCat);
       if (selectedCategory) {
         p = p.filter((x) => x.category === selectedCategory.name);
       }
     }
+
     if (sort === "low") p = [...p].sort((a, b) => a.price - b.price);
     if (sort === "high") p = [...p].sort((a, b) => b.price - a.price);
     if (sort === "rating") p = [...p].sort((a, b) => b.rating - a.rating);
     return p;
-  }, [activeCat, sort, products, categories]);
+  }, [activeCat, activeSearch, sort, products, categories]);
 
   return (
     <Layout>
@@ -83,11 +97,22 @@ const Shop = () => {
           Shop
         </p>
         <h1 className="font-display font-bold text-5xl sm:text-6xl tracking-tight">
-          All <span className="text-gradient">products</span>
+          {activeSearch
+            ? <>Results for <span className="text-gradient">"{activeSearch}"</span></>
+            : <>All <span className="text-gradient">products</span></>}
         </h1>
         <p className="mt-4 text-muted-foreground max-w-xl">
           Browse our curated collection of premium electronics. Filter by category and sort to find your perfect match.
         </p>
+        {/* Clear search chip */}
+        {activeSearch && (
+          <button
+            onClick={() => setParams({})}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium hover:border-primary/50 transition-colors"
+          >
+            ✕ Clear search
+          </button>
+        )}
       </section>
 
       <section className="container pb-24">

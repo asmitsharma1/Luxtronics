@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
 import { UserButton, useUser } from "@clerk/react";
 import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,11 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useUser();
   const showSignedIn = isLoaded && isSignedIn;
   const { country, setCountry } = useCurrency();
@@ -33,7 +37,34 @@ const Navbar = () => {
 
   useEffect(() => {
     setMobileOpen(false);
+    setSearchOpen(false);
+    setSearchQuery("");
   }, [location.pathname]);
+
+  // Auto-focus search input when opened
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 80);
+    }
+  }, [searchOpen]);
+
+  // Close search on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    navigate(`/shop?q=${encodeURIComponent(q)}`);
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
 
   return (
     <header
@@ -85,11 +116,17 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
+          {/* Search button */}
           <button
-            aria-label="Search"
-            className="h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-secondary flex items-center justify-center transition-colors"
+            id="navbar-search-btn"
+            aria-label="Search products"
+            onClick={() => setSearchOpen((v) => !v)}
+            className={cn(
+              "h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center transition-colors",
+              searchOpen ? "bg-primary/10 text-primary" : "hover:bg-secondary"
+            )}
           >
-            <Search className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+            {searchOpen ? <X className="h-4 w-4 sm:h-[18px] sm:w-[18px]" /> : <Search className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />}
           </button>
 
           {/* Currency Switcher */}
@@ -127,6 +164,7 @@ const Navbar = () => {
               </>
             )}
           </div>
+
           <Link
             to="/cart"
             aria-label="Cart"
@@ -137,6 +175,7 @@ const Navbar = () => {
               2
             </span>
           </Link>
+
           {showSignedIn ? (
             <div className="hidden sm:flex items-center justify-center">
               <UserButton />
@@ -164,6 +203,7 @@ const Navbar = () => {
               </Link>
             </div>
           )}
+
           <button
             aria-label="Menu"
             onClick={() => setMobileOpen((v) => !v)}
@@ -174,10 +214,66 @@ const Navbar = () => {
         </div>
       </div>
 
+      {/* ── Search Overlay ──────────────────────────────────────── */}
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-300 ease-in-out",
+          searchOpen ? "max-h-28 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+        )}
+      >
+        <div className="container mt-2">
+          <form
+            onSubmit={handleSearch}
+            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background/80 backdrop-blur-xl px-5 py-3 shadow-2xl"
+          >
+            <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+            <input
+              ref={searchInputRef}
+              id="navbar-search-input"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products… (press Enter)"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="submit"
+                className="shrink-0 rounded-full bg-gradient-brand px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all"
+              >
+                Search
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(false)}
+              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      </div>
+
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden container mt-2 sm:mt-3 animate-fade-up px-4 sm:px-6">
           <div className="rounded-2xl border border-white/5 bg-background/35 p-3 sm:p-4 flex flex-col gap-1 backdrop-blur-xl">
+            {/* Mobile search */}
+            <form
+              onSubmit={handleSearch}
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 mb-2"
+            >
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products…"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+            </form>
+
             {links.map((l) => (
               <RouterNavLink
                 key={l.to}
