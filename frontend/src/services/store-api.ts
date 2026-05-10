@@ -151,18 +151,30 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
     reviews: product.reviewCount || 0,
     description: product.description || product.shortDescription || '',
     badge: originalPrice > price ? '-20%' : undefined,
-    variations: product.variations?.map((variation) => {
-      const vPrice = parsePrice(variation.salePrice ?? variation.price);
-      const vRegular = parsePrice(variation.regularPrice || variation.price);
-      return {
-        id: (variation.id ?? Math.random()).toString(),
-        sku: variation.sku,
-        price: Math.round(vPrice > 0 ? vPrice : price), // Fallback to main price if variation price is 0
-        oldPrice: vRegular > (vPrice || price) ? Math.round(vRegular) : undefined,
-        attributes: variation.attributes || [],
-        image: variation.image?.src,
-        stockStatus: variation.stockStatus || 'instock',
-      };
-    }) || [],
+    variations: (Array.isArray(product.variations) ? product.variations : [])
+      .map((variation) => {
+        if (!variation) return null;
+        const vPrice = parsePrice(variation.salePrice ?? variation.price);
+        const vRegular = parsePrice(variation.regularPrice || variation.price);
+        
+        // Ensure attributes are always an array and handle missing name/option
+        const vAttrs = Array.isArray(variation.attributes) 
+          ? variation.attributes.map(a => ({
+              name: String(a.name || ''),
+              option: String(a.option || a.value || '')
+            })).filter(a => a.name && a.option)
+          : [];
+
+        return {
+          id: (variation.id ?? Math.random()).toString(),
+          sku: variation.sku,
+          price: Math.round(vPrice > 0 ? vPrice : price),
+          oldPrice: vRegular > (vPrice || price) ? Math.round(vRegular) : undefined,
+          attributes: vAttrs,
+          image: variation.image?.src,
+          stockStatus: variation.stockStatus || 'instock',
+        };
+      })
+      .filter((v): v is NonNullable<typeof v> => v !== null),
   };
 }
