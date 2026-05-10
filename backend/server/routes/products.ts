@@ -55,13 +55,13 @@ export function createProductRoutes(db: Db): Router {
   });
 
   /**
-   * GET /api/products/:id
-   * Get single product by ID
+   * GET /api/products/slug/:slug
+   * Get product by slug
+   * NOTE: Must be registered BEFORE /products/:id to avoid shadowing
    */
-  router.get('/products/:id', async (req: Request, res: Response) => {
+  router.get('/products/slug/:slug', async (req: Request, res: Response) => {
     try {
-      const productId = parseInt(req.params.id);
-      const product = await productService.getProductById(productId);
+      const product = await productService.getProductBySlug(req.params.slug);
 
       if (!product) {
         return res.status(404).json({
@@ -86,12 +86,13 @@ export function createProductRoutes(db: Db): Router {
   });
 
   /**
-   * GET /api/products/slug/:slug
-   * Get product by slug
+   * GET /api/products/:id
+   * Get single product by ID
    */
-  router.get('/products/slug/:slug', async (req: Request, res: Response) => {
+  router.get('/products/:id', async (req: Request, res: Response) => {
     try {
-      const product = await productService.getProductBySlug(req.params.slug);
+      const productId = parseInt(req.params.id);
+      const product = await productService.getProductById(productId);
 
       if (!product) {
         return res.status(404).json({

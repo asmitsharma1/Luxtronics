@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { CurrencyProvider } from "./context/CurrencyContext.tsx";
+import { CartProvider } from "./context/CartContext.tsx";
 import Index from "./pages/Index.tsx";
 import Shop from "./pages/Shop.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
@@ -27,6 +28,7 @@ import AccountProfile from "./pages/AccountProfile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import AdminProducts from "./pages/AdminProducts.tsx";
+import AdminGuard from "./components/AdminGuard.tsx";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,7 @@ const App = () => {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <CurrencyProvider>
+        <CartProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -59,13 +62,14 @@ const App = () => {
             <Route path="/account/register" element={<AccountRegister />} />
             <Route path="/account/orders" element={<AccountOrders />} />
             <Route path="/account/profile" element={<AccountProfile />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+            <Route path="/admin/products" element={<AdminGuard><AdminProducts /></AdminGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </CartProvider>
         </CurrencyProvider>
       </QueryClientProvider>
     </ThemeProvider>

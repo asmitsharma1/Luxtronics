@@ -121,7 +121,7 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
     rating: product.rating,
     reviews: product.reviewCount,
     description: product.description || product.shortDescription || '',
-    badge: originalPrice > price ? '-20%' : undefined,
+    badge: originalPrice > price ? `-${Math.round(((originalPrice - price) / originalPrice) * 100)}%` : undefined,
     variations: product.variations?.map((variation) => ({
       id: variation.id.toString(),
       sku: variation.sku,
