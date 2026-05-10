@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load env with absolute path
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
@@ -15,73 +16,76 @@ const port = parseInt(process.env.PORT || '3001', 10);
 
 const BUILD_DIR = path.join(__dirname, 'prod-build-final');
 
+function mask(str) {
+  if (!str) return '❌ MISSING';
+  return str.substring(0, 3) + '...' + str.substring(str.length - 2);
+}
+
 app.use(cors());
 app.use(express.json());
 
-// ── WooCommerce Helpers ──────────────────────────────────────────────────────
-const wooUrl = () => process.env.VITE_WOOCOMMERCE_URL || '';
-const wooAuth = () => {
-  const k = process.env.VITE_WOOCOMMERCE_KEY;
-  const s = process.env.VITE_WOOCOMMERCE_SECRET;
-  if (!k || !s) return '';
-  return 'Basic ' + Buffer.from(`${k}:${s}`).toString('base64');
-};
-
-function normalizeProduct(p) {
-  const regPrice = parseFloat(p.regular_price || p.price || '0');
-  const salePrice = p.sale_price ? parseFloat(p.sale_price) : undefined;
-  return {
-    id: p.id,
-    slug: p.slug,
-    name: p.name,
-    price: salePrice ?? regPrice,
-    regularPrice: regPrice,
-    salePrice,
-    images: (p.images || []).map(img => ({ id: img.id, src: img.src, alt: img.alt || '' })),
-    category: p.categories?.[0]?.name || 'Uncategorized',
-    description: p.description || '',
-    stockStatus: p.stock_status || 'instock',
-  };
-}
-
-// ── API ──────────────────────────────────────────────────────────────────────
-app.get('/api/products', async (req, res) => {
-  try {
-    const url = `${wooUrl()}/wp-json/wc/v3/products?${new URLSearchParams(req.query)}`;
-    const r = await fetch(url, { headers: { 'Authorization': wooAuth() } });
-    const items = await r.json();
-    res.json({ success: true, data: Array.isArray(items) ? items.map(normalizeProduct) : [] });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
+// ── DEBUG ───────────────────────────────────────────────────────────────────
 app.get('/debug', (req, res) => {
   let assets = [];
   try { assets = readdirSync(path.join(BUILD_DIR, 'assets')); } catch (e) {}
-  res.json({ ok: true, build: BUILD_DIR, assets });
+  
+  res.json({
+    ok: true,
+    build: BUILD_DIR,
+    env_check: {
+      FIREBASE_KEY: mask(process.env.VITE_FIREBASE_API_KEY),
+      WOO_URL: process.env.VITE_WOOCOMMERCE_URL,
+      WOO_KEY: mask(process.env.VITE_WOOCOMMERCE_KEY),
+      WOO_SEC: mask(process.env.VITE_WOOCOMMERCE_SECRET),
+    },
+    assets: assets.filter(a => !a.startsWith('.'))
+  });
 });
 
-// ── UNIVERSAL ASSET RESOLVER (The Ultimate Fix) ──────────────────────────────
-// If a browser asks for a hashed file (stale cache), redirect it to the fixed filename.
+// ── API ─────────────────────────────────────────────────────────────────────
+app.get('/api/products', async (req, res) => {
+  try {
+    const url = `${process.env.VITE_WOOCOMMERCE_URL}/wp-json/wc/v3/products?${new URLSearchParams(req.query)}`;
+    const auth = 'Basic ' + Buffer.from(`${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`).toString('base64');
+    
+    console.log(`Proxying to: ${url}`);
+    
+    const r = await fetch(url, { 
+      headers: { 
+        'Authorization': auth,
+        'User-Agent': 'LuxtronicsServer/1.0',
+        'Accept': 'application/json'
+      } 
+    });
+    
+    if (!r.ok) {
+      const errText = await r.text();
+      console.error(`Woo Error (${r.status}):`, errText);
+      throw new Error(`Woo Error ${r.status}: ${errText}`);
+    }
+    
+    res.json({ success: true, data: await r.json() });
+  } catch (err) { 
+    console.error('API Error:', err.message);
+    res.status(500).json({ success: false, error: err.message }); 
+  }
+});
+
+// ── UNIVERSAL ASSET RESOLVER ────────────────────────────────────────────────
 app.get('/assets/:filename', (req, res, next) => {
   const { filename } = req.params;
+  let target = filename.split('?')[0]; // strip query params
   
-  // Map hashed names to fixed names
-  let target = filename;
-  if (filename.startsWith('index-') && filename.endsWith('.js')) target = 'index.js';
-  if (filename.startsWith('index-') && filename.endsWith('.css')) target = 'index.css';
-  if (filename.startsWith('vendor-react-')) target = 'vendor-react.js';
-  if (filename.startsWith('vendor-ui-')) target = 'vendor-ui.js';
-  if (filename.startsWith('vendor-query-')) target = 'vendor-query.js';
-  if (filename.startsWith('vendor-icons-')) target = 'vendor-icons.js';
-  if (filename.startsWith('vendor-firebase-')) target = 'vendor-firebase.js';
+  if (target.startsWith('index-') && target.endsWith('.js')) target = 'index.js';
+  if (target.startsWith('index-') && target.endsWith('.css')) target = 'index.css';
+  if (target.startsWith('vendor-react-')) target = 'vendor-react.js';
+  if (target.startsWith('vendor-ui-')) target = 'vendor-ui.js';
+  if (target.startsWith('vendor-query-')) target = 'vendor-query.js';
+  if (target.startsWith('vendor-icons-')) target = 'vendor-icons.js';
+  if (target.startsWith('vendor-firebase-')) target = 'vendor-firebase.js';
 
   const fullPath = path.join(BUILD_DIR, 'assets', target);
-  
-  if (existsSync(fullPath)) {
-    console.log(`🎯 Universal Resolver: ${filename} -> ${target}`);
-    return res.sendFile(fullPath, { maxAge: '1y', immutable: true });
-  }
-  
+  if (existsSync(fullPath)) return res.sendFile(fullPath);
   next();
 });
 
@@ -96,7 +100,6 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
     try {
       let html = readFileSync(path.join(BUILD_DIR, 'index.html'), 'utf8');
       
-      // INJECT FIREBASE CONFIG AT RUNTIME
       const fbConfig = {
         apiKey: process.env.VITE_FIREBASE_API_KEY,
         authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -109,25 +112,21 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
       const configScript = `<script>window.__FIREBASE_CONFIG = ${JSON.stringify(fbConfig)};</script>`;
       html = html.replace('<head>', `<head>${configScript}`);
       
-      // Inject version tag AND cache-busting query params to all assets
+      // Inject cache-busting
       const cacheBuster = `?v=${Date.now()}`;
       html = html.replace(/\.js"/g, `.js${cacheBuster}"`);
       html = html.replace(/\.css"/g, `.css${cacheBuster}"`);
-      html = html.replace('<title>', `<title>(FINAL v5) `);
       
       res.set({
         'Content-Type': 'text/html',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache'
       });
       res.send(html);
-    } catch (e) {
-      res.status(500).send('Error reading index.html');
-    }
+    } catch (e) { res.status(500).send('Error reading index.html'); }
   });
 } else {
-  app.get('*', (req, res) => res.status(503).send('Build not found. Please run npm run build.'));
+  app.get('*', (req, res) => res.status(503).send('prod-build-final not found.'));
 }
 
-app.listen(port, () => console.log(`🚀 Server ready on ${port}`));
+app.listen(port, () => console.log(`🚀 Ready on ${port}`));
