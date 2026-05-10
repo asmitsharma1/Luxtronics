@@ -411,8 +411,15 @@ const SearchSuggestions = ({ query, onSelect }: { query: string; onSelect: () =>
           onClick={onSelect}
           className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
         >
-          <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/50 shrink-0 border border-white/5">
-            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+          <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/50 shrink-0 border border-white/5 flex items-center justify-center">
+            <img 
+              src={product.image || 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=100&auto=format&fit=crop'} 
+              alt={product.name} 
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=100&auto=format&fit=crop';
+              }}
+            />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{product.name}</p>

@@ -15,6 +15,7 @@ export type Product = {
   price: number;
   oldPrice?: number;
   image: string;
+  images?: string[];
   rating: number;
   reviews: number;
   badge?: "New" | "Hot" | "-20%";

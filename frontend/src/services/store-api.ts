@@ -114,14 +114,18 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
   };
 }
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=400&auto=format&fit=crop';
+
 export function mapStoreProductToLocalProduct(product: any): Product | null {
   if (!product || typeof product !== 'object') {
     return null;
   }
 
   try {
-    const images = product.images || [];
-    const mainImage = images[0]?.src || '';
+    const images = Array.isArray(product.images) ? product.images : [];
+    const mainImage = images[0]?.src || product.image || FALLBACK_IMAGE;
+    const allImages = images.map((img: any) => img.src).filter(Boolean);
+    if (allImages.length === 0 && mainImage) allImages.push(mainImage);
     
     // Handle both camelCase (MongoDB) and snake_case (WooCommerce direct)
     const price = product.price || 0;
@@ -142,6 +146,7 @@ export function mapStoreProductToLocalProduct(product: any): Product | null {
       price: Math.round(Number(activePrice)),
       oldPrice: Number(originalPrice) > Number(activePrice) ? Math.round(Number(originalPrice)) : undefined,
       image: mainImage,
+      images: allImages,
       rating: parseFloat(product.average_rating || '0'),
       reviews: product.rating_count || 0,
       description: product.description || product.shortDescription || product.short_description || '',
@@ -153,8 +158,11 @@ export function mapStoreProductToLocalProduct(product: any): Product | null {
             const vRegularPrice = v.regularPrice ?? v.regular_price;
             const vActivePrice = vSalePrice && vSalePrice > 0 ? vSalePrice : vPrice;
             
+            // Safety check for variation ID
+            const varId = (v.id || v._id || Math.random()).toString();
+
             return {
-              id: (v.id || v._id).toString(),
+              id: varId,
               sku: v.sku,
               price: Math.round(Number(vActivePrice)),
               oldPrice: Number(vRegularPrice) > Number(vActivePrice) ? Math.round(Number(vRegularPrice)) : undefined,

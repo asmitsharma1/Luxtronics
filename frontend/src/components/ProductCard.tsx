@@ -41,6 +41,9 @@ const ProductCard = ({ product }: { product: Product }) => {
             width={400}
             height={400}
             className="relative h-3/4 w-3/4 object-contain transition-transform duration-700 group-hover:scale-110 group-hover:[transform:translateZ(48px)]"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=400&auto=format&fit=crop';
+            }}
           />
         </div>
 
