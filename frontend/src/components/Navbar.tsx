@@ -4,6 +4,7 @@ import { UserButton, useUser } from "@clerk/react";
 import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency, countries } from "@/context/CurrencyContext";
+import { useCart } from "@/context/CartContext";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
@@ -28,6 +29,7 @@ const Navbar = () => {
   const { isLoaded, isSignedIn } = useUser();
   const showSignedIn = isLoaded && isSignedIn;
   const { country, setCountry } = useCurrency();
+  const { totalItems } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -175,9 +177,11 @@ const Navbar = () => {
             className="h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-secondary flex items-center justify-center transition-colors relative"
           >
             <ShoppingBag className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
-            <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-gradient-brand text-[10px] font-bold flex items-center justify-center text-primary-foreground">
-              2
-            </span>
+            {totalItems > 0 && (
+              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-gradient-brand text-[10px] font-bold flex items-center justify-center text-primary-foreground">
+                {totalItems > 99 ? '99+' : totalItems}
+              </span>
+            )}
           </Link>
 
           {showSignedIn ? (

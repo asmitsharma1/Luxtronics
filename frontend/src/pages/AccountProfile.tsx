@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { Show, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/react";
+import { SignedIn, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/react";
 
 const AccountProfile = () => {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -56,14 +56,14 @@ const AccountProfile = () => {
               <p className="font-medium">{user.primaryEmailAddress?.emailAddress}</p>
             </div>
           </div>
-          <Show when="signed-in">
+          <SignedIn>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>First name: {user.firstName || "Not set"}</p>
               <p>Last name: {user.lastName || "Not set"}</p>
               <p>Username: {user.username || "Not set"}</p>
               <p>Open the UserButton menu to edit your Clerk profile details.</p>
             </div>
-          </Show>
+          </SignedIn>
           <Link to="/account" className="inline-flex rounded-full border border-border px-6 py-3 text-sm font-semibold hover:border-primary/40 w-fit">
             Back to dashboard
           </Link>

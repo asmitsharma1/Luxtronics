@@ -275,7 +275,7 @@ export function createWooCommerceProxyRoutes(): Router {
       const wooRes = await fetch(url, {
         method: 'PUT',
         headers: {
-          Authorization: getAuthHeader(),
+          Authorization: getAuthHeader(host),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(req.body),

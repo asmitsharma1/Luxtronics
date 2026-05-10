@@ -3,7 +3,7 @@
  * Handles 1 lakh products efficiently with lazy loading and pagination
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import ProductCard from '@/components/ProductCard';
@@ -39,21 +39,13 @@ const OptimizedShop = () => {
   const localProducts = wooProducts.map(convertWooProductToLocalProduct);
 
   // Sort products
-  const sortedProducts = useCallback((products: any[]) => {
-    const sorted = [...products];
-    
-    if (sort === 'low') {
-      sorted.sort((a, b) => a.price - b.price);
-    } else if (sort === 'high') {
-      sorted.sort((a, b) => b.price - a.price);
-    } else if (sort === 'rating') {
-      sorted.sort((a, b) => b.rating - a.rating);
-    }
-    
+  const displayedProducts = useMemo(() => {
+    const sorted = [...localProducts];
+    if (sort === 'low') sorted.sort((a, b) => a.price - b.price);
+    else if (sort === 'high') sorted.sort((a, b) => b.price - a.price);
+    else if (sort === 'rating') sorted.sort((a, b) => b.rating - a.rating);
     return sorted;
-  }, [sort]);
-
-  const displayedProducts = sortedProducts(localProducts);
+  }, [localProducts, sort]);
 
   // Handle category change
   const handleCategoryChange = (categorySlug: string) => {

@@ -34,6 +34,13 @@ export const DOMAIN_CONFIG = {
   '127.0.0.1:3000': 'IN',
 };
 
+// Inline domain suffix map — avoids circular import with CurrencyContext
+const COUNTRY_DOMAIN_MAP: Record<string, string> = {
+  US: '.com', GB: '.co.uk', IN: '.in', DE: '.de', FR: '.fr',
+  JP: '.jp', AU: '.com.au', NZ: '.co.nz', CA: '.ca',
+  AE: '.ae', SG: '.sg', BR: '.br', KR: '.kr',
+};
+
 export function getCountryFromDomain(hostname: string): string | null {
   // Remove port for localhost
   const cleanHostname = hostname.replace(/:\d+$/, '');
@@ -59,14 +66,10 @@ export function getCountryFromDomain(hostname: string): string | null {
 }
 
 export function getDomainFromCountry(countryCode: string): string {
-  const country = countries.find(c => c.code === countryCode);
-  return country?.domain || '.com';
+  return COUNTRY_DOMAIN_MAP[countryCode] || '.com';
 }
 
 export function getFullDomain(countryCode: string): string {
   const domain = getDomainFromCountry(countryCode);
   return `luxtronics${domain}`;
 }
-
-// Import countries for reference
-import { countries } from '../context/CurrencyContext';

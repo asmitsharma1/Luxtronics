@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { fetchWooProducts, fetchWooCategories, WooProduct } from '@/services/woocommerce';
 
+interface WooCategory {
+  id: number;
+  name: string;
+  slug: string;
+  count: number;
+}
+
 export function useWooProducts(page = 1, perPage = 12, category?: string, search?: string) {
   const [products, setProducts] = useState<WooProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +37,7 @@ export function useWooProducts(page = 1, perPage = 12, category?: string, search
 }
 
 export function useWooCategories() {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<WooCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

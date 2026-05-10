@@ -37,9 +37,9 @@ export const countries: CountryInfo[] = [
 // Geolocation function using IP-API (free service)
 async function detectUserCountry(): Promise<string | null> {
   try {
-    const response = await fetch('http://ip-api.com/json/?fields=countryCode');
+    const response = await fetch('https://ipapi.co/json/?fields=country_code');
     const data = await response.json();
-    return data.countryCode || null;
+    return data.country_code || null;
   } catch (error) {
     console.warn('Geolocation failed:', error);
     return null;
