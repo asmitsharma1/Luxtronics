@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import ProductCard from "@/components/ProductCard";
 import { cn } from "@/lib/utils";
-import { fetchStoreCategories, fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
+import { fetchStoreCategories, fetchStoreProducts, fetchStoreProduct, mapStoreProductToLocalProduct } from "@/services/store-api";
 import type { Product } from "@/data/products";
 
 type CategoryFilter = {
@@ -16,6 +16,15 @@ type CategoryFilter = {
 
 const Shop = () => {
   const [params, setParams] = useSearchParams();
+  const queryClient = useQueryClient();
+
+  const prefetchProduct = (slug: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['product', slug],
+      queryFn: () => fetchStoreProduct(slug),
+      staleTime: 1000 * 60 * 15,
+    });
+  };
   const activeCat = params.get("cat") || "all";
   const activeSearch = params.get("q") || "";
   const [sort, setSort] = useState("featured");
@@ -147,7 +156,13 @@ const Shop = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {list.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <div 
+              key={p.id}
+              onMouseEnter={() => prefetchProduct(p.slug)}
+              className="animate-fade-in"
+            >
+              <ProductCard product={p} />
+            </div>
             ))}
           </div>
         )}

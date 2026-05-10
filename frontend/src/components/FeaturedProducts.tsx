@@ -1,16 +1,26 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { products as staticProducts } from "@/data/products";
-import { fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
+import { fetchStoreProducts, fetchStoreProduct, mapStoreProductToLocalProduct } from "@/services/store-api";
 import ProductCard from "./ProductCard";
 
 const FeaturedProducts = () => {
+  const queryClient = useQueryClient();
+
   const { data: storeProducts = [], isLoading } = useQuery({
     queryKey: ['products', 'featured'],
     queryFn: () => fetchStoreProducts(1, 8),
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
+
+  const prefetchProduct = (slug: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['product', slug],
+      queryFn: () => fetchStoreProduct(slug),
+      staleTime: 1000 * 60 * 15,
+    });
+  };
 
   const products = useMemo(() => {
     if (storeProducts.length > 0) return storeProducts.map(mapStoreProductToLocalProduct);
@@ -43,7 +53,13 @@ const FeaturedProducts = () => {
           ))
         ) : (
           products.slice(0, 8).map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <div 
+              key={p.id}
+              onMouseEnter={() => prefetchProduct(p.slug)}
+              className="animate-fade-in"
+            >
+              <ProductCard product={p} />
+            </div>
           ))
         )}
       </div>
