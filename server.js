@@ -164,7 +164,7 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
   app.use(express.static(BUILD_DIR, { index: false }));
 
   // ── SPA FALLBACK ────────────────────────────────────────────────────────────
-  app.get('*', (req, res) => {
+  app.get(/(.*)/, (req, res) => {
     if (
       req.path.startsWith('/api') ||
       req.path.startsWith('/assets') ||
@@ -206,7 +206,7 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
   });
 
 } else {
-  app.get('*', (req, res) =>
+  app.get(/(.*)/, (req, res) =>
     res.status(503).send(`Build not found at: ${BUILD_DIR} — check /debug`)
   );
 }
