@@ -296,7 +296,10 @@ const clientDistPath = ensureFrontendBuild();
 if (clientDistPath) {
   app.use(express.static(clientDistPath, { maxAge: '1d', etag: true }));
   app.use((req, res, next) => {
-    if (req.method !== 'GET' || req.path.startsWith('/api') || req.path === '/health') return next();
+    // SPA fallback: only redirect to index.html for non-API, non-asset, non-health requests
+    const isApiOrHealth = req.path.startsWith('/api') || req.path === '/health';
+    const isStaticAsset = /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$/i.test(req.path);
+    if (req.method !== 'GET' || isApiOrHealth || isStaticAsset) return next();
     res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 } else {
