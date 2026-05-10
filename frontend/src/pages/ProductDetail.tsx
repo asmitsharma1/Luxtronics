@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Star, ShoppingBag, Heart, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Check, AlertCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { getProduct, products } from "@/data/products";
@@ -17,64 +18,55 @@ const ProductDetail = () => {
   const { formatPrice, country } = useCurrency();
   const fallbackProduct = getProduct(slug);
 
-  const [product, setProduct] = useState<Product | null>(fallbackProduct || null);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(!fallbackProduct);
   const [selectedVariation, setSelectedVariation] = useState<Variation | null>(null);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [qty, setQty] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
 
-  // ─── Load product from API ───────────────────────────────────────────────
+  // ─── Fetch Product Detail ───────────────────────────────────────────────
+  const { data: product, isLoading: productLoading } = useQuery({
+    queryKey: ['product', slug],
+    queryFn: async () => {
+      const detail = await fetchStoreProductBySlug(slug);
+      if (detail) return mapStoreProductToLocalProduct(detail);
+      
+      // If not found by slug directly, try to find in the products list as a backup
+      const allProducts = await fetchStoreProducts(1, 100);
+      const found = allProducts.find(p => p.slug === slug);
+      if (found) return mapStoreProductToLocalProduct(found);
+      
+      return fallbackProduct || null;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // ─── Fetch Related Products ─────────────────────────────────────────────
+  const { data: relatedProducts = [] } = useQuery({
+    queryKey: ['products', 'related', product?.category],
+    queryFn: async () => {
+      const storeProducts = await fetchStoreProducts(1, 12); // Fetch fewer for speed
+      const mapped = storeProducts.map(mapStoreProductToLocalProduct);
+      return mapped
+        .filter((item) => item.slug !== slug)
+        .slice(0, 4);
+    },
+    enabled: !!product,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+
+  // ─── Auto-select first variation when product loads ─────────────────────
   useEffect(() => {
-    let mounted = true;
-
-    const load = async () => {
-      try {
-        setLoading(true);
-        const [detail, storeProducts] = await Promise.all([
-          fetchStoreProductBySlug(slug),
-          fetchStoreProducts(),
-        ]);
-
-        if (!mounted) return;
-
-        const resolvedProduct = detail ? mapStoreProductToLocalProduct(detail) : fallbackProduct || null;
-        const resolvedRelated = storeProducts
-          .map(mapStoreProductToLocalProduct)
-          .filter((item) => item.slug !== slug)
-          .slice(0, 4);
-
-        setProduct(resolvedProduct);
-        setRelatedProducts(
-          resolvedRelated.length > 0
-            ? resolvedRelated
-            : products.filter((item) => item.slug !== slug).slice(0, 4)
-        );
-
-        // Auto-select first variation
-        if (resolvedProduct?.variations && resolvedProduct.variations.length > 0) {
-          const firstVar = resolvedProduct.variations[0];
-          setSelectedVariation(firstVar);
-          const initialAttrs: Record<string, string> = {};
-          firstVar.attributes.forEach((attr) => {
-            initialAttrs[attr.name] = attr.option;
-          });
-          setSelectedAttributes(initialAttrs);
-        }
-      } catch {
-        if (!mounted) return;
-        setProduct(fallbackProduct || null);
-        setRelatedProducts(products.filter((item) => item.slug !== slug).slice(0, 4));
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    load();
-    return () => { mounted = false; };
-  }, [slug]);
+    if (product?.variations && product.variations.length > 0) {
+      const firstVar = product.variations[0];
+      setSelectedVariation(firstVar);
+      const initialAttrs: Record<string, string> = {};
+      firstVar.attributes.forEach((attr) => {
+        initialAttrs[attr.name] = attr.option;
+      });
+      setSelectedAttributes(initialAttrs);
+    }
+  }, [product]);
 
   // ─── Match variation when attributes change ──────────────────────────────
   useEffect(() => {
@@ -153,7 +145,7 @@ const ProductDetail = () => {
   };
 
   // ─── Loading / not found states ──────────────────────────────────────────
-  if (loading && !product) {
+  if (productLoading && !product) {
     return (
       <Layout>
         <div className="container pt-40 text-center">

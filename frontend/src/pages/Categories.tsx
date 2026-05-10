@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { fetchStoreCategories } from "@/services/store-api";
@@ -27,31 +28,23 @@ const SkeletonCard = () => (
 );
 
 const Categories = () => {
-  const [categories, setCategories] = useState<StoreCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [params, setParams] = useSearchParams();
+  const page = parseInt(params.get("page") || "1");
 
-  const loadPage = useCallback(async (p: number) => {
-    setLoading(true);
-    try {
-      const result = await fetchStoreCategories(p, PER_PAGE);
-      setCategories(result.data);
-      setTotalPages(result.pagination.totalPages);
-      setTotal(result.pagination.total);
-      setPage(p);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch {
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: categoryResult, isLoading: loading } = useQuery({
+    queryKey: ['categories', page],
+    queryFn: () => fetchStoreCategories(page, PER_PAGE),
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  });
 
-  useEffect(() => {
-    loadPage(1);
-  }, [loadPage]);
+  const categories = categoryResult?.data || [];
+  const totalPages = categoryResult?.pagination?.totalPages || 1;
+  const total = categoryResult?.pagination?.total || 0;
+
+  const handlePageChange = (p: number) => {
+    setParams({ page: p.toString() });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <Layout>
@@ -164,7 +157,7 @@ const Categories = () => {
         <div className="container pb-16 flex items-center justify-center gap-3">
           {/* Prev */}
           <button
-            onClick={() => loadPage(page - 1)}
+            onClick={() => handlePageChange(page - 1)}
             disabled={page === 1}
             className="h-10 w-10 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
@@ -188,7 +181,7 @@ const Categories = () => {
             return (
               <button
                 key={p}
-                onClick={() => loadPage(p)}
+                onClick={() => handlePageChange(p)}
                 className={`h-10 min-w-10 px-3 rounded-full text-sm font-medium border transition-all ${
                   page === p
                     ? "bg-gradient-brand text-primary-foreground border-transparent shadow-glow"
@@ -202,7 +195,7 @@ const Categories = () => {
 
           {/* Next */}
           <button
-            onClick={() => loadPage(page + 1)}
+            onClick={() => handlePageChange(page + 1)}
             disabled={page === totalPages}
             className="h-10 w-10 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
