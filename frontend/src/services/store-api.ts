@@ -114,34 +114,61 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
   };
 }
 
-export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
-  const mainImage = product.images?.[0]?.src || '';
-  
-  const activePrice = product.salePrice && product.salePrice > 0 ? product.salePrice : product.price;
-  const originalPrice = product.regularPrice && product.regularPrice > 0 ? product.regularPrice : product.price;
-  
-  return {
-    id: product.id.toString(),
-    slug: product.slug,
-    name: product.name,
-    category: product.category || 'Uncategorized',
-    price: Math.round(activePrice),
-    oldPrice: originalPrice > activePrice ? Math.round(originalPrice) : undefined,
-    image: mainImage,
-    rating: parseFloat(product.average_rating || '0'),
-    reviews: product.rating_count || 0,
-    description: product.description || product.shortDescription || '',
-    badge: originalPrice > activePrice ? `-${Math.round(((originalPrice - activePrice) / originalPrice) * 100)}%` : undefined,
-    variations: product.variations?.map(v => ({
-      id: v.id.toString(),
-      sku: v.sku,
-      price: Math.round(v.salePrice && v.salePrice > 0 ? v.salePrice : v.price),
-      oldPrice: v.regularPrice > (v.salePrice || v.price) ? Math.round(v.regularPrice) : undefined,
-      attributes: v.attributes,
-      image: v.image?.src,
-      stockStatus: v.stockStatus,
-    })),
-  };
+export function mapStoreProductToLocalProduct(product: any): Product | null {
+  if (!product || typeof product !== 'object') {
+    return null;
+  }
+
+  try {
+    const images = product.images || [];
+    const mainImage = images[0]?.src || '';
+    
+    // Handle both camelCase (MongoDB) and snake_case (WooCommerce direct)
+    const price = product.price || 0;
+    const salePrice = product.salePrice ?? product.sale_price;
+    const regularPrice = product.regularPrice ?? product.regular_price;
+    
+    const activePrice = salePrice && salePrice > 0 ? salePrice : price;
+    const originalPrice = regularPrice && regularPrice > 0 ? regularPrice : price;
+    
+    // Safety check for ID
+    const productId = (product.id || product._id || Math.random()).toString();
+
+    return {
+      id: productId,
+      slug: product.slug || '',
+      name: product.name || 'Unknown Product',
+      category: product.category || (product.categories?.[0]?.name) || 'Uncategorized',
+      price: Math.round(Number(activePrice)),
+      oldPrice: Number(originalPrice) > Number(activePrice) ? Math.round(Number(originalPrice)) : undefined,
+      image: mainImage,
+      rating: parseFloat(product.average_rating || '0'),
+      reviews: product.rating_count || 0,
+      description: product.description || product.shortDescription || product.short_description || '',
+      badge: Number(originalPrice) > Number(activePrice) ? `-${Math.round(((Number(originalPrice) - Number(activePrice)) / Number(originalPrice)) * 100)}%` : undefined,
+      variations: Array.isArray(product.variations) 
+        ? product.variations.filter((v: any) => v && (v.id || v._id)).map((v: any) => {
+            const vPrice = v.price || 0;
+            const vSalePrice = v.salePrice ?? v.sale_price;
+            const vRegularPrice = v.regularPrice ?? v.regular_price;
+            const vActivePrice = vSalePrice && vSalePrice > 0 ? vSalePrice : vPrice;
+            
+            return {
+              id: (v.id || v._id).toString(),
+              sku: v.sku,
+              price: Math.round(Number(vActivePrice)),
+              oldPrice: Number(vRegularPrice) > Number(vActivePrice) ? Math.round(Number(vRegularPrice)) : undefined,
+              attributes: v.attributes || [],
+              image: v.image?.src || v.image,
+              stockStatus: v.stockStatus || v.stock_status || 'instock',
+            };
+          })
+        : undefined,
+    };
+  } catch (err) {
+    console.error('Error mapping product:', err, product);
+    return null;
+  }
 }
 
 /**
@@ -152,7 +179,9 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
   
   const response = await fetchJson<ApiResponse<StoreProduct[]>>(`/api/search?q=${encodeURIComponent(query)}&per_page=5`);
   
-  if (!response.success) return [];
+  if (!response.success || !Array.isArray(response.data)) return [];
   
-  return response.data.map(mapStoreProductToLocalProduct);
+  return response.data
+    .map(mapStoreProductToLocalProduct)
+    .filter((p): p is Product => p !== null);
 }

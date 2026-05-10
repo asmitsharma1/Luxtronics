@@ -23,7 +23,11 @@ const FeaturedProducts = () => {
   };
 
   const products = useMemo(() => {
-    if (storeProducts.length > 0) return storeProducts.map(mapStoreProductToLocalProduct);
+    if (storeProducts.length > 0) {
+      return storeProducts
+        .map(mapStoreProductToLocalProduct)
+        .filter((p): p is Product => p !== null);
+    }
     return staticProducts;
   }, [storeProducts]);
 

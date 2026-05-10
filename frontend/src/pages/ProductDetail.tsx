@@ -29,12 +29,18 @@ const ProductDetail = () => {
     queryKey: ['product', slug],
     queryFn: async () => {
       const detail = await fetchStoreProduct(slug);
-      if (detail) return mapStoreProductToLocalProduct(detail);
+      if (detail) {
+        const mapped = mapStoreProductToLocalProduct(detail);
+        if (mapped) return mapped;
+      }
       
       // If not found by slug directly, try to find in the products list as a backup
       const allProducts = await fetchStoreProducts(1, 100);
       const found = allProducts.find(p => p.slug === slug);
-      if (found) return mapStoreProductToLocalProduct(found);
+      if (found) {
+        const mapped = mapStoreProductToLocalProduct(found);
+        if (mapped) return mapped;
+      }
       
       return fallbackProduct || null;
     },
@@ -46,10 +52,10 @@ const ProductDetail = () => {
     queryKey: ['products', 'related', product?.category],
     queryFn: async () => {
       const storeProducts = await fetchStoreProducts(1, 12); // Fetch fewer for speed
-      const mapped = storeProducts.map(mapStoreProductToLocalProduct);
-      return mapped
-        .filter((item) => item.slug !== slug)
-        .slice(0, 4);
+      const mapped = storeProducts
+        .map(mapStoreProductToLocalProduct)
+        .filter((item): item is Product => item !== null && item.slug !== slug);
+      return mapped.slice(0, 4);
     },
     enabled: !!product,
     staleTime: 1000 * 60 * 10, // 10 minutes
