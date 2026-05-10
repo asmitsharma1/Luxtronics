@@ -121,34 +121,38 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
 }
 
 export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
+  if (!product) {
+    return {} as Product;
+  }
+
   const images = Array.isArray(product.images) ? product.images : [];
   const mainImage = images[0]?.src || '';
   const allImages = images.map(img => img.src).filter(Boolean);
   
-  const price = product.salePrice ?? product.price;
-  const originalPrice = product.regularPrice || product.price;
+  const price = product.salePrice ?? product.price ?? 0;
+  const originalPrice = product.regularPrice || product.price || 0;
 
   return {
-    id: product.id.toString(),
-    slug: product.slug,
-    name: product.name,
-    category: product.category,
+    id: (product.id ?? Math.random()).toString(),
+    slug: product.slug || '',
+    name: product.name || 'Unnamed Product',
+    category: product.category || 'Uncategorized',
     price: Math.round(price),
     oldPrice: originalPrice > price ? Math.round(originalPrice) : undefined,
     image: mainImage,
     images: allImages.length > 0 ? allImages : [mainImage],
-    rating: product.rating,
-    reviews: product.reviewCount,
+    rating: product.rating || 5,
+    reviews: product.reviewCount || 0,
     description: product.description || product.shortDescription || '',
     badge: originalPrice > price ? '-20%' : undefined,
     variations: product.variations?.map((variation) => ({
-      id: variation.id.toString(),
+      id: (variation.id ?? Math.random()).toString(),
       sku: variation.sku,
-      price: Math.round(variation.salePrice ?? variation.price),
-      oldPrice: (variation.regularPrice > (variation.salePrice ?? variation.price)) ? Math.round(variation.regularPrice) : undefined,
-      attributes: variation.attributes,
+      price: Math.round(variation.salePrice ?? variation.price ?? 0),
+      oldPrice: (variation.regularPrice > (variation.salePrice ?? variation.price ?? 0)) ? Math.round(variation.regularPrice) : undefined,
+      attributes: variation.attributes || [],
       image: variation.image?.src,
-      stockStatus: variation.stockStatus,
-    })),
+      stockStatus: variation.stockStatus || 'instock',
+    })) || [],
   };
 }
