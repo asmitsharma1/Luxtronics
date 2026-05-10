@@ -50,8 +50,8 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function fetchStoreProducts(): Promise<StoreProduct[]> {
-  const response = await fetchJson<ApiResponse<StoreProduct[]>>('/api/products?per_page=100&page=1');
+export async function fetchStoreProducts(page = 1, perPage = 100): Promise<StoreProduct[]> {
+  const response = await fetchJson<ApiResponse<StoreProduct[]>>(`/api/products?per_page=${perPage}&page=${page}`);
 
   if (!response.success) {
     throw new Error(response.error || 'Failed to load products');

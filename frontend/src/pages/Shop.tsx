@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import ProductCard from "@/components/ProductCard";
 import { cn } from "@/lib/utils";
@@ -18,50 +19,26 @@ const Shop = () => {
   const activeCat = params.get("cat") || "all";
   const activeSearch = params.get("q") || "";
   const [sort, setSort] = useState("featured");
-  const [categories, setCategories] = useState<CategoryFilter[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // ─── Fetch Categories ──────────────────────────────────────────────────
+  const { data: categoryResult } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => fetchStoreCategories(1, 100),
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  });
 
-  useEffect(() => {
-    let mounted = true;
+  const categories = categoryResult?.data || [];
 
-    const load = async () => {
-      try {
-        setLoading(true);
-        const [categoryResult, productData] = await Promise.all([
-          fetchStoreCategories(1, 100), // get all for filter bar
-          fetchStoreProducts(),
-        ]);
+  // ─── Fetch Products ────────────────────────────────────────────────────
+  const { data: storeProducts = [], isLoading: productsLoading, error: productsError } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => fetchStoreProducts(1, 100),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-        if (!mounted) {
-          return;
-        }
+  const products = useMemo(() => storeProducts.map(mapStoreProductToLocalProduct), [storeProducts]);
+  const loading = productsLoading;
+  const error = productsError ? (productsError as Error).message : null;
 
-        setCategories(categoryResult.data);
-        setProducts(productData.map(mapStoreProductToLocalProduct));
-        setError(null);
-      } catch (loadError) {
-        if (!mounted) {
-          return;
-        }
-
-        setError(loadError instanceof Error ? loadError.message : "Failed to load products");
-        setCategories([]);
-        setProducts([]);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const list = useMemo(() => {
     let p = [...products];

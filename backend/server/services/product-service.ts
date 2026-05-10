@@ -63,7 +63,14 @@ export class ProductService {
    */
   async getProductBySlug(slug: string): Promise<MongoProduct | null> {
     const collection = this.db.collection(this.PRODUCTS_COLLECTION);
-    return collection.findOne({ slug }) as Promise<MongoProduct | null>;
+    // Try exact match first
+    const exactMatch = await collection.findOne({ slug }) as MongoProduct | null;
+    if (exactMatch) return exactMatch;
+
+    // Try case-insensitive match
+    return collection.findOne({ 
+      slug: { $regex: new RegExp(`^${slug.trim()}$`, 'i') } 
+    }) as Promise<MongoProduct | null>;
   }
 
   /**
