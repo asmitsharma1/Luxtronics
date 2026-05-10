@@ -44,7 +44,12 @@ const Shop = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const products = useMemo(() => storeProducts.map(mapStoreProductToLocalProduct), [storeProducts]);
+  const products = useMemo(() => 
+    storeProducts
+      .map(mapStoreProductToLocalProduct)
+      .filter((p): p is Product => p !== null), 
+    [storeProducts]
+  );
   const loading = productsLoading;
   const error = productsError ? (productsError as Error).message : null;
 
