@@ -6,6 +6,9 @@ import { useCurrency, countries } from "@/context/CurrencyContext";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useQuery } from "@tanstack/react-query";
+import { fetchSearchSuggestions } from "@/services/store-api";
+import { Product } from "@/data/products";
 
 const links = [
   { to: "/", label: "Home" },
@@ -244,44 +247,52 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Search overlay */}
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
-          searchOpen ? "max-h-28 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+          searchOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"
         )}
       >
         <div className="container mt-2">
-          <form
-            onSubmit={handleSearch}
-            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background/80 backdrop-blur-xl px-5 py-3 shadow-2xl"
-          >
-            <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-            <input
-              ref={searchInputRef}
-              id="navbar-search-input"
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products… (press Enter)"
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="submit"
-                className="shrink-0 rounded-full bg-gradient-brand px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all"
-              >
-                Search
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setSearchOpen(false)}
-              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+          <div className="relative">
+            <form
+              onSubmit={handleSearch}
+              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background/80 backdrop-blur-xl px-5 py-3 shadow-2xl"
             >
-              <X className="h-4 w-4" />
-            </button>
-          </form>
+              <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+              <input
+                ref={searchInputRef}
+                id="navbar-search-input"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products… (press Enter)"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-full bg-gradient-brand px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all"
+                >
+                  Search
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </form>
+
+            {/* Search Suggestions */}
+            {searchQuery.length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl border border-white/10 bg-background/90 backdrop-blur-xl shadow-2xl overflow-hidden animate-fade-in">
+                <SearchSuggestions query={searchQuery} onSelect={() => setSearchOpen(false)} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -356,6 +367,70 @@ const Navbar = () => {
         </div>
       )}
     </header>
+  );
+};
+
+const SearchSuggestions = ({ query, onSelect }: { query: string; onSelect: () => void }) => {
+  const { data: suggestions = [], isLoading } = useQuery({
+    queryKey: ['search-suggestions', query],
+    queryFn: () => fetchSearchSuggestions(query),
+    enabled: query.length >= 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-4 space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex gap-3 animate-pulse">
+            <div className="h-12 w-12 rounded-lg bg-white/5" />
+            <div className="flex-1 space-y-2 py-1">
+              <div className="h-3 w-1/3 bg-white/5 rounded" />
+              <div className="h-3 w-1/4 bg-white/5 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (suggestions.length === 0) {
+    return (
+      <div className="p-6 text-center text-sm text-muted-foreground">
+        No products found for "{query}"
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-h-[400px] overflow-y-auto py-2 scrollbar-hidden">
+      {suggestions.map((product) => (
+        <Link
+          key={product.id}
+          to={`/product/${product.slug}`}
+          onClick={onSelect}
+          className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+        >
+          <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/50 shrink-0 border border-white/5">
+            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{product.category}</p>
+          </div>
+          <div className="text-sm font-semibold text-primary">
+            ₹{product.price.toLocaleString()}
+          </div>
+        </Link>
+      ))}
+      <Link
+        to={`/shop?q=${encodeURIComponent(query)}`}
+        onClick={onSelect}
+        className="block w-full p-3 text-center text-xs font-medium text-muted-foreground hover:text-primary transition-colors border-t border-white/5"
+      >
+        View all results
+      </Link>
+    </div>
   );
 };
 

@@ -17,21 +17,44 @@ export interface StoreCategory {
   sampleImage?: string | null;
 }
 
+export interface StoreVariation {
+  id: number;
+  sku?: string;
+  price: number;
+  salePrice?: number;
+  regularPrice: number;
+  stockStatus: 'instock' | 'outofstock' | 'onbackorder';
+  attributes: Array<{
+    name: string;
+    option: string;
+  }>;
+  image?: {
+    id: number;
+    src: string;
+    alt: string;
+  };
+}
+
 export interface StoreProduct {
   id: number;
   slug: string;
   name: string;
   description: string;
-  short_description?: string;
-  categories: Array<{ id: number; name: string; slug: string }>;
-  price: string;
-  sale_price?: string;
-  regular_price?: string;
+  shortDescription?: string;
+  category: string;
+  price: number;
+  salePrice?: number;
+  regularPrice: number;
   images: StoreImage[];
   average_rating?: string;
   rating_count?: number;
-  stock_status: 'instock' | 'outofstock' | 'onbackorder';
-  variations?: number[];
+  stockStatus: 'instock' | 'outofstock' | 'onbackorder';
+  variations?: StoreVariation[];
+  attributes?: Array<{
+    name: string;
+    value: string;
+    options?: string[];
+  }>;
 }
 
 interface ApiResponse<T> {
@@ -94,29 +117,42 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
 export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
   const mainImage = product.images?.[0]?.src || '';
   
-  const price = parseFloat(product.price || '0');
-  const salePrice = product.sale_price ? parseFloat(product.sale_price) : 0;
-  const regularPrice = product.regular_price ? parseFloat(product.regular_price) : 0;
-
-  const activePrice = salePrice > 0 ? salePrice : price;
-  const originalPrice = regularPrice > 0 ? regularPrice : price;
+  const activePrice = product.salePrice && product.salePrice > 0 ? product.salePrice : product.price;
+  const originalPrice = product.regularPrice && product.regularPrice > 0 ? product.regularPrice : product.price;
   
-  const categoryName = product.categories && product.categories.length > 0 
-    ? product.categories[0].name 
-    : 'Uncategorized';
-
   return {
     id: product.id.toString(),
     slug: product.slug,
     name: product.name,
-    category: categoryName,
+    category: product.category || 'Uncategorized',
     price: Math.round(activePrice),
     oldPrice: originalPrice > activePrice ? Math.round(originalPrice) : undefined,
     image: mainImage,
     rating: parseFloat(product.average_rating || '0'),
     reviews: product.rating_count || 0,
-    description: product.description || product.short_description || '',
+    description: product.description || product.shortDescription || '',
     badge: originalPrice > activePrice ? `-${Math.round(((originalPrice - activePrice) / originalPrice) * 100)}%` : undefined,
-    variations: undefined,
+    variations: product.variations?.map(v => ({
+      id: v.id.toString(),
+      sku: v.sku,
+      price: Math.round(v.salePrice && v.salePrice > 0 ? v.salePrice : v.price),
+      oldPrice: v.regularPrice > (v.salePrice || v.price) ? Math.round(v.regularPrice) : undefined,
+      attributes: v.attributes,
+      image: v.image?.src,
+      stockStatus: v.stockStatus,
+    })),
   };
+}
+
+/**
+ * Fetch search suggestions based on a query
+ */
+export async function fetchSearchSuggestions(query: string): Promise<Product[]> {
+  if (!query || query.length < 2) return [];
+  
+  const response = await fetchJson<ApiResponse<StoreProduct[]>>(`/api/search?q=${encodeURIComponent(query)}&per_page=5`);
+  
+  if (!response.success) return [];
+  
+  return response.data.map(mapStoreProductToLocalProduct);
 }
