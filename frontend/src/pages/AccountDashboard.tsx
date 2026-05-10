@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Package, Heart, MapPin, UserRound } from "lucide-react";
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/react";
+import { useAuth } from "@/context/AuthContext";
 
 const quickCards = [
   {
@@ -31,14 +31,24 @@ const quickCards = [
 ];
 
 const AccountDashboard = () => {
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuth();
 
   if (!isLoaded) {
     return (
       <Layout>
         <section className="container pt-32 pb-24 max-w-xl">
-          <h1 className="font-display font-bold text-4xl tracking-tight">Account</h1>
-          <p className="mt-3 text-muted-foreground">Loading account...</p>
+          <p className="text-muted-foreground">Loading account...</p>
+        </section>
+      </Layout>
+    );
+  }
+
+  if (!isSignedIn || !user) {
+    return (
+      <Layout>
+        <section className="container pt-32 pb-24 max-w-xl">
+          <h1 className="font-display font-bold text-4xl tracking-tight">Please sign in</h1>
+          <p className="mt-3 text-muted-foreground">Sign in to access your dashboard.</p>
           <div className="mt-6 flex gap-3 flex-wrap">
             <Link
               to="/account/login"
@@ -58,46 +68,25 @@ const AccountDashboard = () => {
     );
   }
 
-  if (!isSignedIn || !user) {
-    return (
-      <Layout>
-        <section className="container pt-32 pb-24 max-w-xl">
-          <h1 className="font-display font-bold text-4xl tracking-tight">Please sign in</h1>
-          <p className="mt-3 text-muted-foreground">Use Clerk to access your dashboard.</p>
-          <div className="mt-6 flex gap-3 flex-wrap">
-            <SignInButton>
-              <button type="button" className="rounded-full bg-gradient-brand px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow">
-                Sign in
-              </button>
-            </SignInButton>
-            <SignUpButton>
-              <button type="button" className="rounded-full border border-border px-6 py-3 text-sm font-semibold hover:border-primary/40">
-                Create account
-              </button>
-            </SignUpButton>
-          </div>
-        </section>
-      </Layout>
-    );
-  }
+  const displayName =
+    user.displayName ||
+    user.email?.split("@")[0] ||
+    "there";
 
   return (
     <Layout>
       <section className="container pt-32 pb-12">
         <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">My account</p>
         <h1 className="font-display font-bold text-5xl tracking-tight">
-          Hi, <span className="text-gradient">{user.firstName || user.username || user.primaryEmailAddress?.emailAddress.split("@")[0]}</span>
+          Hi, <span className="text-gradient">{displayName}</span>
         </h1>
-        <p className="mt-4 text-muted-foreground max-w-2xl">
-          {user.primaryEmailAddress?.emailAddress}
-        </p>
+        <p className="mt-4 text-muted-foreground max-w-2xl">{user.email}</p>
         <div className="mt-5 flex items-center gap-3 flex-wrap">
-          <UserButton />
           <Link
             to="/account/profile"
             className="rounded-full border border-border px-5 py-2 text-sm font-medium hover:border-primary/40"
           >
-            Profile
+            Edit profile
           </Link>
         </div>
       </section>
