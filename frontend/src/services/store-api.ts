@@ -125,12 +125,18 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
     return {} as Product;
   }
 
+  const parsePrice = (p: any) => {
+    if (typeof p === 'number') return p;
+    if (typeof p === 'string') return parseFloat(p) || 0;
+    return 0;
+  };
+
   const images = Array.isArray(product.images) ? product.images : [];
   const mainImage = images[0]?.src || '';
   const allImages = images.map(img => img.src).filter(Boolean);
   
-  const price = product.salePrice ?? product.price ?? 0;
-  const originalPrice = product.regularPrice || product.price || 0;
+  const price = parsePrice(product.salePrice ?? product.price);
+  const originalPrice = parsePrice(product.regularPrice || product.price);
 
   return {
     id: (product.id ?? Math.random()).toString(),
@@ -145,14 +151,18 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
     reviews: product.reviewCount || 0,
     description: product.description || product.shortDescription || '',
     badge: originalPrice > price ? '-20%' : undefined,
-    variations: product.variations?.map((variation) => ({
-      id: (variation.id ?? Math.random()).toString(),
-      sku: variation.sku,
-      price: Math.round(variation.salePrice ?? variation.price ?? 0),
-      oldPrice: (variation.regularPrice > (variation.salePrice ?? variation.price ?? 0)) ? Math.round(variation.regularPrice) : undefined,
-      attributes: variation.attributes || [],
-      image: variation.image?.src,
-      stockStatus: variation.stockStatus || 'instock',
-    })) || [],
+    variations: product.variations?.map((variation) => {
+      const vPrice = parsePrice(variation.salePrice ?? variation.price);
+      const vRegular = parsePrice(variation.regularPrice || variation.price);
+      return {
+        id: (variation.id ?? Math.random()).toString(),
+        sku: variation.sku,
+        price: Math.round(vPrice > 0 ? vPrice : price), // Fallback to main price if variation price is 0
+        oldPrice: vRegular > (vPrice || price) ? Math.round(vRegular) : undefined,
+        attributes: variation.attributes || [],
+        image: variation.image?.src,
+        stockStatus: variation.stockStatus || 'instock',
+      };
+    }) || [],
   };
 }
