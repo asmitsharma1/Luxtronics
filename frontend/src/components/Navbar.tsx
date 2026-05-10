@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
-import { UserButton, useUser } from "@clerk/react";
-import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency, countries } from "@/context/CurrencyContext";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
@@ -26,8 +26,7 @@ const Navbar = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isLoaded, isSignedIn } = useUser();
-  const showSignedIn = isLoaded && isSignedIn;
+  const { isSignedIn, user, logOut } = useAuth();
   const { country, setCountry } = useCurrency();
   const { totalItems } = useCart();
 
@@ -44,14 +43,12 @@ const Navbar = () => {
     setSearchQuery("");
   }, [location.pathname]);
 
-  // Auto-focus search input when opened
   useEffect(() => {
     if (searchOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 80);
     }
   }, [searchOpen]);
 
-  // Close search on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSearchOpen(false);
@@ -69,6 +66,16 @@ const Navbar = () => {
     setSearchQuery("");
   };
 
+  const handleLogOut = async () => {
+    await logOut();
+    navigate("/");
+  };
+
+  // Avatar initials from display name or email
+  const avatarLabel = user?.displayName
+    ? user.displayName.charAt(0).toUpperCase()
+    : user?.email?.charAt(0).toUpperCase() ?? "U";
+
   return (
     <header
       className={cn(
@@ -82,6 +89,7 @@ const Navbar = () => {
           scrolled && "rounded-2xl border border-white/5 bg-background/10 px-6 py-3 backdrop-blur-md"
         )}
       >
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-1 sm:gap-2 group">
           <div className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-gradient-brand flex items-center justify-center shadow-glow group-hover:scale-110 transition-transform duration-300">
             <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" strokeWidth={2.5} />
@@ -91,6 +99,7 @@ const Navbar = () => {
           </span>
         </Link>
 
+        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
           {links.map((l) => (
             <RouterNavLink
@@ -100,9 +109,7 @@ const Navbar = () => {
               className={({ isActive }) =>
                 cn(
                   "relative px-4 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 )
               }
             >
@@ -118,11 +125,11 @@ const Navbar = () => {
           ))}
         </nav>
 
+        {/* Right actions */}
         <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
-          {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* Search button */}
+          {/* Search */}
           <button
             id="navbar-search-btn"
             aria-label="Search products"
@@ -135,7 +142,7 @@ const Navbar = () => {
             {searchOpen ? <X className="h-4 w-4 sm:h-[18px] sm:w-[18px]" /> : <Search className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />}
           </button>
 
-          {/* Currency Switcher */}
+          {/* Currency switcher */}
           <div className="relative">
             <button
               onClick={() => setCurrencyOpen((v) => !v)}
@@ -171,6 +178,7 @@ const Navbar = () => {
             )}
           </div>
 
+          {/* Cart */}
           <Link
             to="/cart"
             aria-label="Cart"
@@ -179,14 +187,28 @@ const Navbar = () => {
             <ShoppingBag className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
             {totalItems > 0 && (
               <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-gradient-brand text-[10px] font-bold flex items-center justify-center text-primary-foreground">
-                {totalItems > 99 ? '99+' : totalItems}
+                {totalItems > 99 ? "99+" : totalItems}
               </span>
             )}
           </Link>
 
-          {showSignedIn ? (
-            <div className="hidden sm:flex items-center justify-center">
-              <UserButton />
+          {/* Auth — desktop */}
+          {isSignedIn ? (
+            <div className="hidden sm:flex items-center gap-2">
+              <Link
+                to="/account"
+                className="h-9 w-9 rounded-full bg-gradient-brand flex items-center justify-center text-primary-foreground text-sm font-bold shadow-glow"
+                aria-label="Account"
+              >
+                {avatarLabel}
+              </Link>
+              <button
+                onClick={handleLogOut}
+                aria-label="Sign out"
+                className="h-9 w-9 rounded-full hover:bg-secondary flex items-center justify-center transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
           ) : (
             <div className="hidden sm:flex items-center gap-2">
@@ -222,7 +244,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ── Search Overlay ──────────────────────────────────────── */}
+      {/* Search overlay */}
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
@@ -267,7 +289,6 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden container mt-2 sm:mt-3 animate-fade-up px-4 sm:px-6">
           <div className="rounded-2xl border border-white/5 bg-background/35 p-3 sm:p-4 flex flex-col gap-1 backdrop-blur-xl">
-            {/* Mobile search */}
             <form
               onSubmit={handleSearch}
               className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 mb-2"
@@ -290,22 +311,31 @@ const Navbar = () => {
                 className={({ isActive }) =>
                   cn(
                     "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground hover:bg-secondary/60"
+                    isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/60"
                   )
                 }
               >
                 {l.label}
               </RouterNavLink>
             ))}
+
             <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-2">
-              {showSignedIn && (
-                <div className="px-2 py-2">
-                  <UserButton />
-                </div>
-              )}
-              {!showSignedIn && (
+              {isSignedIn ? (
+                <>
+                  <Link
+                    to="/account"
+                    className="w-full rounded-lg border border-border px-4 py-3 text-sm font-medium text-center"
+                  >
+                    My Account
+                  </Link>
+                  <button
+                    onClick={handleLogOut}
+                    className="w-full rounded-lg border border-border px-4 py-3 text-sm font-medium text-center hover:border-primary/40 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
                 <>
                   <Link
                     to="/account/login"
