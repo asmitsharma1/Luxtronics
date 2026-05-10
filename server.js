@@ -2,182 +2,92 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 
-// ── Environment Setup ────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables with priority: .env.production > .env.local > .env
+// Load env
 dotenv.config({ path: path.join(__dirname, '.env') });
-dotenv.config({ path: path.join(__dirname, '.env.local'), override: true });
-dotenv.config({ path: path.join(__dirname, '.env.production'), override: true });
 
 const app = express();
 const port = parseInt(process.env.PORT || '3001', 10);
 
-// ── WooCommerce Config ───────────────────────────────────────────────────────
-const wooUrl    = () => process.env.VITE_WOOCOMMERCE_URL    || '';
-const wooKey    = () => process.env.VITE_WOOCOMMERCE_KEY    || '';
-const wooSecret = () => process.env.VITE_WOOCOMMERCE_SECRET || '';
-
-function wooAuth() {
-  const k = wooKey(), s = wooSecret();
-  if (!k || !s) return '';
-  return 'Basic ' + Buffer.from(`${k}:${s}`).toString('base64');
+// Dynamic Build Resolver
+function getBuildDir() {
+  const candidates = [
+    path.join(__dirname, 'build'),
+    path.join(process.cwd(), 'build'),
+    path.join(__dirname, 'dist'),
+    path.join(process.cwd(), 'dist'),
+  ];
+  return candidates.find(c => existsSync(path.join(c, 'index.html')));
 }
 
-// ── Express Middleware ───────────────────────────────────────────────────────
-app.set('trust proxy', 1);
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+const BUILD_DIR = getBuildDir();
 
-const corsOrigins = (process.env.CORS_ORIGIN || '*').split(',').map(o => o.trim()).filter(Boolean);
-app.use(cors({ 
-  origin: corsOrigins.includes('*') ? true : corsOrigins, 
-  credentials: true 
-}));
+// WooCommerce Config
+const wooUrl    = () => process.env.VITE_WOOCOMMERCE_URL || '';
+const wooAuth    = () => {
+  const k = process.env.VITE_WOOCOMMERCE_KEY;
+  const s = process.env.VITE_WOOCOMMERCE_SECRET;
+  if (!k || !s) return '';
+  return 'Basic ' + Buffer.from(`${k}:${s}`).toString('base64');
+};
 
-// ── API Routes (WooCommerce Proxy) ───────────────────────────────────────────
-
-// Helper for fetching from WooCommerce
-async function fetchWoo(endpoint, options = {}) {
-  const url = `${wooUrl()}/wp-json/wc/v3/${endpoint}`;
-  const auth = wooAuth();
-  if (!auth) throw new Error('WooCommerce credentials missing');
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': auth,
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`WooCommerce Error (${response.status}): ${text}`);
-  }
-  
-  return { 
-    data: await response.json(), 
-    headers: response.headers 
+// Data Normalizer
+function normalizeProduct(p) {
+  const price = parseFloat(p.price || '0');
+  return {
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    description: p.description || '',
+    shortDescription: p.short_description || '',
+    price: price,
+    regularPrice: parseFloat(p.regular_price || p.price || '0'),
+    salePrice: p.sale_price ? parseFloat(p.sale_price) : undefined,
+    images: (p.images || []).map(img => ({ id: img.id, src: img.src, alt: img.alt || '' })),
+    category: p.categories?.[0]?.name || 'Uncategorized',
+    stockStatus: p.stock_status || 'instock',
   };
 }
 
-// Health check
-app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
 
-// Products API
+// API
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', buildDir: BUILD_DIR, cwd: process.cwd(), files: readdirSync(__dirname).filter(f => !f.startsWith('.')) });
+});
+
 app.get('/api/products', async (req, res) => {
   try {
-    const { page = '1', per_page = '50', category, search, slug } = req.query;
-    const params = new URLSearchParams({ page, per_page, status: 'publish' });
-    if (category) params.append('category', category);
-    if (search) params.append('search', search);
-    if (slug) params.append('slug', slug);
-
-    const { data, headers } = await fetchWoo(`products?${params}`);
-    
-    // Add pagination info to response
-    res.json({
-      success: true,
-      data,
-      pagination: {
-        total: parseInt(headers.get('X-WP-Total') || '0'),
-        totalPages: parseInt(headers.get('X-WP-TotalPages') || '0')
-      }
-    });
+    const url = `${wooUrl()}/wp-json/wc/v3/products?${new URLSearchParams(req.query)}`;
+    const response = await fetch(url, { headers: { 'Authorization': wooAuth() } });
+    if (!response.ok) throw new Error(`Woo Error: ${response.status}`);
+    const items = await response.json();
+    res.json({ success: true, data: items.map(normalizeProduct) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Categories API
-app.get('/api/categories', async (req, res) => {
-  try {
-    const { page = '1', per_page = '100' } = req.query;
-    const params = new URLSearchParams({ page, per_page, hide_empty: 'false' });
-    const { data } = await fetchWoo(`products/categories?${params}`);
-    res.json({ success: true, data });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Order API
-app.post('/api/orders', async (req, res) => {
-  try {
-    const { data } = await fetchWoo('orders', {
-      method: 'POST',
-      body: JSON.stringify(req.body)
-    });
-    res.json({ success: true, data });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ── Static File Serving (Frontend) ───────────────────────────────────────────
-
-// Priority list for finding the build folder
-const buildPath = [
-  path.join(__dirname, 'build'),
-  path.join(__dirname, 'dist'),
-].find(p => existsSync(path.join(p, 'index.html')));
-
-if (buildPath) {
-  console.log(`✅ Serving production build from: ${buildPath}`);
-  
-  // 1. Assets (JS, CSS, Images) - Long cache is safe due to Vite's predictable names
-  // (We use immutable for assets folder specifically)
-  app.use('/assets', express.static(path.join(buildPath, 'assets'), {
-    maxAge: '1y',
-    immutable: true,
-    index: false
-  }));
-
-  // 2. Other static files (favicon, etc) - 1 hour cache
-  app.use(express.static(buildPath, {
-    maxAge: '1h',
-    index: false
-  }));
-
-  // 3. SPA Fallback (index.html) - NO CACHE to ensure users always get fresh asset links
+// Serving
+if (BUILD_DIR) {
+  app.use('/assets', express.static(path.join(BUILD_DIR, 'assets'), { maxAge: '1y', immutable: true }));
+  app.use(express.static(BUILD_DIR, { maxAge: '1h' }));
   app.get('*', (req, res) => {
-    // Skip API and non-GET requests
-    if (req.path.startsWith('/api') || req.path === '/health' || req.method !== 'GET') {
-      return res.status(404).json({ error: 'Not Found' });
-    }
-    
-    res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-      'Surrogate-Control': 'no-store'
-    });
-    res.sendFile(path.join(buildPath, 'index.html'));
+    if (req.path.startsWith('/api')) return res.status(404).end();
+    res.set('Cache-Control', 'no-store');
+    res.sendFile(path.join(BUILD_DIR, 'index.html'));
   });
 } else {
-  console.log('⚠️  No production build found. Start in dev mode or run npm run build.');
   app.get('*', (req, res) => {
-    res.status(404).send('Backend is running, but frontend build was not found.');
+    const debug = { cwd: process.cwd(), dirname: __dirname, files: readdirSync(__dirname) };
+    res.status(503).send(`<h1>Build Not Found</h1><pre>${JSON.stringify(debug, null, 2)}</pre>`);
   });
 }
 
-// ── Error Handling ───────────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
-  console.error('❌ Server Error:', err);
-  res.status(500).json({ success: false, error: 'Internal Server Error' });
-});
-
-// ── Start Server ─────────────────────────────────────────────────────────────
-app.listen(port, () => {
-  console.log(`🚀 Luxtronics Server ready on port ${port}`);
-  console.log(`🌍 Mode: ${process.env.NODE_ENV || 'development'}`);
-});
-
-process.on('uncaughtException', (err) => console.error('🔥 Uncaught Exception:', err));
-process.on('unhandledRejection', (reason) => console.error('🔥 Unhandled Rejection:', reason));
+app.listen(port, () => console.log(`Server on ${port}`));
