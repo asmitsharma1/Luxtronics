@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => ({
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-ui": ["framer-motion", "@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-tooltip", "@radix-ui/react-select"],
           "vendor-query": ["@tanstack/react-query"],
-          "vendor-firebase": ["firebase"],
+          "vendor-firebase": ["firebase/app", "firebase/auth"],
           "vendor-icons": ["lucide-react"],
         },
       },
