@@ -1,4 +1,4 @@
-import{r as m,R as Et,a as Co,b as ic,c as oc}from"./vendor-react-CIQB3BZV.js";var Ao={exports:{}},Ke={};/**
+import{r as m,R as Et,a as Co,b as ic,c as oc}from"./vendor-react.js";var Ao={exports:{}},Ke={};/**
  * @license React
  * react-jsx-runtime.production.min.js
  *

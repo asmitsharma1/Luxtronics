@@ -29,6 +29,14 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
+        // Fixed filenames WITHOUT content hashes.
+        // This ensures index.html always references the same predictable
+        // filenames whether the build runs locally or on Hostinger.
+        // Without this, each build produces different hash-suffixed filenames
+        // that don't match the committed index.html → 404 → white page.
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-ui": ["framer-motion", "@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-tooltip", "@radix-ui/react-select"],
