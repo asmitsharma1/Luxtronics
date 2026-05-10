@@ -22,30 +22,16 @@ export interface StoreProduct {
   slug: string;
   name: string;
   description: string;
-  shortDescription?: string;
-  category: string;
-  categoryId?: number;
-  price: number;
-  salePrice?: number;
-  regularPrice: number;
+  short_description?: string;
+  categories: Array<{ id: number; name: string; slug: string }>;
+  price: string;
+  sale_price?: string;
+  regular_price?: string;
   images: StoreImage[];
-  rating: number;
-  reviewCount: number;
-  stockStatus: 'instock' | 'outofstock' | 'onbackorder';
-  variations?: Array<{
-    id: number;
-    sku?: string;
-    price: number;
-    salePrice?: number;
-    regularPrice: number;
-    stockStatus: 'instock' | 'outofstock' | 'onbackorder';
-    stock?: number;
-    attributes: Array<{
-      name: string;
-      option: string;
-    }>;
-    image?: StoreImage;
-  }>;
+  average_rating?: string;
+  rating_count?: number;
+  stock_status: 'instock' | 'outofstock' | 'onbackorder';
+  variations?: number[];
 }
 
 interface ApiResponse<T> {
@@ -107,29 +93,30 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
 
 export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
   const mainImage = product.images?.[0]?.src || '';
-  const price = product.salePrice ?? product.price;
-  const originalPrice = product.regularPrice || product.price;
+  
+  const price = parseFloat(product.price || '0');
+  const salePrice = product.sale_price ? parseFloat(product.sale_price) : 0;
+  const regularPrice = product.regular_price ? parseFloat(product.regular_price) : 0;
+
+  const activePrice = salePrice > 0 ? salePrice : price;
+  const originalPrice = regularPrice > 0 ? regularPrice : price;
+  
+  const categoryName = product.categories && product.categories.length > 0 
+    ? product.categories[0].name 
+    : 'Uncategorized';
 
   return {
     id: product.id.toString(),
     slug: product.slug,
     name: product.name,
-    category: product.category,
-    price: Math.round(price),
-    oldPrice: originalPrice > price ? Math.round(originalPrice) : undefined,
+    category: categoryName,
+    price: Math.round(activePrice),
+    oldPrice: originalPrice > activePrice ? Math.round(originalPrice) : undefined,
     image: mainImage,
-    rating: product.rating,
-    reviews: product.reviewCount,
-    description: product.description || product.shortDescription || '',
-    badge: originalPrice > price ? `-${Math.round(((originalPrice - price) / originalPrice) * 100)}%` : undefined,
-    variations: product.variations?.map((variation) => ({
-      id: variation.id.toString(),
-      sku: variation.sku,
-      price: Math.round(variation.salePrice ?? variation.price),
-      oldPrice: variation.regularPrice > (variation.salePrice ?? variation.price) ? Math.round(variation.regularPrice) : undefined,
-      attributes: variation.attributes,
-      image: variation.image?.src,
-      stockStatus: variation.stockStatus,
-    })),
+    rating: parseFloat(product.average_rating || '0'),
+    reviews: product.rating_count || 0,
+    description: product.description || product.short_description || '',
+    badge: originalPrice > activePrice ? `-${Math.round(((originalPrice - activePrice) / originalPrice) * 100)}%` : undefined,
+    variations: undefined,
   };
 }
