@@ -92,8 +92,39 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
   
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api') || req.path === '/debug') return res.status(404).end();
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.sendFile(path.join(BUILD_DIR, 'index.html'));
+    
+    try {
+      let html = readFileSync(path.join(BUILD_DIR, 'index.html'), 'utf8');
+      
+      // INJECT FIREBASE CONFIG AT RUNTIME
+      const fbConfig = {
+        apiKey: process.env.VITE_FIREBASE_API_KEY,
+        authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.VITE_FIREBASE_APP_ID
+      };
+      
+      const configScript = `<script>window.__FIREBASE_CONFIG = ${JSON.stringify(fbConfig)};</script>`;
+      html = html.replace('<head>', `<head>${configScript}`);
+      
+      // Inject version tag AND cache-busting query params to all assets
+      const cacheBuster = `?v=${Date.now()}`;
+      html = html.replace(/\.js"/g, `.js${cacheBuster}"`);
+      html = html.replace(/\.css"/g, `.css${cacheBuster}"`);
+      html = html.replace('<title>', `<title>(FINAL v5) `);
+      
+      res.set({
+        'Content-Type': 'text/html',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      res.send(html);
+    } catch (e) {
+      res.status(500).send('Error reading index.html');
+    }
   });
 } else {
   app.get('*', (req, res) => res.status(503).send('Build not found. Please run npm run build.'));
