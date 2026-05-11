@@ -277,7 +277,7 @@ const ProductDetail = () => {
               </div>
               <span className="font-medium">{product.rating}</span>
               <span className="text-muted-foreground">
-                ({product.reviews.toLocaleString()} reviews)
+                ({(product.reviews || 0).toLocaleString()} reviews)
               </span>
             </div>
 
