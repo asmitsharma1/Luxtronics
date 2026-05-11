@@ -61,7 +61,7 @@ const Hero = () => {
               New Arrivals · Spring Collection
             </motion.span>
 
-            <h1 className="font-display font-bold text-4xl xs:text-5xl sm:text-6xl md:text-5xl lg:text-7xl xl:text-8xl 2xl:text-9xl leading-[0.95] tracking-tight">
+            <h1 className="font-display font-bold text-3xl xs:text-4xl sm:text-5xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl leading-[1.1] md:leading-[0.95] tracking-tight">
               <span className="text-gradient">Premium tech</span>
               <br />
               <span className="md:inline">for everyday life</span>
