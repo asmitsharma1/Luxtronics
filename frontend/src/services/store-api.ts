@@ -1,5 +1,8 @@
 import type { Product } from '@/data/products';
 
+// Backend API URL - absolute for parked domains
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://luxtronics.in';
+
 export interface StoreImage {
   id: number;
   src: string;
@@ -67,7 +70,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 export async function fetchStoreProducts(page = 1, perPage = 100, search?: string): Promise<StoreProduct[]> {
-  let url = `/api/products?per_page=${perPage}&page=${page}`;
+  let url = `${BACKEND_URL}/api/products?per_page=${perPage}&page=${page}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
 
   const response = await fetchJson<ApiResponse<StoreProduct[]>>(url);
@@ -81,7 +84,7 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
 
 export async function fetchStoreProduct(slug: string): Promise<StoreProduct | null> {
   try {
-    const response = await fetchJson<ApiResponse<StoreProduct>>(`/api/products/slug/${encodeURIComponent(slug)}`);
+    const response = await fetchJson<ApiResponse<StoreProduct>>(`${BACKEND_URL}/api/products/slug/${encodeURIComponent(slug)}`);
 
     return response.success ? response.data : null;
   } catch {
@@ -98,7 +101,7 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
     data: StoreCategory[];
     pagination?: { page: number; perPage: number; total: number; totalPages: number };
     error?: string;
-  }>(`/api/categories?page=${page}&per_page=${perPage}`);
+  }>(`${BACKEND_URL}/api/categories?page=${page}&per_page=${perPage}`);
 
   if (!response.success) {
     throw new Error(response.error || 'Failed to load categories');
@@ -116,7 +119,7 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
 export async function fetchSearchSuggestions(query: string): Promise<Product[]> {
   if (!query || query.length < 2) return [];
   
-  const response = await fetchJson<ApiResponse<StoreProduct[]>>(`/api/products?search=${encodeURIComponent(query)}&per_page=5`);
+  const response = await fetchJson<ApiResponse<StoreProduct[]>>(`${BACKEND_URL}/api/products?search=${encodeURIComponent(query)}&per_page=5`);
   
   if (!response.success || !Array.isArray(response.data)) return [];
   

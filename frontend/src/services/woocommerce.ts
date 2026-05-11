@@ -4,9 +4,9 @@
  * The backend proxy forwards requests to luxtronics.luxtronics.in securely.
  */
 
-// In production the frontend is served by the same origin as the backend,
-// so we use a relative path. In local dev Vite proxies /api → localhost:3001.
-const API_BASE = '/api/woo';
+// Backend API URL - absolute for parked domains
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://luxtronics.in';
+const API_BASE = `${BACKEND_URL}/api/woo`;
 
 export interface WooProduct {
   id: number;

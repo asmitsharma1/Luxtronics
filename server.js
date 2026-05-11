@@ -48,10 +48,10 @@ function mask(str) {
 const WOO_DOMAINS = {
   'luxtronics.in': 'https://luxtronics.luxtronics.in',
   'luxtronics.luxtronics.in': 'https://luxtronics.luxtronics.in',
-  'luxtronics.com.au': 'https://luxtronics.com.au',
-  'luxtronics.co.nz': 'https://luxtronics.co.nz',
+  'luxtronics.com.au': 'https://luxtronics.luxtronics.in',
+  'luxtronics.co.nz': 'https://luxtronics.luxtronics.in',
   // Default fallback
-  'default': process.env.VITE_WOOCOMMERCE_URL || 'https://luxtronics.luxtronics.in'
+  'default': 'https://luxtronics.luxtronics.in'
 };
 
 function getWooUrl(req) {
