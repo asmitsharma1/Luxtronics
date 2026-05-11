@@ -21,8 +21,11 @@ export interface StoreProduct {
   name: string;
   description: string;
   shortDescription?: string;
-  category: string;
-  categoryId?: number;
+  categories: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
   price: number;
   salePrice?: number;
   regularPrice: number;
@@ -142,8 +145,9 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
     id: (product.id ?? Math.random()).toString(),
     slug: product.slug || '',
     name: product.name || 'Unnamed Product',
-    category: product.category || 'Uncategorized',
-    categoryId: product.categoryId,
+    categories: product.categories || [],
+    category: product.categories?.[0]?.name || 'Uncategorized',
+    categoryId: product.categories?.[0]?.id,
     price: Math.round(price),
     oldPrice: originalPrice > price ? Math.round(originalPrice) : undefined,
     image: mainImage,

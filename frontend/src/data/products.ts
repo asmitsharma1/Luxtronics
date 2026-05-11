@@ -20,7 +20,9 @@ export type Product = {
   reviews: number;
   badge?: "New" | "Hot" | "-20%";
   description: string;
-  categoryId?: number;
+  category: string; // Keep for display
+  categories: Array<{ id: number; name: string }>;
+  categoryId?: number; // Keep for single-cat legacy compatibility
   variations?: Array<{
     id: string;
     sku?: string;
