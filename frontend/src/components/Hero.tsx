@@ -42,14 +42,14 @@ const Hero = () => {
       <div className="absolute top-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px] animate-glow-pulse" />
       <div className="absolute bottom-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-accent/20 blur-[120px] animate-glow-pulse" />
 
-      <div className="container relative h-screen flex items-center pt-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
+      <div className="container relative min-h-screen flex items-center pt-20 pb-12 sm:pt-24 sm:pb-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 xl:gap-20 items-center w-full">
           {/* Copy */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-            className="relative z-10"
+            className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left"
           >
             <motion.span
               initial={{ opacity: 0 }}
@@ -61,42 +61,42 @@ const Hero = () => {
               New Arrivals · Spring Collection
             </motion.span>
 
-            <h1 className="font-display font-bold text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-[0.95] tracking-tight">
+            <h1 className="font-display font-bold text-4xl xs:text-5xl sm:text-6xl md:text-5xl lg:text-7xl xl:text-8xl 2xl:text-9xl leading-[0.95] tracking-tight">
               <span className="text-gradient">Premium tech</span>
               <br />
-              for everyday life
+              <span className="md:inline">for everyday life</span>
             </h1>
 
-            <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-muted-foreground max-w-md leading-relaxed">
+            <p className="mt-4 sm:mt-6 text-base sm:text-lg lg:text-xl text-muted-foreground max-w-lg leading-relaxed">
               Curated electronics from the world's leading brands. Experience speed,
               power, and innovation — delivered to your door.
             </p>
 
-            <div className="mt-6 sm:mt-10 flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6">
               <Link
                 to="/shop"
-                className="group inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 sm:px-7 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all duration-500 hover:scale-105"
+                className="group inline-flex items-center gap-2 rounded-full bg-gradient-brand px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all duration-500 hover:scale-105 active:scale-95"
               >
                 Explore Now
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 to="/categories"
-                className="inline-flex items-center gap-2 rounded-full border border-border px-5 sm:px-7 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold hover:border-foreground transition-colors"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-background/50 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold hover:border-foreground transition-all duration-300 hover:bg-background"
               >
                 Browse Categories
               </Link>
             </div>
 
-            <div className="mt-8 sm:mt-12 grid grid-cols-3 gap-4 sm:gap-6 max-w-md">
+            <div className="mt-10 sm:mt-14 grid grid-cols-3 gap-6 sm:gap-10 max-w-xl w-full">
               {[
                 { num: "12K+", label: "Products" },
                 { num: "98%", label: "Happy Buyers" },
                 { num: "24/7", label: "Support" },
               ].map((s) => (
-                <div key={s.label}>
-                  <div className="font-display font-bold text-lg sm:text-2xl text-gradient">{s.num}</div>
-                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">{s.label}</div>
+                <div key={s.label} className="flex flex-col items-center md:items-start">
+                  <div className="font-display font-bold text-2xl sm:text-3xl xl:text-4xl text-gradient">{s.num}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 uppercase tracking-widest font-semibold">{s.label}</div>
                 </div>
               ))}
             </div>
@@ -107,7 +107,7 @@ const Hero = () => {
             initial={{ opacity: 0, scale: 0.85, rotate: 10 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 1.1, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 }}
-            className="relative h-[250px] sm:h-[400px] md:h-[500px] lg:h-[700px] flex items-center justify-center"
+            className="relative h-[300px] sm:h-[450px] md:h-[500px] lg:h-[600px] xl:h-[750px] 2xl:h-[850px] flex items-center justify-center order-first md:order-last"
           >
             <div className="absolute inset-0 bg-gradient-radial opacity-80" />
             <div className="relative z-10 h-full w-full">
