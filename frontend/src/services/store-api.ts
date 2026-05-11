@@ -147,8 +147,8 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
     oldPrice: originalPrice > price ? Math.round(originalPrice) : undefined,
     image: mainImage,
     images: allImages.length > 0 ? allImages : [mainImage],
-    rating: product.rating || 5,
-    reviews: product.reviewCount || 0,
+    rating: Number(product.rating || 5),
+    reviews: Number(product.reviewCount || 0),
     description: product.description || product.shortDescription || '',
     badge: originalPrice > price ? '-20%' : undefined,
     variations: (Array.isArray(product.variations) ? product.variations : [])
