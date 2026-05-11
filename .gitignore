@@ -33,4 +33,3 @@ dist-ssr
 .env.australia
 .env.newzealand
 deploy.log
-build/
