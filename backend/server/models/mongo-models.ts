@@ -15,8 +15,11 @@ export interface MongoProduct {
   name: string;
   description: string;
   shortDescription?: string;
-  category: string;
-  categoryId?: number;
+  categories: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
   price: number;
   salePrice?: number;
   regularPrice: number;
@@ -165,8 +168,11 @@ export function createProductDocument(wooProduct: any, variations?: any[]): Mong
     name: wooProduct.name,
     description: wooProduct.description || '',
     shortDescription: wooProduct.short_description,
-    category: wooProduct.categories?.[0]?.name || 'Uncategorized',
-    categoryId: wooProduct.categories?.[0]?.id,
+    categories: (wooProduct.categories || []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+    })),
     price: parseFloat(wooProduct.price || 0),
     salePrice: wooProduct.sale_price ? parseFloat(wooProduct.sale_price) : undefined,
     regularPrice: parseFloat(wooProduct.regular_price || wooProduct.price || 0),

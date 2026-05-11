@@ -75,8 +75,8 @@ const Shop = () => {
       const selectedCategory = categories.find((c) => c.slug === activeCat);
       if (selectedCategory) {
         p = p.filter((x) => 
-          x.categoryId === selectedCategory.id || 
-          x.category.toLowerCase().trim() === selectedCategory.name.toLowerCase().trim()
+          x.categories.some(cat => cat.id === selectedCategory.id) || 
+          x.categories.some(cat => cat.name.toLowerCase().trim() === selectedCategory.name.toLowerCase().trim())
         );
       }
     }

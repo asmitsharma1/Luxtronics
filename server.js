@@ -79,7 +79,12 @@ app.get('/api/products', async (req, res) => {
     try {
       const query = {};
       if (search) query.name = { $regex: search, $options: 'i' };
-      if (category) query.category = { $regex: category, $options: 'i' };
+      if (category) {
+        query.$or = [
+          { 'categories.name': { $regex: category, $options: 'i' } },
+          { 'categories.slug': { $regex: category, $options: 'i' } }
+        ];
+      }
 
       const total = await productsCol.countDocuments(query);
       const items = await productsCol.find(query)
