@@ -37,58 +37,66 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-gradient-hero grain">
+    <section className="relative w-full min-h-screen overflow-hidden bg-gradient-hero grain">
       {/* Ambient blobs */}
       <div className="absolute top-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px] animate-glow-pulse" />
       <div className="absolute bottom-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-accent/20 blur-[120px] animate-glow-pulse" />
 
-      <div className="container relative min-h-screen flex items-center pt-20 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center w-full overflow-hidden">
+      {/*
+        KEY FIX:
+        - Container uses h-screen + max-h-screen instead of min-h-screen
+        - py handles top/bottom spacing uniformly
+        - Grid takes full height so image scales within available space
+      */}
+      <div className="container relative flex items-center h-screen max-h-screen py-20 sm:py-24 lg:py-28">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-center w-full h-full">
+
           {/* Copy */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-            className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left"
+            className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left justify-center"
           >
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium mb-6"
+              className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium mb-4 sm:mb-6"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
               New Arrivals · Spring Collection
             </motion.span>
 
-            <h1 className="font-display font-bold text-3xl xs:text-4xl sm:text-5xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl leading-[1.1] md:leading-[0.95] tracking-tight">
+            <h1 className="font-display font-bold text-3xl xs:text-4xl sm:text-5xl md:text-4xl lg:text-5xl xl:text-6xl leading-[1.1] md:leading-[0.95] tracking-tight">
               <span className="text-gradient">Premium tech</span>
               <br />
               <span className="md:inline">for everyday life</span>
             </h1>
 
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg lg:text-xl text-muted-foreground max-w-lg leading-relaxed">
+            <p className="mt-3 sm:mt-5 text-base sm:text-lg text-muted-foreground max-w-lg leading-relaxed">
               Curated electronics from the world's leading brands. Experience speed,
               power, and innovation — delivered to your door.
             </p>
 
-            <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6">
+            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4">
               <Link
                 to="/shop"
-                className="group inline-flex items-center gap-2 rounded-full bg-gradient-brand px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all duration-500 hover:scale-105 active:scale-95"
+                className="group inline-flex items-center gap-2 rounded-full bg-gradient-brand px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all duration-500 hover:scale-105 active:scale-95"
               >
                 Explore Now
                 <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 to="/categories"
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-background/50 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold hover:border-foreground transition-all duration-300 hover:bg-background"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-background/50 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold hover:border-foreground transition-all duration-300 hover:bg-background"
               >
                 Browse Categories
               </Link>
             </div>
 
-            <div className="mt-8 sm:mt-10 flex items-center justify-center md:justify-start gap-8 sm:gap-12 w-full">
+            {/* Stats */}
+            <div className="mt-6 sm:mt-8 flex items-center justify-center md:justify-start gap-8 sm:gap-10 w-full">
               {[
                 { num: "12K+", label: "Products" },
                 { num: "98%", label: "Happy Buyers" },
@@ -107,10 +115,12 @@ const Hero = () => {
             initial={{ opacity: 0, scale: 0.85, rotate: 10 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 1.1, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 }}
-            className="relative h-[260px] sm:h-[360px] md:h-[400px] lg:h-[480px] xl:h-[560px] 2xl:h-[650px] flex items-center justify-center order-first md:order-last overflow-hidden"
+            className="relative flex items-center justify-center order-first md:order-last
+              h-[240px] sm:h-[340px] md:h-full
+              max-h-[300px] sm:max-h-[420px] md:max-h-full"
           >
             <div className="absolute inset-0 bg-gradient-radial opacity-80" />
-            <div className="relative z-10 h-full w-full">
+            <div className="relative z-10 h-full w-full overflow-hidden">
               <AnimatePresence mode="wait">
                 <Link to="/categories" aria-label="Browse categories" className="absolute inset-0 block">
                   <motion.img
@@ -123,7 +133,7 @@ const Hero = () => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.96, y: -12 }}
                     transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-                    className={`absolute inset-0 h-full w-full object-contain max-h-full animate-float cursor-pointer ${categorySlides[activeSlide].glow}`}
+                    className={`absolute inset-0 h-full w-full object-contain animate-float cursor-pointer ${categorySlides[activeSlide].glow}`}
                   />
                 </Link>
               </AnimatePresence>
@@ -141,18 +151,19 @@ const Hero = () => {
               className="absolute bottom-1/3 left-10 h-2 w-2 rounded-full bg-primary shadow-glow"
             />
           </motion.div>
+
         </div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator — pointer-events-none so it never blocks content */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-muted-foreground pointer-events-none"
       >
-        <Mouse className="h-5 w-5 animate-bounce" />
-        <span className="text-[10px] uppercase tracking-widest">Scroll</span>
+        <Mouse className="h-4 w-4 animate-bounce" />
+        <span className="text-[9px] uppercase tracking-widest">Scroll</span>
       </motion.div>
     </section>
   );
