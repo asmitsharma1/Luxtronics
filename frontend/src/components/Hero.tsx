@@ -42,8 +42,8 @@ const Hero = () => {
       <div className="absolute top-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px] animate-glow-pulse" />
       <div className="absolute bottom-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-accent/20 blur-[120px] animate-glow-pulse" />
 
-      <div className="container relative min-h-screen flex items-center pt-28 pb-12 sm:pt-36 lg:pt-40 sm:pb-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-center w-full">
+      <div className="container relative min-h-screen flex items-center pt-20 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center w-full overflow-hidden">
           {/* Copy */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -88,7 +88,7 @@ const Hero = () => {
               </Link>
             </div>
 
-            <div className="mt-8 sm:mt-12 flex items-center justify-center md:justify-start gap-8 sm:gap-12 w-full">
+            <div className="mt-8 sm:mt-10 flex items-center justify-center md:justify-start gap-8 sm:gap-12 w-full">
               {[
                 { num: "12K+", label: "Products" },
                 { num: "98%", label: "Happy Buyers" },
@@ -102,12 +102,12 @@ const Hero = () => {
             </div>
           </motion.div>
 
-          {/* Product */}
+          {/* Product Image */}
           <motion.div
             initial={{ opacity: 0, scale: 0.85, rotate: 10 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 1.1, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 }}
-            className="relative h-[300px] sm:h-[450px] md:h-[500px] lg:h-[600px] xl:h-[750px] 2xl:h-[850px] flex items-center justify-center order-first md:order-last"
+            className="relative h-[260px] sm:h-[360px] md:h-[400px] lg:h-[480px] xl:h-[560px] 2xl:h-[650px] flex items-center justify-center order-first md:order-last overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-radial opacity-80" />
             <div className="relative z-10 h-full w-full">
@@ -123,12 +123,12 @@ const Hero = () => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.96, y: -12 }}
                     transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-                    className={`absolute inset-0 h-full w-full object-contain animate-float cursor-pointer ${categorySlides[activeSlide].glow}`}
+                    className={`absolute inset-0 h-full w-full object-contain max-h-full animate-float cursor-pointer ${categorySlides[activeSlide].glow}`}
                   />
                 </Link>
               </AnimatePresence>
-
             </div>
+
             {/* Floating accent dots */}
             <motion.div
               animate={{ y: [0, -15, 0] }}
