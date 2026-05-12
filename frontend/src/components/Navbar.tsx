@@ -110,7 +110,7 @@ const Navbar = () => {
       <div
         className={cn(
           "w-full flex items-center justify-between transition-all duration-500 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1920px] mx-auto",
-          scrolled && "rounded-lg sm:rounded-xl lg:rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-2.5 sm:py-3 backdrop-blur-xl shadow-lg"
+          scrolled && "rounded-2xl sm:rounded-3xl border dark:border-white/10 light:border-black/10 dark:bg-black/70 light:bg-white/95 backdrop-blur-2xl shadow-2xl shadow-black/20 dark:shadow-black/40"
         )}
       >
         {/* Logo */}
