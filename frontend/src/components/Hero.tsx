@@ -130,10 +130,10 @@ const Hero = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium mb-4 sm:mb-6 backdrop-blur-xl border dark:border-white/10 light:border-black/10"
+                className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium mb-4 sm:mb-6 backdrop-blur-2xl border dark:border-white/15 light:border-black/15 shadow-lg"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">
+                <span className="h-2 w-2 rounded-full bg-gradient-brand animate-pulse shadow-glow" />
+                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent font-bold">
                   New Arrivals · Spring Collection
                 </span>
               </motion.div>
@@ -175,7 +175,8 @@ const Hero = () => {
                 >
                   <span className="relative z-10">Explore Now</span>
                   <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 relative z-10" />
-                  <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/10 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/15 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </Link>
                 <Link
                   to="/categories"

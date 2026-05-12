@@ -47,16 +47,16 @@ const ProductCard = ({ product }: { product: Product }) => {
       
       <Link
         to={`/product/${product.slug}`}
-        className="group relative block rounded-xl sm:rounded-2xl bg-gradient-card border border-border dark:border-border light:border-black/8 p-3 sm:p-4 md:p-5 transition-all duration-500 hover:border-primary/40 hover:shadow-elegant hover:-translate-y-2 sm:hover:-translate-y-1 [perspective:1400px] overflow-hidden"
+        className="group relative block rounded-2xl sm:rounded-3xl bg-gradient-card border border-border dark:border-border light:border-black/8 p-4 sm:p-5 md:p-6 transition-all duration-500 hover:border-primary/50 hover:shadow-elegant-hover hover:-translate-y-2 sm:hover:-translate-y-1 [perspective:1600px] overflow-hidden"
         aria-label={`View ${product.name} - ${product.category}`}
         itemScope
         itemType="https://schema.org/Product"
       >
         {/* Hover glow effect */}
-        <div className="absolute inset-0 dark:bg-gradient-to-br dark:from-primary/8 dark:via-transparent dark:to-accent/8 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 dark:bg-gradient-to-br dark:from-primary/10 dark:via-transparent dark:to-accent/10 bg-gradient-to-br from-primary/8 via-transparent to-accent/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
-        <div className="relative transition-transform duration-500 ease-out [transform-style:preserve-3d] group-hover:[transform:rotateX(8deg)_rotateY(-10deg)_translateY(-4px)]">
-          <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 blur-2xl translate-y-6 scale-95 opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100" />
+        <div className="relative transition-transform duration-500 ease-out [transform-style:preserve-3d] group-hover:[transform:rotateX(6deg)_rotateY(-8deg)_translateY(-6px)]">
+          <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary/15 to-accent/15 blur-3xl translate-y-8 scale-95 opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100" />
 
           {product.badge && (
             <motion.span
