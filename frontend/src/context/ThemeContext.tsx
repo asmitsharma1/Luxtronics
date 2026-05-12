@@ -30,15 +30,20 @@ function applyTheme(resolved: "dark" | "light") {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    try {
-      return (localStorage.getItem(STORAGE_KEY) as Theme) || "dark";
-    } catch {
-      return "dark";
-    }
-  });
+  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<Theme>("dark");
 
-  const [systemTheme, setSystemTheme] = useState<"dark" | "light">(getSystemTheme);
+  const [systemTheme, setSystemTheme] = useState<"dark" | "light">("dark");
+
+  // Load theme from localStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY) as Theme;
+      if (stored) setThemeState(stored);
+    } catch {}
+    setSystemTheme(getSystemTheme());
+  }, []);
 
   // Listen for OS-level preference changes
   useEffect(() => {
