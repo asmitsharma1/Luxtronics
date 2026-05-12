@@ -54,11 +54,13 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
     setSearchQuery("");
     setDebouncedQuery("");
+    setCurrencyOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -342,75 +344,83 @@ const Navbar = () => {
       </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden container mt-2 sm:mt-3 animate-fade-up px-4 sm:px-6 max-w-[1920px] mx-auto">
-          <div className="rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white p-3 sm:p-4 flex flex-col gap-1 backdrop-blur-xl shadow-lg">
-            <form
-              onSubmit={handleSearch}
-              className="flex items-center gap-2 rounded-xl border dark:border-white/10 light:border-black/10 dark:bg-white/5 light:bg-black/5 px-3 py-2 mb-2"
-            >
-              <Search className="h-4 w-4 dark:text-white light:text-black shrink-0" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products…"
-                className="flex-1 bg-transparent text-sm dark:text-white light:text-black dark:placeholder:text-white/60 light:placeholder:text-black/60 focus:outline-none"
-              />
-            </form>
-
-            {links.map((l) => (
-              <RouterNavLink
-                key={l.to}
-                to={l.to}
-                end={l.to === "/"}
-                className={({ isActive }) =>
-                  cn(
-                    "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                    isActive ? "dark:bg-white/10 light:bg-black/10 dark:text-white light:text-black" : "dark:text-white/80 light:text-black/80 dark:hover:bg-white/5 light:hover:bg-black/5"
-                  )
-                }
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden container mt-2 sm:mt-3 px-4 sm:px-6 max-w-[1920px] mx-auto"
+          >
+            <div className="rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white p-3 sm:p-4 flex flex-col gap-1 backdrop-blur-xl shadow-lg">
+              <form
+                onSubmit={handleSearch}
+                className="flex items-center gap-2 rounded-xl border dark:border-white/10 light:border-black/10 dark:bg-white/5 light:bg-black/5 px-3 py-2 mb-2"
               >
-                {l.label}
-              </RouterNavLink>
-            ))}
+                <Search className="h-4 w-4 dark:text-white light:text-black shrink-0" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products…"
+                  className="flex-1 bg-transparent text-sm dark:text-white light:text-black dark:placeholder:text-white/60 light:placeholder:text-black/60 focus:outline-none"
+                />
+              </form>
 
-            <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-2">
-              {isSignedIn ? (
-                <>
-                  <Link
-                    to="/account"
-                    className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium text-center dark:text-white light:text-black dark:hover:bg-white/5 light:hover:bg-black/5"
-                  >
-                    My Account
-                  </Link>
-                  <button
-                    onClick={handleLogOut}
-                    className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium text-center hover:border-primary/40 transition-colors dark:text-white light:text-black"
-                  >
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/account/login"
-                    className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium hover:border-primary/40 transition-colors text-center dark:text-white light:text-black dark:hover:bg-white/5 light:hover:bg-black/5"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/account/register"
-                    className="w-full rounded-lg bg-gradient-brand px-4 py-3 text-sm font-semibold text-primary-foreground shadow-glow text-center"
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
+              {links.map((l) => (
+                <RouterNavLink
+                  key={l.to}
+                  to={l.to}
+                  end={l.to === "/"}
+                  className={({ isActive }) =>
+                    cn(
+                      "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                      isActive ? "dark:bg-white/10 light:bg-black/10 dark:text-white light:text-black" : "dark:text-white/80 light:text-black/80 dark:hover:bg-white/5 light:hover:bg-black/5"
+                    )
+                  }
+                >
+                  {l.label}
+                </RouterNavLink>
+              ))}
+
+              <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-2">
+                {isSignedIn ? (
+                  <>
+                    <Link
+                      to="/account"
+                      className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium text-center dark:text-white light:text-black dark:hover:bg-white/5 light:hover:bg-black/5"
+                    >
+                      My Account
+                    </Link>
+                    <button
+                      onClick={handleLogOut}
+                      className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium text-center hover:border-primary/40 transition-colors dark:text-white light:text-black"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/account/login"
+                      className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium hover:border-primary/40 transition-colors text-center dark:text-white light:text-black dark:hover:bg-white/5 light:hover:bg-black/5"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      to="/account/register"
+                      className="w-full rounded-lg bg-gradient-brand px-4 py-3 text-sm font-semibold text-primary-foreground shadow-glow text-center"
+                    >
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
