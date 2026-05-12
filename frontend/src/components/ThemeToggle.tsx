@@ -12,7 +12,13 @@ const options: { value: Theme; label: string; Icon: React.ElementType }[] = [
 export default function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -24,6 +30,15 @@ export default function ThemeToggle() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Don't render until mounted to avoid hydration issues
+  if (!mounted) {
+    return (
+      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center">
+        <div className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+      </div>
+    );
+  }
 
   const CurrentIcon = resolvedTheme === "dark" ? Moon : Sun;
 
