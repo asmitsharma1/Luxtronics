@@ -142,7 +142,32 @@ export async function fetchStoreProduct(slug: string): Promise<StoreProduct | nu
     if (!response.ok) return null;
     
     const products = await response.json();
-    return Array.isArray(products) && products.length > 0 ? products[0] : null;
+    const product = Array.isArray(products) && products.length > 0 ? products[0] : null;
+    
+    if (!product) return null;
+    
+    // If it's a variable product, fetch variations
+    if (product.type === 'variable' && product.id) {
+      try {
+        const variationsUrl = `${apiUrl}/products/${product.id}/variations?per_page=100`;
+        const variationsResponse = await fetch(variationsUrl, {
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (variationsResponse.ok) {
+          const variations = await variationsResponse.json();
+          product.variations = Array.isArray(variations) ? variations : [];
+        }
+      } catch (error) {
+        console.error('Failed to fetch variations:', error);
+        // Continue without variations
+      }
+    }
+    
+    return product;
   } catch {
     return null;
   }

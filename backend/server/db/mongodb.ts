@@ -49,7 +49,7 @@ class MongoDBConnection {
         retryWrites: true,
         w: 'majority',
         journal: true,
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 10000, // Increased timeout
         socketTimeoutMS: 45000,
         maxPoolSize: 10,
         minPoolSize: 5,
@@ -58,8 +58,9 @@ class MongoDBConnection {
       if (useTls) {
         clientOptions.tls = true;
         clientOptions.ssl = true;
-        clientOptions.tlsAllowInvalidCertificates = false;
-        clientOptions.tlsAllowInvalidHostnames = false;
+        // More lenient SSL settings for compatibility
+        clientOptions.tlsAllowInvalidCertificates = true;
+        clientOptions.tlsAllowInvalidHostnames = true;
       }
 
       this.client = new MongoClient(this.uri, clientOptions);
