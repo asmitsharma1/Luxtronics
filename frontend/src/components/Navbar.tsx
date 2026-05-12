@@ -108,7 +108,7 @@ const Navbar = () => {
       <div
         className={cn(
           "w-full flex items-center justify-between transition-all duration-500 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1920px] mx-auto",
-          scrolled && "rounded-lg sm:rounded-xl lg:rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white/90 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-2.5 sm:py-3 backdrop-blur-xl shadow-lg"
+          scrolled && "rounded-lg sm:rounded-xl lg:rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-2.5 sm:py-3 backdrop-blur-xl shadow-lg"
         )}
       >
         {/* Logo */}
@@ -184,7 +184,7 @@ const Navbar = () => {
             {currencyOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/80 light:bg-white/95 backdrop-blur-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto scrollbar-hidden">
+                <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/80 light:bg-white backdrop-blur-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto scrollbar-hidden">
                   {countries.map((c) => (
                     <button
                       key={c.code}
@@ -282,7 +282,7 @@ const Navbar = () => {
           <div className="relative max-w-[1920px] mx-auto">
             <form
               onSubmit={handleSearch}
-              className="flex items-center gap-3 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white/90 backdrop-blur-xl px-5 py-3 shadow-2xl"
+              className="flex items-center gap-3 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white backdrop-blur-xl px-5 py-3 shadow-2xl"
             >
               <Search className="h-5 w-5 dark:text-white light:text-black shrink-0" />
               <input
@@ -323,7 +323,7 @@ const Navbar = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.98 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 right-0 mt-4 z-50 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/80 light:bg-white/95 backdrop-blur-xl shadow-2xl overflow-hidden"
+                  className="absolute top-full left-0 right-0 mt-4 z-50 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/80 light:bg-white backdrop-blur-xl shadow-2xl overflow-hidden"
                 >
                   <SearchSuggestions
                     query={searchQuery}
@@ -344,7 +344,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden container mt-2 sm:mt-3 animate-fade-up px-4 sm:px-6 max-w-[1920px] mx-auto">
-          <div className="rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white/90 p-3 sm:p-4 flex flex-col gap-1 backdrop-blur-xl shadow-lg">
+          <div className="rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white p-3 sm:p-4 flex flex-col gap-1 backdrop-blur-xl shadow-lg">
             <form
               onSubmit={handleSearch}
               className="flex items-center gap-2 rounded-xl border dark:border-white/10 light:border-black/10 dark:bg-white/5 light:bg-black/5 px-3 py-2 mb-2"
