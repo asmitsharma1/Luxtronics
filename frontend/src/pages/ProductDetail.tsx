@@ -6,9 +6,11 @@ import Layout from "@/components/Layout";
 import { getProduct, products } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useCart } from "@/context/CartContext";
 import { fetchStoreProduct, fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { redirectToWooCheckout } from "@/lib/woo-checkout";
+import { toast } from "sonner";
 import type { Product } from "@/data/products";
 
 type Variation = NonNullable<Product["variations"]>[0];
@@ -112,9 +114,27 @@ const ProductDetail = () => {
     : true;
 
   // ─── Add to cart flash ───────────────────────────────────────────────────
+  const { addItem } = useCart();
+  
   const handleAddToCart = () => {
+    if (!product) return;
+    
+    // Add product to cart with selected variation
+    const productToAdd = {
+      ...product,
+      selectedVariation: selectedVariation || undefined,
+    };
+    
+    addItem(productToAdd, 1);
+    
+    // Show success animation
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
+    
+    // Show toast notification
+    toast.success(`${product.name} added to cart!`, {
+      duration: 2000,
+    });
   };
 
   const related = useMemo(() => relatedProducts, [relatedProducts]);

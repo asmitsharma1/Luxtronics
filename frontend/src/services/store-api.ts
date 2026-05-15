@@ -54,6 +54,53 @@ export interface StoreProduct {
   }>;
 }
 
+export interface WooCommerceOrder {
+  id: number;
+  order_key: string;
+  status: string;
+  currency: string;
+  date_created: string;
+  date_modified: string;
+  total: string;
+  subtotal: string;
+  total_tax: string;
+  shipping_total: string;
+  payment_method: string;
+  payment_method_title: string;
+  billing: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    address_1: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  };
+  shipping: {
+    first_name: string;
+    last_name: string;
+    address_1: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  };
+  line_items: Array<{
+    id: number;
+    name: string;
+    product_id: number;
+    quantity: number;
+    subtotal: string;
+    total: string;
+    price: number;
+    image?: {
+      src: string;
+    };
+  }>;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -333,4 +380,66 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
       })
       .filter((v): v is NonNullable<typeof v> => v !== null),
   };
+}
+
+
+/**
+ * Fetch customer orders from WooCommerce
+ */
+export async function fetchCustomerOrders(customerEmail: string): Promise<WooCommerceOrder[]> {
+  try {
+    const { apiUrl } = storeConfig;
+    const { key, secret } = getStoreCredentials();
+    
+    // Search orders by customer email
+    const url = `${apiUrl}/orders?customer=${encodeURIComponent(customerEmail)}&per_page=100&orderby=date&order=desc`;
+    const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch orders:', response.statusText);
+      return [];
+    }
+    
+    const orders = await response.json();
+    return Array.isArray(orders) ? orders : [];
+  } catch (error) {
+    console.error('Error fetching customer orders:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch single order by ID
+ */
+export async function fetchOrder(orderId: number): Promise<WooCommerceOrder | null> {
+  try {
+    const { apiUrl } = storeConfig;
+    const { key, secret } = getStoreCredentials();
+    
+    const url = `${apiUrl}/orders/${orderId}`;
+    const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    return null;
+  }
 }
