@@ -1,24 +1,16 @@
-# Luxtronics Robots.txt
+# Luxtronics - Robots.txt
+# Allow all search engines to crawl the site
+
 User-agent: *
 Allow: /
-Disallow: /admin/
+
+# Disallow admin and account pages
 Disallow: /account/
-Disallow: /checkout/
-Disallow: /cart/
-Disallow: /*?sort=
-Disallow: /*?filter=
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
 
-# Sitemap
-Sitemap: https://luxtronics.com/sitemap.xml
-
-# Crawl delay
-Crawl-delay: 1
-
-# Host
-Host: https://luxtronics.com
-
-# Clean params
-Clean-param: ref /shop/
-Clean-param: utm_source /shop/
-Clean-param: utm_medium /shop/
-Clean-param: utm_campaign /shop/
+# Sitemap location
+Sitemap: https://luxtronics.in/sitemap.xml
+Sitemap: https://luxtronics.com.au/sitemap.xml
+Sitemap: https://luxtronics.co.nz/sitemap.xml
