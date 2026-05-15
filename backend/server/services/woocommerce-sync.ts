@@ -38,8 +38,9 @@ export class WooCommerceSync {
     failed: number;
     errors: string[];
   }> {
-    const batchSize = options.batchSize || 100;
-    const delay = options.delay || 1000;
+    // WooCommerce API hard limit is 100 per page — always use 100
+    const WC_PAGE_SIZE = 100;
+    const delay = options.delay || 500;
 
     let synced = 0;
     let failed = 0;
@@ -51,12 +52,13 @@ export class WooCommerceSync {
 
       // Get total product count from WooCommerce
       const totalProducts = await this.getTotalProductCount();
-      console.log(`Starting sync of ${totalProducts} products...`);
+      const totalPages = Math.ceil(totalProducts / WC_PAGE_SIZE);
+      console.log(`Starting sync of ${totalProducts} products across ${totalPages} pages...`);
 
-      // Sync in batches
-      for (let page = 1; page <= Math.ceil(totalProducts / batchSize); page++) {
+      // Iterate every page (100 products each)
+      for (let page = 1; page <= totalPages; page++) {
         try {
-          const products = await this.fetchProductsFromWooCommerce(page, batchSize);
+          const products = await this.fetchProductsFromWooCommerce(page, WC_PAGE_SIZE);
 
           if (products.length === 0) break;
 
@@ -75,24 +77,26 @@ export class WooCommerceSync {
             }
             mongoProducts.push(createProductDocument(product, variations));
           }
+
           const savedCount = await this.productService.saveProducts(mongoProducts);
 
           synced += savedCount;
           options.onProgress?.(synced, totalProducts);
 
           console.log(
-            `✅ Synced batch ${page}: ${savedCount} products (${synced}/${totalProducts})`
+            `✅ Synced page ${page}/${totalPages}: ${savedCount} products (${synced}/${totalProducts})`
           );
 
-          // Delay between batches to avoid API rate limiting
-          if (page < Math.ceil(totalProducts / batchSize)) {
+          // Delay between pages to avoid API rate limiting
+          if (page < totalPages) {
             await new Promise(resolve => setTimeout(resolve, delay));
           }
         } catch (error) {
           failed += 1;
           const errorMsg = error instanceof Error ? error.message : String(error);
-          errors.push(`Batch ${page} error: ${errorMsg}`);
-          console.error(`❌ Batch ${page} failed:`, error);
+          errors.push(`Page ${page} error: ${errorMsg}`);
+          console.error(`❌ Page ${page} failed:`, errorMsg);
+          // Continue to next page even if this one failed
         }
       }
 

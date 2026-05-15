@@ -124,7 +124,7 @@ class MongoDBConnection {
     
     await Promise.all([
       productsCollection.createIndex({ id: 1 }, { unique: true }),
-      productsCollection.createIndex({ slug: 1 }, { unique: true }),
+      productsCollection.createIndex({ slug: 1 }), // Non-unique: WooCommerce can have duplicate slugs
       productsCollection.createIndex({ category: 1 }),
       productsCollection.createIndex({ price: 1 }),
       productsCollection.createIndex({ rating: -1 }),

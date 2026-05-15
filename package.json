@@ -10,6 +10,7 @@
     "dev:server": "tsx watch backend/server/index.ts",
     "sync:products": "tsx backend/scripts/sync-products.ts",
     "sync:full": "tsx backend/scripts/sync-full.ts",
+    "fix:slug-index": "tsx backend/scripts/fix-slug-index.ts",
     "build": "vite build && rm -rf build && cp -R dist build",
     "build:dev": "vite build --mode development",
     "start": "node server.js",
