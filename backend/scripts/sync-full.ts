@@ -60,8 +60,8 @@ async function main() {
     console.log('🔄 Running full sync...\n');
 
     const result = await syncService.fullSync({
-      batchSize: 100,
-      delay: 1000,
+      batchSize: 1000, // Increased from 100 to 1000
+      delay: 500, // Reduced delay from 1000ms to 500ms
       onProgress: (current, total) => {
         const percentage = Math.round((current / total) * 100);
         const progressBar = createProgressBar(percentage, 50);

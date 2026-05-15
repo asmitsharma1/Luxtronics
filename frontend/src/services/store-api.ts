@@ -75,6 +75,41 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
   const { apiUrl } = storeConfig;
   const { key, secret } = getStoreCredentials();
   
+  // If perPage is more than 100, fetch multiple pages
+  if (perPage > 100) {
+    const allProducts: StoreProduct[] = [];
+    const maxPerPage = 100; // WooCommerce API limit
+    const totalPages = Math.ceil(perPage / maxPerPage);
+    
+    for (let currentPage = 1; currentPage <= totalPages; currentPage++) {
+      let url = `${apiUrl}/products?per_page=${maxPerPage}&page=${currentPage}&status=publish`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      
+      const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.statusText}`);
+      }
+      
+      const products = await response.json();
+      if (Array.isArray(products) && products.length > 0) {
+        allProducts.push(...products);
+      } else {
+        break; // No more products
+      }
+    }
+    
+    return allProducts;
+  }
+  
+  // Single page fetch
   let url = `${apiUrl}/products?per_page=${perPage}&page=${page}&status=publish`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
   

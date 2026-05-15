@@ -50,7 +50,7 @@ const Shop = () => {
         setLoading(true);
         const [categoryData, productData] = await Promise.all([
           fetchStoreCategories(),
-          fetchStoreProducts(),                         // ← loads all products once; filtering is done client-side
+          fetchStoreProducts(1, 1000),  // Fetch up to 1000 products (10 pages)
         ]);
 
         if (!mounted) return;
