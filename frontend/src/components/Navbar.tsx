@@ -215,7 +215,7 @@ const Navbar = () => {
           >
             <ShoppingBag className="h-4 w-4 sm:h-[18px] sm:w-[18px] dark:text-white light:text-black" />
             {totalItems > 0 && (
-              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-gradient-brand text-[10px] font-bold flex items-center justify-center text-primary-foreground">
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-brand text-[10px] font-bold flex items-center justify-center text-primary-foreground shadow-lg border-2 border-background">
                 {totalItems > 99 ? "99+" : totalItems}
               </span>
             )}
