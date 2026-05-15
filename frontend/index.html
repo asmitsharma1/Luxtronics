@@ -27,6 +27,16 @@
     
     <!-- Theme color -->
     <meta name="theme-color" content="#000000">
+
+    <!-- Push tawk.to widget above the bottom edge so it doesn't overlap WhatsApp -->
+    <style>
+      #tawk-bubble-container,
+      .tawk-min-container,
+      iframe[title*="chat"],
+      iframe[src*="tawk.to"] {
+        bottom: 80px !important;
+      }
+    </style>
   </head>
 
   <body>
@@ -36,6 +46,10 @@
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">
       var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+      // Push tawk.to widget up so it doesn't overlap other buttons
+      Tawk_API.onLoad = function() {
+        Tawk_API.setAttributes({}, function(error){});
+      };
       (function(){
         var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
         s1.async=true;
