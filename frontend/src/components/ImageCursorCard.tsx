@@ -30,22 +30,22 @@ function ensureFloatingEl() {
     'position:fixed',
     'top:0',
     'left:0',
-    'width:90px',
-    'height:90px',
-    'border-radius:14px',
+    'width:36px',
+    'height:36px',
+    'border-radius:6px',
     'overflow:hidden',
     'pointer-events:none',
-    'z-index:2147483647',   // max z-index
+    'z-index:2147483647',
     'opacity:0',
     'transition:opacity 0.15s ease, transform 0.15s ease',
     'transform:translate(-50%,-65%) scale(0.8)',
-    'box-shadow:0 12px 40px rgba(0,0,0,0.5),0 0 0 2px rgba(255,255,255,0.12)',
+    'box-shadow:0 4px 16px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.12)',
     'background:#111',
     'will-change:left,top,opacity,transform',
   ].join(';');
 
   _img = document.createElement('img');
-  _img.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:8px;display:block;';
+  _img.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:4px;display:block;';
   _el.appendChild(_img);
   document.body.appendChild(_el);
 
