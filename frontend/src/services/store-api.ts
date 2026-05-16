@@ -463,7 +463,14 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
     id: (product.id ?? Math.random()).toString(),
     slug: product.slug || '',
     name: product.name || 'Unnamed Product',
-    categories: product.categories || [],
+    // Normalise categories — handle both WooCommerce raw format and already-mapped format
+    categories: Array.isArray(product.categories)
+      ? product.categories.map((c: any) => ({
+          id:   Number(c.id   ?? 0),
+          name: String(c.name ?? ''),
+          slug: String(c.slug ?? ''),
+        }))
+      : [],
     category: product.categories?.[0]?.name || 'Uncategorized',
     categoryId: product.categories?.[0]?.id,
     price: Math.round(price),

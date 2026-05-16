@@ -180,13 +180,21 @@ const Shop = () => {
       if (activeCat !== "all") {
         const sel = categories.find(c => c.slug === activeCat);
         if (sel) {
-          p = p.filter(x =>
-            Array.isArray(x.categories) &&
-            x.categories.some(c =>
-              c.id === sel.id || c.slug === sel.slug ||
-              c.name.toLowerCase().trim() === sel.name.toLowerCase().trim()
-            )
-          );
+          p = p.filter(x => {
+            // Check all possible category fields — Firebase stores raw WooCommerce data
+            const cats: any[] = Array.isArray((x as any).categories) ? (x as any).categories : [];
+
+            return cats.some((c: any) => {
+              const cId   = Number(c.id);
+              const cSlug = String(c.slug  || '').toLowerCase().trim();
+              const cName = String(c.name  || '').toLowerCase().trim();
+              return (
+                cId   === sel.id   ||
+                cSlug === sel.slug.toLowerCase().trim() ||
+                cName === sel.name.toLowerCase().trim()
+              );
+            });
+          });
         }
       }
       if (sort === "low")    p = [...p].sort((a, b) => a.price - b.price);
