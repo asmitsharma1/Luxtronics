@@ -116,7 +116,7 @@ export async function fetchCategoriesFromFirebase(): Promise<StoreCategory[]> {
 
 /**
  * Search products in Firebase with smart filtering + relevance scoring
- * Same scoring logic as Shop.tsx for consistency
+ * Same strict token-matching logic as Shop.tsx
  */
 export async function searchProductsInFirebase(searchQuery: string): Promise<StoreProduct[]> {
   try {
@@ -129,53 +129,58 @@ export async function searchProductsInFirebase(searchQuery: string): Promise<Sto
     })) as StoreProduct[];
 
     const q     = searchQuery.toLowerCase().trim();
-    const words = q.split(/\s+/).filter(Boolean);
+    const words = (q.match(/[a-z0-9]+/g) || []);
 
-    // Score each product
-    const scored = products
-      .map(product => {
-        const name  = (product.name || '').toLowerCase();
-        const cat   = product.categories?.map((c: any) => c.name).join(' ').toLowerCase() || '';
-        const desc  = (product.description || '').toLowerCase();
+    // Tokenise helper
+    const tok = (text: string) => (text || '').toLowerCase().match(/[a-z0-9]+/g) || [];
 
-        let score = 0;
+    // Strict word match: numbers must be exact tokens, letters use prefix
+    const wordMatchesToken = (qw: string, pt: string) =>
+      /^\d+$/.test(qw) ? pt === qw : pt.startsWith(qw);
 
-        if (name === q)                   score += 1000;
-        if (name.startsWith(q + ' '))     score += 800;
-        if (name.includes(' ' + q))       score += 700;
-        if (name.includes(q))             score += 600;
+    const allIn = (ws: string[], tokens: string[]) =>
+      ws.every(w => tokens.some(t => wordMatchesToken(w, t)));
 
-        const allInName = words.every(w => name.includes(w));
-        if (allInName)                    score += 500;
+    const score = (product: StoreProduct): number => {
+      const name  = (product.name || '').toLowerCase();
+      const cats  = product.categories?.map((c: any) => c.name).join(' ') || '';
+      const desc  = (product.description || '').toLowerCase();
 
-        if (allInName && words.length > 1) {
-          let last = -1, inOrder = true;
+      const nt = tok(name);
+      const ct = tok(cats);
+      const dt = tok(desc);
+
+      let s = 0;
+      if (name === q)                          s += 1000;
+      if (name.startsWith(q + ' '))            s += 800;
+
+      const inName = allIn(words, nt);
+      if (inName) {
+        s += 600;
+        if (words.length > 1) {
+          let last = -1, ordered = true;
           for (const w of words) {
-            const idx = name.indexOf(w, last + 1);
-            if (idx <= last) { inOrder = false; break; }
+            const idx = nt.findIndex((t, i) => i > last && wordMatchesToken(w, t));
+            if (idx === -1) { ordered = false; break; }
             last = idx;
           }
-          if (inOrder) score += 200;
+          if (ordered) s += 200;
         }
+      }
 
-        const prefixMatches = words.filter(w =>
-          name.split(/\s+/).some(token => token.startsWith(w))
-        );
-        score += prefixMatches.length * 80;
+      if (!inName && allIn(words, [...nt, ...ct])) s += 120;
+      if (!inName && allIn(words, dt))             s += 40;
 
-        if (cat.includes(q))              score += 150;
-        const allInCat = words.every(w => (name + ' ' + cat).includes(w));
-        if (!allInName && allInCat)       score += 120;
+      if (s > 0) s -= name.length * 0.1;
+      return s;
+    };
 
-        const allInDesc = words.every(w => desc.includes(w));
-        if (!allInName && !allInCat && allInDesc) score += 50;
+    return products
+      .map(p => ({ p, s: score(p) }))
+      .filter(({ s }) => s > 0)
+      .sort((a, b) => b.s - a.s)
+      .map(({ p }) => p);
 
-        return { product, score };
-      })
-      .filter(({ score }) => score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    return scored.map(({ product }) => product);
   } catch (error) {
     console.error('Error searching products in Firebase:', error);
     return [];

@@ -16,58 +16,88 @@ type CategoryFilter = {
 };
 
 // ─────────────────────────────────────────────
-// AMAZON-STYLE RELEVANCE SCORING
-// Higher score = more relevant = shown first
+// SMART SEARCH ENGINE
 // ─────────────────────────────────────────────
+
+/**
+ * Tokenise a string into lowercase words.
+ * "iPhone 7 Plus" → ["iphone", "7", "plus"]
+ */
+function tokenise(text: string): string[] {
+  return text.toLowerCase().match(/[a-z0-9]+/g) || [];
+}
+
+/**
+ * Check whether a query word matches a product token.
+ * Rules:
+ *  - Numeric tokens (e.g. "7", "15", "64") must match EXACTLY as a whole token.
+ *    → "7" must NOT match inside "7s", "7plus", "64gb", "x7", etc.
+ *  - Alphabetic tokens use prefix matching so "samsu" matches "samsung".
+ */
+function wordMatchesToken(queryWord: string, productToken: string): boolean {
+  const isNumeric = /^\d+$/.test(queryWord);
+  if (isNumeric) {
+    // Exact token match only — "7" ≠ "7s", "7plus", "64"
+    return productToken === queryWord;
+  }
+  // Alphabetic: prefix match ("iphone" matches "iphone", "iphonex" etc.)
+  return productToken.startsWith(queryWord);
+}
+
+/**
+ * Check whether ALL query words are present in the token list.
+ */
+function allWordsInTokens(words: string[], tokens: string[]): boolean {
+  return words.every(w => tokens.some(t => wordMatchesToken(w, t)));
+}
+
 function scoreProduct(product: Product, query: string, words: string[]): number {
   const name  = product.name.toLowerCase();
   const cat   = product.category.toLowerCase();
   const desc  = (product.description || "").toLowerCase();
   const q     = query.toLowerCase();
 
+  const nameTokens = tokenise(name);
+  const catTokens  = tokenise(cat);
+  const descTokens = tokenise(desc);
+
   let score = 0;
 
-  // ── Tier 1: Exact / near-exact name match (highest value) ──
-  if (name === q)                      score += 1000;   // perfect match
-  if (name.startsWith(q + " "))        score += 800;    // "iPhone 15" → "iPhone 15 Pro"
-  if (name.includes(" " + q))          score += 700;    // query appears as a word block
-  if (name.includes(q))                score += 600;    // query appears anywhere in name
+  // ── Tier 1: Exact full-name match ──────────────────────────────────────────
+  if (name === q)                       score += 1000;
+  // Name starts with the exact query phrase
+  if (name.startsWith(q + " ") || name.startsWith(q + ",")) score += 800;
 
-  // ── Tier 2: All query words appear in name ──
-  const allInName = words.every(w => name.includes(w));
-  if (allInName)                       score += 500;
+  // ── Tier 2: All query words present in name tokens (strict whole-word) ─────
+  const allInName = allWordsInTokens(words, nameTokens);
+  if (allInName) {
+    score += 600;
 
-  // ── Tier 3: Word-order bonus (words appear in same sequence) ──
-  if (allInName && words.length > 1) {
-    let lastIdx = -1;
-    let inOrder = true;
-    for (const w of words) {
-      const idx = name.indexOf(w, lastIdx + 1);
-      if (idx <= lastIdx) { inOrder = false; break; }
-      lastIdx = idx;
+    // Bonus: words appear in the same left-to-right order in the name
+    if (words.length > 1) {
+      let lastIdx = -1;
+      let inOrder = true;
+      for (const w of words) {
+        const idx = nameTokens.findIndex((t, i) => i > lastIdx && wordMatchesToken(w, t));
+        if (idx === -1) { inOrder = false; break; }
+        lastIdx = idx;
+      }
+      if (inOrder) score += 200;
     }
-    if (inOrder) score += 200;
   }
 
-  // ── Tier 4: Partial word / prefix match in name ──
-  // E.g. "samsu" should match "samsung"
-  const prefixMatches = words.filter(w => name.split(/\s+/).some(token => token.startsWith(w)));
-  score += prefixMatches.length * 80;
+  // ── Tier 3: Category helps complete the match ──────────────────────────────
+  const allInNameCat = allWordsInTokens(words, [...nameTokens, ...catTokens]);
+  if (!allInName && allInNameCat) score += 120;
 
-  // ── Tier 5: Category match ──
-  if (cat.includes(q))                 score += 150;
-  const allInCat = words.every(w => (name + " " + cat).includes(w));
-  if (!allInName && allInCat)          score += 120;
+  // ── Tier 4: Description fallback (only if name+cat don't match) ───────────
+  const allInDesc = allWordsInTokens(words, descTokens);
+  if (!allInName && !allInNameCat && allInDesc) score += 40;
 
-  // ── Tier 6: Description match (lowest priority) ──
-  const allInDesc = words.every(w => desc.includes(w));
-  if (!allInName && !allInCat && allInDesc) score += 50;
-
-  // ── Tie-breaker: rating & name length ──
-  // Shorter names that match = more specific = slightly preferred
+  // ── Tie-breaker ────────────────────────────────────────────────────────────
   if (score > 0) {
     score += (product.rating || 0) * 5;
-    score -= name.length * 0.1;
+    score -= name.length * 0.1;   // shorter name = more specific = slightly preferred
   }
 
   return score;
