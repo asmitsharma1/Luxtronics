@@ -9,8 +9,8 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: "dark",
-  resolvedTheme: "dark",
+  theme: "light",
+  resolvedTheme: "light",
   setTheme: () => {},
 });
 
@@ -31,9 +31,9 @@ function applyTheme(resolved: "dark" | "light") {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>("light");
 
-  const [systemTheme, setSystemTheme] = useState<"dark" | "light">("dark");
+  const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light");
 
   // Load theme from localStorage after mount to avoid hydration mismatch
   useEffect(() => {

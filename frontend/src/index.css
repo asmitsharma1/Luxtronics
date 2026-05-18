@@ -9,7 +9,72 @@
 */
 
 @layer base {
+  /* ── Default (Light) theme — clean white, trustworthy like major e-commerce ── */
   :root {
+    /* Surfaces — pure white base */
+    --background: 0 0% 99%;
+    --foreground: 0 0% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+
+    /* Brand — keep the orange/pink accent but toned for light bg */
+    --primary: 18 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --accent: 328 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 18 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-brand: linear-gradient(135deg, hsl(18 100% 50%) 0%, hsl(328 100% 50%) 100%);
+    --gradient-brand-soft: linear-gradient(135deg, hsl(18 100% 50% / 0.12) 0%, hsl(328 100% 50% / 0.12) 100%);
+    --gradient-radial: radial-gradient(circle at 50% 50%, hsl(18 100% 50% / 0.18), transparent 60%);
+    --gradient-hero: radial-gradient(ellipse 80% 50% at 70% 50%, hsl(328 100% 50% / 0.12), transparent 60%),
+                     radial-gradient(ellipse 60% 50% at 30% 30%, hsl(18 100% 50% / 0.1), transparent 60%);
+    --gradient-text: linear-gradient(135deg, hsl(18 100% 45%) 0%, hsl(328 100% 45%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 97%));
+
+    /* Shadows — soft for light mode */
+    --shadow-glow: 0 0 40px hsl(18 100% 50% / 0.25);
+    --shadow-glow-pink: 0 0 50px hsl(328 100% 50% / 0.2);
+    --shadow-elegant: 0 12px 40px -12px hsl(0 0% 0% / 0.12);
+    --shadow-card: 0 2px 16px hsl(0 0% 0% / 0.07);
+
+    /* Transitions */
+    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 18 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 92%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 18 100% 50%;
+  }
+
+  /* ── Dark theme ─────────────────────────────────────────────── */
+  .dark {
     /* Surfaces */
     --background: 0 0% 4%;
     --foreground: 0 0% 98%;
@@ -20,11 +85,10 @@
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
 
-    /* Brand */
-    --primary: 18 100% 55%;          /* vibrant orange */
+    --primary: 18 100% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --accent: 328 100% 55%;          /* hot pink */
+    --accent: 328 100% 55%;
     --accent-foreground: 0 0% 100%;
 
     --secondary: 0 0% 12%;
@@ -40,9 +104,6 @@
     --input: 0 0% 14%;
     --ring: 18 100% 55%;
 
-    --radius: 0.75rem;
-
-    /* Gradients */
     --gradient-brand: linear-gradient(135deg, hsl(18 100% 55%) 0%, hsl(328 100% 55%) 100%);
     --gradient-brand-soft: linear-gradient(135deg, hsl(18 100% 55% / 0.15) 0%, hsl(328 100% 55% / 0.15) 100%);
     --gradient-radial: radial-gradient(circle at 50% 50%, hsl(18 100% 55% / 0.35), transparent 60%);
@@ -51,17 +112,11 @@
     --gradient-text: linear-gradient(135deg, hsl(18 100% 60%) 0%, hsl(328 100% 60%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 9%), hsl(0 0% 5%));
 
-    /* Shadows / glows */
     --shadow-glow: 0 0 60px hsl(18 100% 55% / 0.4);
     --shadow-glow-pink: 0 0 80px hsl(328 100% 55% / 0.35);
     --shadow-elegant: 0 20px 60px -20px hsl(0 0% 0% / 0.6);
     --shadow-card: 0 4px 30px hsl(0 0% 0% / 0.5);
 
-    /* Transitions */
-    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-    /* Sidebar (unused but kept) */
     --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 18 100% 55%;
@@ -72,54 +127,38 @@
     --sidebar-ring: 18 100% 55%;
   }
 
-  /* ── Light theme overrides ─────────────────────────────────── */
+  /* ── Legacy .light class — same as :root ───────────────────── */
   .light {
-    /* Surfaces */
-    --background: 0 0% 98%;
+    --background: 0 0% 99%;
     --foreground: 0 0% 8%;
-
     --card: 0 0% 100%;
     --card-foreground: 0 0% 8%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 8%;
-
-    /* Brand stays the same */
     --primary: 18 100% 50%;
     --primary-foreground: 0 0% 100%;
-
     --accent: 328 100% 50%;
     --accent-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 93%;
+    --secondary: 0 0% 95%;
     --secondary-foreground: 0 0% 10%;
-
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 42%;
-
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 86%;
-    --input: 0 0% 86%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
     --ring: 18 100% 50%;
-
-    /* Gradients — slightly dimmed for light bg */
     --gradient-brand: linear-gradient(135deg, hsl(18 100% 50%) 0%, hsl(328 100% 50%) 100%);
     --gradient-brand-soft: linear-gradient(135deg, hsl(18 100% 50% / 0.12) 0%, hsl(328 100% 50% / 0.12) 100%);
     --gradient-radial: radial-gradient(circle at 50% 50%, hsl(18 100% 50% / 0.18), transparent 60%);
     --gradient-hero: radial-gradient(ellipse 80% 50% at 70% 50%, hsl(328 100% 50% / 0.12), transparent 60%),
                      radial-gradient(ellipse 60% 50% at 30% 30%, hsl(18 100% 50% / 0.1), transparent 60%);
     --gradient-text: linear-gradient(135deg, hsl(18 100% 45%) 0%, hsl(328 100% 45%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 96%));
-
-    /* Shadows — softer for light mode */
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 97%));
     --shadow-glow: 0 0 40px hsl(18 100% 50% / 0.25);
     --shadow-glow-pink: 0 0 50px hsl(328 100% 50% / 0.2);
-    --shadow-elegant: 0 12px 40px -12px hsl(0 0% 0% / 0.15);
-    --shadow-card: 0 2px 20px hsl(0 0% 0% / 0.08);
-
-    /* Sidebar */
+    --shadow-elegant: 0 12px 40px -12px hsl(0 0% 0% / 0.12);
+    --shadow-card: 0 2px 16px hsl(0 0% 0% / 0.07);
     --sidebar-background: 0 0% 97%;
     --sidebar-foreground: 0 0% 10%;
     --sidebar-primary: 18 100% 50%;
@@ -175,6 +214,11 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Light mode (default) — clean white, no heavy glows */
+  body {
+    background-image: none;
+  }
+
   /* Dark mode ambient glows */
   .dark body {
     background-image:
@@ -184,9 +228,7 @@
 
   /* Light mode subtle glow */
   .light body {
-    background-image:
-      radial-gradient(ellipse 800px 400px at 80% -10%, hsl(328 100% 55% / 0.04), transparent),
-      radial-gradient(ellipse 600px 400px at -10% 30%, hsl(18 100% 55% / 0.03), transparent);
+    background-image: none;
   }
 
   h1, h2, h3, h4, h5 {

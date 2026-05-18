@@ -1,5 +1,13 @@
 import { Link } from "react-router-dom";
-import { Zap, Instagram, Twitter, Youtube, Github } from "lucide-react";
+import { Zap, Instagram, Twitter, Youtube, Facebook } from "lucide-react";
+
+// ── Update these URLs to your real social media pages ──────────────────────────
+const SOCIAL_LINKS = [
+  { Icon: Instagram, href: "https://www.instagram.com/luxtronics.in/", label: "Instagram" },
+  { Icon: Twitter,   href: "https://x.com/luxtronics",                  label: "Twitter / X" },
+  { Icon: Youtube,   href: "https://www.youtube.com/@luxtronics",       label: "YouTube" },
+  { Icon: Facebook,  href: "https://www.facebook.com/luxtronics",       label: "Facebook" },
+];
 
 const footerColumns = [
   {
@@ -76,15 +84,17 @@ const Footer = () => {
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-6">
             Premium electronics curated for the next generation of creators and tech enthusiasts.
           </p>
-          <div className="flex gap-3">
-            {[Instagram, Twitter, Youtube, Github].map((Icon, i) => (
+          <div className="flex gap-3 flex-wrap">
+            {SOCIAL_LINKS.map(({ Icon, href, label }) => (
               <a
-                key={i}
-                href="#"
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full border border-border flex items-center justify-center hover:border-primary hover:bg-primary/10 hover:text-primary transition-all duration-300"
-                aria-label="Social link"
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Follow us on ${label}`}
+                className="h-10 w-10 rounded-full border-2 border-border bg-background flex items-center justify-center text-muted-foreground hover:border-primary hover:bg-primary hover:text-white transition-all duration-300 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
               >
-                <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                <Icon className="h-[18px] w-[18px]" />
               </a>
             ))}
           </div>
