@@ -16,7 +16,6 @@ const links = [
   { to: "/categories", label: "Categories" },
   { to: "/about", label: "About" },
   { to: "/blog", label: "Blog" },
-  { to: "/account", label: "Account" },
   { to: "/contact", label: "Contact" },
 ];
 
@@ -28,7 +27,6 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // Debounce: update debouncedQuery 300ms after searchQuery changes
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery.trim());
@@ -45,16 +43,14 @@ const Navbar = () => {
 
   useEffect(() => {
     const onScroll = () => {
-      requestAnimationFrame(() => {
-        setScrolled(window.scrollY > 20);
-      });
+      requestAnimationFrame(() => setScrolled(window.scrollY > 10));
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile menu on route change
+  // Close everything on route change
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
@@ -63,10 +59,14 @@ const Navbar = () => {
     setCurrencyOpen(false);
   }, [location.pathname]);
 
+  // Lock body scroll when mobile menu is open
   useEffect(() => {
-    if (searchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 80);
-    }
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 80);
   }, [searchOpen]);
 
   useEffect(() => {
@@ -75,6 +75,7 @@ const Navbar = () => {
         setSearchOpen(false);
         setSearchQuery("");
         setDebouncedQuery("");
+        setMobileOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -101,327 +102,381 @@ const Navbar = () => {
     : user?.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
-    <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-smooth",
-        scrolled ? "py-2 sm:py-3" : "py-3 sm:py-5"
-      )}
-    >
-      <div
+    <>
+      <header
         className={cn(
-          "w-full flex items-center justify-between transition-all duration-500 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1920px] mx-auto",
-          scrolled && "rounded-2xl sm:rounded-3xl border dark:border-white/10 light:border-black/10 dark:bg-black/70 light:bg-white/95 backdrop-blur-2xl shadow-2xl shadow-black/20 dark:shadow-black/40"
+          "sticky top-0 left-0 right-0 z-50 w-full transition-all duration-300",
+          scrolled
+            ? "bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl shadow-md border-b border-gray-200 dark:border-gray-800"
+            : "bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-900"
         )}
       >
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-1 sm:gap-2 group">
-          <div className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-gradient-brand flex items-center justify-center shadow-glow group-hover:scale-110 transition-transform duration-300">
-            <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" strokeWidth={2.5} />
-          </div>
-          <span className="font-display font-bold text-lg sm:text-xl lg:text-2xl tracking-tight dark:text-white light:text-black">
-            Lux<span className="text-gradient">tronics</span>
-          </span>
-        </Link>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
-            <RouterNavLink
-              key={l.to}
-              to={l.to}
-              end={l.to === "/"}
-              className={({ isActive }) =>
-                cn(
-                  "relative px-4 py-2 text-sm font-medium transition-colors",
-                  isActive ? "dark:text-white light:text-black" : "dark:text-white/80 light:text-black/80 dark:hover:text-white light:hover:text-black"
-                )
-              }
+          {/* ── Logo ── */}
+          <Link to="/" className="flex items-center gap-1.5 shrink-0 group">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300">
+              <Zap className="h-4 w-4 text-white" strokeWidth={2.5} />
+            </div>
+            <span className="font-display font-bold text-lg sm:text-xl tracking-tight text-gray-900 dark:text-white">
+              Lux<span className="bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">tronics</span>
+            </span>
+          </Link>
+
+          {/* ── Desktop nav ── */}
+          <nav className="hidden lg:flex items-center gap-0.5" aria-label="Main navigation">
+            {links.map((l) => (
+              <RouterNavLink
+                key={l.to}
+                to={l.to}
+                end={l.to === "/"}
+                className={({ isActive }) =>
+                  cn(
+                    "relative px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                    isActive
+                      ? "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  )
+                }
+              >
+                {l.label}
+              </RouterNavLink>
+            ))}
+          </nav>
+
+          {/* ── Right actions ── */}
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+
+            {/* Search */}
+            <button
+              aria-label="Search products"
+              onClick={() => {
+                setSearchOpen((v) => !v);
+                if (searchOpen) { setSearchQuery(""); setDebouncedQuery(""); }
+              }}
+              className={cn(
+                "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
+                searchOpen
+                  ? "bg-orange-100 dark:bg-orange-950/40 text-orange-600"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
             >
-              {({ isActive }) => (
+              {searchOpen ? <X className="h-[18px] w-[18px]" /> : <Search className="h-[18px] w-[18px]" />}
+            </button>
+
+            {/* Currency switcher — desktop only */}
+            <div className="relative hidden sm:block">
+              <button
+                onClick={() => setCurrencyOpen((v) => !v)}
+                className="h-9 flex items-center gap-1.5 rounded-full px-3 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Switch currency"
+              >
+                <span className="text-base leading-none">{country.flag}</span>
+                <span className="text-xs hidden md:inline">{country.currency}</span>
+                <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", currencyOpen && "rotate-180")} />
+              </button>
+              {currencyOpen && (
                 <>
-                  {l.label}
-                  {isActive && (
-                    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-gradient-brand" />
-                  )}
+                  <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden max-h-80 overflow-y-auto scrollbar-hidden">
+                    {countries.map((c) => (
+                      <button
+                        key={c.code}
+                        onClick={() => { setCountry(c); setCurrencyOpen(false); }}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm",
+                          country.code === c.code && "bg-orange-50 dark:bg-orange-950/30 border-l-2 border-orange-500"
+                        )}
+                      >
+                        <span className="text-lg">{c.flag}</span>
+                        <div className="flex-1">
+                          <p className="font-medium text-xs text-gray-900 dark:text-white">{c.name}</p>
+                          <p className="text-[10px] text-gray-500">{c.currency} · {c.currencySymbol}</p>
+                        </div>
+                        {country.code === c.code && <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />}
+                      </button>
+                    ))}
+                  </div>
                 </>
               )}
-            </RouterNavLink>
-          ))}
-        </nav>
+            </div>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
-          <ThemeToggle />
-
-          {/* Search toggle */}
-          <button
-            id="navbar-search-btn"
-            aria-label="Search products"
-            onClick={() => {
-              setSearchOpen((v) => !v);
-              if (searchOpen) {
-                setSearchQuery("");
-                setDebouncedQuery("");
-              }
-            }}
-            className={cn(
-              "h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center transition-colors dark:text-white light:text-black",
-              searchOpen ? "bg-primary/10 text-primary" : "dark:hover:bg-white/10 light:hover:bg-black/10"
-            )}
-          >
-            {searchOpen ? <X className="h-4 w-4 sm:h-[18px] sm:w-[18px]" /> : <Search className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />}
-          </button>
-
-          {/* Currency switcher */}
-          <div className="relative">
-            <button
-              onClick={() => setCurrencyOpen((v) => !v)}
-              className="hidden sm:flex h-9 items-center gap-1.5 rounded-full dark:hover:bg-white/10 light:hover:bg-black/10 px-3 text-sm font-medium transition-colors dark:text-white light:text-black"
-              aria-label="Switch currency"
+            {/* Cart */}
+            <Link
+              to="/cart"
+              aria-label={`Cart (${totalItems} items)`}
+              className="h-9 w-9 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
             >
-              <span className="text-base leading-none">{country.flag}</span>
-              <span className="text-xs dark:text-white/80 light:text-black/80">{country.currency}</span>
-              <ChevronDown className={`h-3 w-3 dark:text-white/80 light:text-black/80 transition-transform duration-200 ${currencyOpen ? "rotate-180" : ""}`} />
+              <ShoppingBag className="h-[18px] w-[18px]" />
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 h-5 w-5 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 text-[10px] font-bold flex items-center justify-center text-white shadow border-2 border-white dark:border-gray-950">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </span>
+              )}
+            </Link>
+
+            {/* Auth — desktop */}
+            {isSignedIn ? (
+              <div className="hidden sm:flex items-center gap-1">
+                <Link
+                  to="/account"
+                  className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold shadow"
+                  aria-label="My account"
+                >
+                  {avatarLabel}
+                </Link>
+                <button
+                  onClick={handleLogOut}
+                  aria-label="Sign out"
+                  className="h-9 w-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2">
+                <Link
+                  to="/account/login"
+                  className="h-9 w-9 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  aria-label="Sign in"
+                >
+                  <User className="h-[18px] w-[18px]" />
+                </Link>
+                <Link
+                  to="/account/login"
+                  className="hidden md:inline-flex h-9 items-center rounded-full border border-gray-300 dark:border-gray-600 px-4 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-orange-400 hover:text-orange-600 transition-colors"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/account/register"
+                  className="hidden md:inline-flex h-9 items-center rounded-full bg-gradient-to-r from-orange-500 to-pink-600 px-4 text-sm font-semibold text-white shadow hover:shadow-md hover:scale-105 active:scale-95 transition-all"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+
+            {/* Hamburger — mobile/tablet */}
+            <button
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((v) => !v)}
+              className="lg:hidden h-9 w-9 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ml-1"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-            {currencyOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/80 light:bg-white backdrop-blur-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto scrollbar-hidden">
-                  {countries.map((c) => (
+          </div>
+        </div>
+
+        {/* ── Search bar (slides down) ── */}
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden border-t border-gray-100 dark:border-gray-800"
+            >
+              <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div className="relative">
+                  <form
+                    onSubmit={handleSearch}
+                    className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 shadow-sm"
+                  >
+                    <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                    <input
+                      ref={searchInputRef}
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search for products, brands…"
+                      className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="submit"
+                        className="shrink-0 rounded-full bg-gradient-to-r from-orange-500 to-pink-600 px-4 py-1.5 text-xs font-semibold text-white shadow hover:shadow-md transition-all"
+                      >
+                        Search
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
+                      className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </form>
+
+                  {/* Search suggestions */}
+                  <AnimatePresence>
+                    {debouncedQuery.length >= 2 && searchOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden"
+                      >
+                        <SearchSuggestions
+                          query={searchQuery}
+                          debouncedQuery={debouncedQuery}
+                          onSelect={() => { setSearchOpen(false); setSearchQuery(""); setDebouncedQuery(""); }}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* ── Mobile full-screen menu ── */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed top-0 right-0 bottom-0 z-50 w-[85vw] max-w-sm bg-white dark:bg-gray-950 shadow-2xl flex flex-col lg:hidden"
+            >
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-1.5">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center">
+                    <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+                  </div>
+                  <span className="font-display font-bold text-base text-gray-900 dark:text-white">
+                    Lux<span className="bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">tronics</span>
+                  </span>
+                </Link>
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Close menu"
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Search inside drawer */}
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                <form
+                  onSubmit={(e) => { handleSearch(e); setMobileOpen(false); }}
+                  className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2"
+                >
+                  <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search products…"
+                    className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+                  />
+                </form>
+              </div>
+
+              {/* Nav links */}
+              <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Mobile navigation">
+                {links.map((l) => (
+                  <RouterNavLink
+                    key={l.to}
+                    to={l.to}
+                    end={l.to === "/"}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center px-4 py-3.5 rounded-xl text-base font-medium transition-colors mb-1",
+                        isActive
+                          ? "bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400"
+                          : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      )
+                    }
+                  >
+                    {l.label}
+                  </RouterNavLink>
+                ))}
+              </nav>
+
+              {/* Auth + currency at bottom */}
+              <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                {/* Currency row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {countries.slice(0, 4).map((c) => (
                     <button
                       key={c.code}
-                      onClick={() => { setCountry(c); setCurrencyOpen(false); }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left dark:hover:bg-white/[0.08] light:hover:bg-black/[0.05] transition-colors text-sm ${country.code === c.code ? "dark:bg-primary/10 light:bg-primary/10 border-l-2 border-primary" : ""
-                        }`}
+                      onClick={() => setCountry(c)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                        country.code === c.code
+                          ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30 text-orange-600"
+                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                      )}
                     >
-                      <span className="text-lg">{c.flag}</span>
-                      <div className="flex-1">
-                        <p className="font-medium text-xs">{c.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{c.currency} · {c.currencySymbol}</p>
-                      </div>
-                      {country.code === c.code && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                      <span>{c.flag}</span>
+                      <span>{c.currency}</span>
                     </button>
                   ))}
                 </div>
-              </>
-            )}
-          </div>
 
-          {/* Cart */}
-          <Link
-            to="/cart"
-            aria-label="Cart"
-            className="h-9 w-9 sm:h-10 sm:w-10 rounded-full dark:hover:bg-white/10 light:hover:bg-black/10 flex items-center justify-center transition-colors relative"
-          >
-            <ShoppingBag className="h-4 w-4 sm:h-[18px] sm:w-[18px] dark:text-white light:text-black" />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-brand text-[10px] font-bold flex items-center justify-center text-primary-foreground shadow-lg border-2 border-background">
-                {totalItems > 99 ? "99+" : totalItems}
-              </span>
-            )}
-          </Link>
-
-          {/* Auth — desktop */}
-          {isSignedIn ? (
-            <div className="hidden sm:flex items-center gap-2">
-              <Link
-                to="/account"
-                className="h-9 w-9 rounded-full bg-gradient-brand flex items-center justify-center text-primary-foreground text-sm font-bold shadow-glow"
-                aria-label="Account"
-              >
-                {avatarLabel}
-              </Link>
-              <button
-                onClick={handleLogOut}
-                aria-label="Sign out"
-                className="h-9 w-9 rounded-full dark:hover:bg-white/10 light:hover:bg-black/10 flex items-center justify-center transition-colors dark:text-white light:text-black"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="hidden sm:flex items-center gap-2">
-              <Link
-                to="/account/login"
-                aria-label="Account"
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full dark:hover:bg-white/10 light:hover:bg-black/10 flex items-center justify-center transition-colors dark:text-white light:text-black"
-              >
-                <User className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
-              </Link>
-              <Link
-                to="/account/login"
-                className="h-9 inline-flex items-center rounded-full border dark:border-white/20 light:border-black/20 px-4 text-sm font-medium hover:border-primary/40 transition-colors dark:text-white light:text-black"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/account/register"
-                className="h-9 inline-flex items-center rounded-full bg-gradient-brand px-4 text-sm font-semibold text-primary-foreground shadow-glow"
-              >
-                Sign up
-              </Link>
-            </div>
-          )}
-
-          <button
-            aria-label="Menu"
-            onClick={() => setMobileOpen((v) => !v)}
-            className="md:hidden h-9 w-9 rounded-full dark:hover:bg-white/10 light:hover:bg-black/10 flex items-center justify-center transition-colors dark:text-white light:text-black"
-          >
-            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Search bar */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-in-out",
-          searchOpen ? "max-h-[800px] opacity-100 overflow-visible" : "max-h-0 opacity-0 overflow-hidden pointer-events-none"
-        )}
-      >
-        <div className="container mt-2">
-          <div className="relative max-w-[1920px] mx-auto">
-            <form
-              onSubmit={handleSearch}
-              className="flex items-center gap-3 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white backdrop-blur-xl px-5 py-3 shadow-2xl"
-            >
-              <Search className="h-5 w-5 dark:text-white light:text-black shrink-0" />
-              <input
-                ref={searchInputRef}
-                id="navbar-search-input"
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products… (press Enter)"
-                className="flex-1 bg-transparent text-sm dark:text-white light:text-black dark:placeholder:text-white/60 light:placeholder:text-black/60 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-full bg-gradient-brand px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all"
-                >
-                  Search
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchOpen(false);
-                  setSearchQuery("");
-                  setDebouncedQuery("");
-                }}
-                className="shrink-0 dark:text-white light:text-black hover:text-primary transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </form>
-
-            {/* Search Suggestions dropdown */}
-            <AnimatePresence>
-              {debouncedQuery.length >= 2 && searchOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 right-0 mt-4 z-50 rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/80 light:bg-white backdrop-blur-xl shadow-2xl overflow-hidden"
-                >
-                  <SearchSuggestions
-                    query={searchQuery}
-                    debouncedQuery={debouncedQuery}
-                    onSelect={() => {
-                      setSearchOpen(false);
-                      setSearchQuery("");
-                      setDebouncedQuery("");
-                    }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden container mt-2 sm:mt-3 px-4 sm:px-6 max-w-[1920px] mx-auto"
-          >
-            <div className="rounded-2xl border dark:border-white/10 light:border-black/10 dark:bg-black/60 light:bg-white p-3 sm:p-4 flex flex-col gap-1 backdrop-blur-xl shadow-lg">
-              <form
-                onSubmit={handleSearch}
-                className="flex items-center gap-2 rounded-xl border dark:border-white/10 light:border-black/10 dark:bg-white/5 light:bg-black/5 px-3 py-2 mb-2"
-              >
-                <Search className="h-4 w-4 dark:text-white light:text-black shrink-0" />
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products…"
-                  className="flex-1 bg-transparent text-sm dark:text-white light:text-black dark:placeholder:text-white/60 light:placeholder:text-black/60 focus:outline-none"
-                />
-              </form>
-
-              {links.map((l) => (
-                <RouterNavLink
-                  key={l.to}
-                  to={l.to}
-                  end={l.to === "/"}
-                  className={({ isActive }) =>
-                    cn(
-                      "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                      isActive ? "dark:bg-white/10 light:bg-black/10 dark:text-white light:text-black" : "dark:text-white/80 light:text-black/80 dark:hover:bg-white/5 light:hover:bg-black/5"
-                    )
-                  }
-                >
-                  {l.label}
-                </RouterNavLink>
-              ))}
-
-              <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-2">
                 {isSignedIn ? (
-                  <>
+                  <div className="flex gap-2">
                     <Link
                       to="/account"
-                      className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium text-center dark:text-white light:text-black dark:hover:bg-white/5 light:hover:bg-black/5"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 text-sm font-medium text-center text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       My Account
                     </Link>
                     <button
-                      onClick={handleLogOut}
-                      className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium text-center hover:border-primary/40 transition-colors dark:text-white light:text-black"
+                      onClick={() => { handleLogOut(); setMobileOpen(false); }}
+                      className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 text-sm font-medium text-center text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       Sign out
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <>
+                  <div className="flex gap-2">
                     <Link
                       to="/account/login"
-                      className="w-full rounded-lg border dark:border-white/20 light:border-black/20 px-4 py-3 text-sm font-medium hover:border-primary/40 transition-colors text-center dark:text-white light:text-black dark:hover:bg-white/5 light:hover:bg-black/5"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex-1 rounded-xl border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm font-medium text-center text-gray-700 dark:text-gray-200 hover:border-orange-400 transition-colors"
                     >
                       Sign in
                     </Link>
                     <Link
                       to="/account/register"
-                      className="w-full rounded-lg bg-gradient-brand px-4 py-3 text-sm font-semibold text-primary-foreground shadow-glow text-center"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 px-4 py-3 text-sm font-semibold text-white text-center shadow hover:shadow-md transition-all"
                     >
                       Sign up
                     </Link>
-                  </>
+                  </div>
                 )}
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 };
 
@@ -439,70 +494,53 @@ const SearchSuggestions = ({
   const { formatPrice } = useCurrency();
   const isTyping = query.trim() !== debouncedQuery;
 
-  const {
-    data: suggestions = [],
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
+  const { data: suggestions = [], isLoading, isError, error } = useQuery({
     queryKey: ["search-suggestions", debouncedQuery],
-    queryFn: async () => {
-      console.log("[Search] Fetching suggestions for:", debouncedQuery);
-      const result = await fetchSearchSuggestions(debouncedQuery);
-      console.log("[Search] Got results:", result);
-      return result;
-    },
+    queryFn: () => fetchSearchSuggestions(debouncedQuery),
     enabled: debouncedQuery.length >= 2 && !isTyping,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
 
-  // Still typing — show skeleton
   if (isTyping || isLoading) {
     return (
       <div className="p-4 space-y-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex gap-3 animate-pulse">
-            <div className="h-12 w-12 rounded-lg bg-white/5 shrink-0" />
+            <div className="h-12 w-12 rounded-lg bg-gray-100 dark:bg-gray-800 shrink-0" />
             <div className="flex-1 space-y-2 py-1">
-              <div className="h-3 w-2/5 bg-white/5 rounded" />
-              <div className="h-3 w-1/4 bg-white/5 rounded" />
+              <div className="h-3 w-2/5 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-3 w-1/4 bg-gray-100 dark:bg-gray-800 rounded" />
             </div>
-            <div className="h-3 w-12 bg-white/5 rounded self-center" />
           </div>
         ))}
       </div>
     );
   }
 
-  // API error
   if (isError) {
     return (
       <div className="p-5 text-center">
-        <p className="text-sm text-red-400">
-          ❌ {error instanceof Error ? error.message : "Failed to fetch suggestions"}
+        <p className="text-sm text-red-500">
+          {error instanceof Error ? error.message : "Failed to fetch suggestions"}
         </p>
-        <p className="text-[10px] text-muted-foreground mt-1">Check console for details</p>
       </div>
     );
   }
 
-  // No results
   if (suggestions.length === 0) {
     return (
       <div className="p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          No products found for{" "}
-          <span className="text-foreground font-medium">"{debouncedQuery}"</span>
+        <p className="text-sm text-gray-500">
+          No products found for <span className="font-medium text-gray-900 dark:text-white">"{debouncedQuery}"</span>
         </p>
-        <p className="text-xs text-muted-foreground/60 mt-1">Try a different keyword</p>
       </div>
     );
   }
 
   return (
     <div className="max-h-[400px] overflow-y-auto py-2 scrollbar-hidden">
-      <p className="px-4 pb-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
+      <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
         Suggestions ({suggestions.length})
       </p>
       {suggestions.map((product) => (
@@ -510,33 +548,24 @@ const SearchSuggestions = ({
           key={product.id}
           to={`/product/${product.slug}`}
           onClick={onSelect}
-          className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+          className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0"
         >
-          <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/50 shrink-0 border border-white/5">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="h-full w-full object-cover"
-            />
+          <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0 border border-gray-200 dark:border-gray-700">
+            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              {product.category}
-            </p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{product.name}</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider">{product.category}</p>
           </div>
-          <div className="text-sm font-semibold text-primary shrink-0">
-            {formatPrice(product.price)}
-          </div>
+          <div className="text-sm font-semibold text-orange-600 shrink-0">{formatPrice(product.price)}</div>
         </Link>
       ))}
       <Link
         to={`/shop?q=${encodeURIComponent(debouncedQuery)}`}
         onClick={onSelect}
-        className="block w-full p-3 text-center text-xs font-medium text-muted-foreground hover:text-primary transition-colors border-t border-white/5"
+        className="block w-full p-3 text-center text-xs font-medium text-gray-500 hover:text-orange-600 transition-colors border-t border-gray-100 dark:border-gray-800"
       >
-        View all results for{" "}
-        <span className="font-semibold">"{debouncedQuery}"</span>
+        View all results for <span className="font-semibold">"{debouncedQuery}"</span>
       </Link>
     </div>
   );
