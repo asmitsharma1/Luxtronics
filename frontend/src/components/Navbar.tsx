@@ -1,14 +1,62 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
-import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown, LogOut, Smartphone, Tv, Headphones, Camera, Laptop, Watch, Gamepad2, Home as HomeIcon, Cpu, Battery } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, X, Zap, ChevronDown, LogOut, Smartphone, Tv, Headphones, Camera, Laptop, Watch, Gamepad2, Home as HomeIcon, Cpu, Battery, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCurrency, countries } from "@/context/CurrencyContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSearchSuggestions } from "@/services/store-api";
 import { motion, AnimatePresence } from "framer-motion";
+
+// ─── Store domains ─────────────────────────────────────────────────────────────
+const STORES = [
+  {
+    code: "IN",
+    flag: "🇮🇳",
+    label: "India",
+    currency: "INR",
+    symbol: "₹",
+    domain: "luxtronics.in",
+    color: "from-orange-500 to-amber-500",
+    bg: "bg-orange-50 dark:bg-orange-950/30",
+    border: "border-orange-400",
+    text: "text-orange-600 dark:text-orange-400",
+  },
+  {
+    code: "AU",
+    flag: "🇦🇺",
+    label: "Australia",
+    currency: "AUD",
+    symbol: "A$",
+    domain: "luxtronics.com.au",
+    color: "from-blue-500 to-cyan-500",
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+    border: "border-blue-400",
+    text: "text-blue-600 dark:text-blue-400",
+  },
+  {
+    code: "NZ",
+    flag: "🇳🇿",
+    label: "New Zealand",
+    currency: "NZD",
+    symbol: "NZ$",
+    domain: "luxtronics.co.nz",
+    color: "from-emerald-500 to-teal-500",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    border: "border-emerald-400",
+    text: "text-emerald-600 dark:text-emerald-400",
+  },
+] as const;
+
+type StoreCode = typeof STORES[number]["code"];
+
+function getCurrentStore() {
+  if (typeof window === "undefined") return STORES[0];
+  const host = window.location.hostname.replace(/^www\./, "");
+  return STORES.find(s => s.domain === host) ?? STORES[0];
+}
 
 // ─── Megamenu data ─────────────────────────────────────────────────────────────
 const megaMenuData = {
@@ -96,13 +144,14 @@ type MegaKey = typeof megaLinks[number];
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [storeOpen, setStoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeMega, setActiveMega] = useState<MegaKey | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<MegaKey | null>(null);
   const megaTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentStore = getCurrentStore();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -115,7 +164,6 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSignedIn, user, logOut } = useAuth();
-  const { country, setCountry } = useCurrency();
   const { totalItems } = useCart();
 
   useEffect(() => {
@@ -133,7 +181,7 @@ const Navbar = () => {
     setSearchOpen(false);
     setSearchQuery("");
     setDebouncedQuery("");
-    setCurrencyOpen(false);
+    setStoreOpen(false);
     setActiveMega(null);
   }, [location.pathname]);
 
@@ -353,41 +401,79 @@ const Navbar = () => {
               {searchOpen ? <X className="h-[18px] w-[18px]" /> : <Search className="h-[18px] w-[18px]" />}
             </button>
 
-            {/* Currency switcher — desktop only */}
+            {/* ── Store / Domain switcher — desktop only ── */}
             <div className="relative hidden sm:block">
               <button
-                onClick={() => setCurrencyOpen((v) => !v)}
-                className="h-9 flex items-center gap-1.5 rounded-full px-3 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                aria-label="Switch currency"
+                onClick={() => setStoreOpen((v) => !v)}
+                className={cn(
+                  "h-9 flex items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
+                  storeOpen
+                    ? `${currentStore.bg} ${currentStore.text} border border-current/20`
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                )}
+                aria-label="Switch store region"
               >
-                <span className="text-base leading-none">{country.flag}</span>
-                <span className="text-xs hidden md:inline">{country.currency}</span>
-                <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", currencyOpen && "rotate-180")} />
+                <span className="text-base leading-none">{currentStore.flag}</span>
+                <span className="text-xs hidden md:inline font-semibold">{currentStore.currency}</span>
+                <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", storeOpen && "rotate-180")} />
               </button>
-              {currencyOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden max-h-80 overflow-y-auto scrollbar-hidden">
-                    {countries.map((c) => (
-                      <button
-                        key={c.code}
-                        onClick={() => { setCountry(c); setCurrencyOpen(false); }}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm",
-                          country.code === c.code && "bg-orange-50 dark:bg-orange-950/30 border-l-2 border-orange-500"
-                        )}
-                      >
-                        <span className="text-lg">{c.flag}</span>
-                        <div className="flex-1">
-                          <p className="font-medium text-xs text-gray-900 dark:text-white">{c.name}</p>
-                          <p className="text-[10px] text-gray-500">{c.currency} · {c.currencySymbol}</p>
-                        </div>
-                        {country.code === c.code && <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+
+              <AnimatePresence>
+                {storeOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setStoreOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden"
+                    >
+                      <div className="px-4 pt-3 pb-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1.5">
+                          <Globe className="h-3 w-3" /> Select your store
+                        </p>
+                      </div>
+                      {STORES.map((store) => {
+                        const isCurrent = store.code === currentStore.code;
+                        return (
+                          <a
+                            key={store.code}
+                            href={isCurrent ? "#" : `https://${store.domain}${window.location.pathname}`}
+                            onClick={(e) => { if (isCurrent) e.preventDefault(); setStoreOpen(false); }}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-3 transition-colors",
+                              isCurrent
+                                ? `${store.bg} border-l-2 ${store.border}`
+                                : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                            )}
+                          >
+                            <span className="text-2xl leading-none">{store.flag}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className={cn("font-semibold text-sm", isCurrent ? store.text : "text-gray-900 dark:text-white")}>
+                                {store.label}
+                              </p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                {store.currency} · {store.symbol} · {store.domain}
+                              </p>
+                            </div>
+                            {isCurrent && (
+                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r text-white", store.color)}>
+                                Current
+                              </span>
+                            )}
+                          </a>
+                        );
+                      })}
+                      <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800">
+                        <p className="text-[10px] text-gray-400 leading-relaxed">
+                          Switching store will redirect you to the regional website with local pricing.
+                        </p>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Cart */}
@@ -671,23 +757,27 @@ const Navbar = () => {
 
               {/* Auth + currency at bottom */}
               <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
-                {/* Currency row */}
+                {/* Store switcher row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  {countries.slice(0, 4).map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => setCountry(c)}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                        country.code === c.code
-                          ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30 text-orange-600"
-                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300"
-                      )}
-                    >
-                      <span>{c.flag}</span>
-                      <span>{c.currency}</span>
-                    </button>
-                  ))}
+                  {STORES.map((store) => {
+                    const isCurrent = store.code === currentStore.code;
+                    return (
+                      <a
+                        key={store.code}
+                        href={isCurrent ? "#" : `https://${store.domain}${window.location.pathname}`}
+                        onClick={(e) => { if (isCurrent) e.preventDefault(); }}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+                          isCurrent
+                            ? `${store.bg} ${store.border} ${store.text} border`
+                            : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                        )}
+                      >
+                        <span>{store.flag}</span>
+                        <span>{store.currency}</span>
+                      </a>
+                    );
+                  })}
                 </div>
 
                 {isSignedIn ? (
