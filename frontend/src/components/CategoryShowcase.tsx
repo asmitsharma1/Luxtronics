@@ -34,41 +34,21 @@ const CategoryShowcase = () => {
           </h2>
         </motion.div>
 
-        {/* Top-level pills */}
-        <div className="relative">
-          <div className="flex flex-wrap gap-3 items-center justify-start mb-4">
+        {/* Structured category grid: parent sections with child lists */}
+        <div className="mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {menu.map((item) => (
-              <button
-                key={item.slug}
-                onMouseEnter={() => setActive(item.slug)}
-                onMouseLeave={() => setActive(null)}
-                onFocus={() => setActive(item.slug)}
-                onBlur={() => setActive(null)}
-                className={`px-4 py-2 rounded-full border text-sm font-medium hover:bg-primary/5 transition-colors ${active === item.slug ? 'bg-primary/10 border-primary' : 'bg-white/50'}`}
-              >
-                {item.title}
-              </button>
-            ))}
-          </div>
+              <div key={item.slug} className="bg-white/80 dark:bg-slate-900/60 rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-semibold mb-3 flex items-center justify-between">
+                  <span>{item.title}</span>
+                </h3>
 
-          {/* Mega panel */}
-          <div className="absolute left-0 right-0 top-full mt-2 pointer-events-none">
-            {menu.map((item) => (
-              <div
-                key={item.slug}
-                onMouseEnter={() => setActive(item.slug)}
-                onMouseLeave={() => setActive(null)}
-                className={`pointer-events-auto bg-white rounded-xl shadow-lg p-6 transition-all duration-200 mx-auto max-w-6xl ${active === item.slug ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'}`}
-                style={{
-                  transformOrigin: 'top center'
-                }}
-              >
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="flex flex-col gap-2">
                   {(item.children || []).map((child) => (
                     <Link
                       key={child.slug}
                       to={`/shop?cat=${child.slug}`}
-                      className="block p-2 rounded hover:bg-gray-50 text-sm font-medium"
+                      className="text-sm text-slate-700 dark:text-slate-200 hover:text-primary rounded px-2 py-1"
                     >
                       {child.title}
                     </Link>
