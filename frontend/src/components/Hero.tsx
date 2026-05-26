@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import heroBgDesktop from "@/assets/hero.jpg";
 import heroBgMobile from "@/assets/mob1.jpg";
 import heroGadget from "@/assets/hero-gadget.png";
-import heroLaptop from "@/assets/product-laptop.png";
+import heroWatch from "@/assets/product-watch.png";
 import heroHeadphones from "@/assets/product-headphones.png";
 import { fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
 
@@ -21,42 +21,42 @@ const SLIDES = [
   {
     id: 1,
     badge: "🔥 Limited Time Deal",
-    headline: "Up to 40% OFF",
-    subheadline: "Premium Smartphones",
-    description: "Latest flagship phones from top brands. Free shipping + 2-year warranty included.",
-    cta: { label: "Shop Smartphones", to: "/shop?cat=smartphones" },
+    headline: "iPhone Essentials",
+    subheadline: "Rings, cases & premium accessories",
+    description: "Apple-friendly accessories, MagSafe rings, cases and fast chargers with free shipping + 2-year warranty.",
+    cta: { label: "Shop iPhone Accessories", to: "/shop?cat=smartphones" },
     secondary: { label: "View All Deals", to: "/shop" },
     image: heroGadget,
-    imageAlt: "Premium smartphones on sale",
+    imageAlt: "iPhone accessories and smartphone essentials",
     accent: "from-orange-500 to-pink-600",
     bg: "from-orange-50 via-white to-pink-50",
     darkBg: "dark:from-orange-950/40 dark:via-gray-950 dark:to-pink-950/30",
     tag: "SALE",
     tagColor: "bg-orange-500",
     spotlights: [
-      { name: "Smartphones", image: heroGadget, alt: "Premium smartphones", accent: "from-orange-500 to-pink-600" },
-      { name: "Laptops", image: heroLaptop, alt: "Premium laptops", accent: "from-blue-500 to-violet-600" },
+      { name: "iPhone Accessories", image: heroGadget, alt: "iPhone accessories", accent: "from-orange-500 to-pink-600" },
+      { name: "Wearables", image: heroWatch, alt: "Smartwatch and wearable products", accent: "from-blue-500 to-violet-600" },
       { name: "Audio", image: heroHeadphones, alt: "Premium headphones", accent: "from-emerald-500 to-cyan-600" },
     ],
   },
   {
     id: 2,
     badge: "✨ New Arrivals",
-    headline: "Pro Laptops",
-    subheadline: "Starting from ₹49,999",
-    description: "High-performance laptops for creators, students and professionals. EMI available.",
-    cta: { label: "Explore Laptops", to: "/shop?cat=laptops" },
+    headline: "Smart Wearables",
+    subheadline: "Starting from ₹4,999",
+    description: "Smartwatches, fitness bands and connected accessories built for daily use. EMI available.",
+    cta: { label: "Explore Wearables", to: "/shop?cat=wearables" },
     secondary: { label: "Compare Models", to: "/categories" },
-    image: heroLaptop,
-    imageAlt: "Pro laptops collection",
+    image: heroWatch,
+    imageAlt: "Smart wearable collection",
     accent: "from-blue-500 to-violet-600",
     bg: "from-blue-50 via-white to-violet-50",
     darkBg: "dark:from-blue-950/40 dark:via-gray-950 dark:to-violet-950/30",
     tag: "NEW",
     tagColor: "bg-blue-500",
     spotlights: [
-      { name: "Laptops", image: heroLaptop, alt: "Pro laptops collection", accent: "from-blue-500 to-violet-600" },
-      { name: "Smartphones", image: heroGadget, alt: "Premium smartphones", accent: "from-orange-500 to-pink-600" },
+      { name: "Wearables", image: heroWatch, alt: "Smartwatch and wearable products", accent: "from-blue-500 to-violet-600" },
+      { name: "iPhone Accessories", image: heroGadget, alt: "iPhone accessories", accent: "from-orange-500 to-pink-600" },
       { name: "Audio", image: heroHeadphones, alt: "Premium headphones", accent: "from-emerald-500 to-cyan-600" },
     ],
   },
@@ -77,8 +77,8 @@ const SLIDES = [
     tagColor: "bg-emerald-500",
     spotlights: [
       { name: "Audio", image: heroHeadphones, alt: "Premium headphones and earbuds", accent: "from-emerald-500 to-cyan-600" },
-      { name: "Smartphones", image: heroGadget, alt: "Premium smartphones", accent: "from-orange-500 to-pink-600" },
-      { name: "Laptops", image: heroLaptop, alt: "Pro laptops collection", accent: "from-blue-500 to-violet-600" },
+      { name: "iPhone Accessories", image: heroGadget, alt: "iPhone accessories", accent: "from-orange-500 to-pink-600" },
+      { name: "Wearables", image: heroWatch, alt: "Smartwatch and wearable products", accent: "from-blue-500 to-violet-600" },
     ],
   },
 ];

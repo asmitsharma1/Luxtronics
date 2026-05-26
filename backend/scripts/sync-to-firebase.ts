@@ -36,6 +36,67 @@ const woo = new Api({
   version: 'wc/v3',
 });
 
+const CATEGORY_RULES = [
+  { name: 'Smartphones', slug: 'smartphones', patterns: [/phone/i, /iphone/i, /mobile/i, /smartphone/i, /handset/i] },
+  { name: 'Laptops', slug: 'laptops', patterns: [/laptop/i, /macbook/i, /notebook/i, /ultrabook/i] },
+  { name: 'Audio', slug: 'audio', patterns: [/headphone/i, /earbud/i, /speaker/i, /audio/i, /sound/i, /buds?/i] },
+  { name: 'Wearables', slug: 'wearables', patterns: [/watch/i, /smartwatch/i, /wearable/i, /fitness band/i, /band/i] },
+  { name: 'Gaming', slug: 'gaming', patterns: [/gaming/i, /gamepad/i, /controller/i, /console/i, /ps5/i, /xbox/i] },
+  { name: 'Cameras', slug: 'cameras', patterns: [/camera/i, /dslr/i, /mirrorless/i, /lens/i, /photograph/i] },
+  { name: 'Chargers & Cables', slug: 'chargers-cables', patterns: [/charger/i, /cable/i, /adapter/i, /usb-c/i, /type-c/i, /power bank/i] },
+  { name: 'Smart Home', slug: 'smart-home', patterns: [/smart home/i, /home device/i, /automation/i, /robot/i, /sensor/i, /smart bulb/i] },
+];
+
+function isUncategorizedCategory(name: string) {
+  const normalized = String(name || '').trim().toLowerCase();
+  return !normalized || normalized === 'uncategorized' || normalized === 'uncategorised';
+}
+
+function inferCategoryFromProduct(product: any) {
+  const searchableText = [
+    product?.name,
+    product?.slug,
+    product?.description,
+    product?.short_description,
+    ...(Array.isArray(product?.tags) ? product.tags.map((tag: any) => tag?.name || tag?.slug || '') : []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  for (const rule of CATEGORY_RULES) {
+    if (rule.patterns.some((pattern) => pattern.test(searchableText))) {
+      return {
+        id: Math.abs(rule.slug.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)),
+        name: rule.name,
+        slug: rule.slug,
+      };
+    }
+  }
+
+  return null;
+}
+
+function resolveCategories(product: any) {
+  const existing = Array.isArray(product?.categories)
+    ? product.categories
+        .filter((category: any) => category && !isUncategorizedCategory(category.name) && !isUncategorizedCategory(category.slug))
+        .map((category: any) => ({
+          id: Number(category.id ?? 0),
+          name: String(category.name ?? ''),
+          slug: String(category.slug ?? ''),
+        }))
+        .filter((category: any) => category.name && category.slug)
+    : [];
+
+  if (existing.length > 0) {
+    return existing;
+  }
+
+  const inferred = inferCategoryFromProduct(product);
+  return inferred ? [inferred] : [];
+}
+
 // ── Fetch all products (paginated) ────────────────────────────────────────────
 async function fetchAllProducts(): Promise<any[]> {
   console.log('📦 Fetching products from WooCommerce...');
@@ -56,7 +117,10 @@ async function fetchAllProducts(): Promise<any[]> {
   }
 
   console.log(`✅ Total products: ${all.length}\n`);
-  return all;
+  return all.map((product) => ({
+    ...product,
+    categories: resolveCategories(product),
+  }));
 }
 
 // ── Fetch categories ──────────────────────────────────────────────────────────

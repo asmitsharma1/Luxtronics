@@ -111,6 +111,63 @@ export interface WooCommerceOrder {
   }>;
 }
 
+const CATEGORY_RULES = [
+  { name: 'Smartphones', slug: 'smartphones', patterns: [/phone/i, /iphone/i, /mobile/i, /smartphone/i, /handset/i] },
+  { name: 'Laptops', slug: 'laptops', patterns: [/laptop/i, /macbook/i, /notebook/i, /ultrabook/i] },
+  { name: 'Audio', slug: 'audio', patterns: [/headphone/i, /earbud/i, /speaker/i, /audio/i, /sound/i, /buds?/i] },
+  { name: 'Wearables', slug: 'wearables', patterns: [/watch/i, /smartwatch/i, /wearable/i, /fitness band/i, /band/i] },
+  { name: 'Gaming', slug: 'gaming', patterns: [/gaming/i, /gamepad/i, /controller/i, /console/i, /ps5/i, /xbox/i] },
+  { name: 'Cameras', slug: 'cameras', patterns: [/camera/i, /dslr/i, /mirrorless/i, /lens/i, /photograph/i] },
+  { name: 'Chargers & Cables', slug: 'chargers-cables', patterns: [/charger/i, /cable/i, /adapter/i, /usb-c/i, /type-c/i, /power bank/i] },
+  { name: 'Smart Home', slug: 'smart-home', patterns: [/smart home/i, /home device/i, /automation/i, /robot/i, /sensor/i, /smart bulb/i] },
+];
+
+function isUncategorizedCategory(name: string) {
+  const normalized = String(name || '').trim().toLowerCase();
+  return !normalized || normalized === 'uncategorized' || normalized === 'uncategorised';
+}
+
+function inferCategoryFromProduct(product: StoreProduct) {
+  const searchableText = [
+    product?.name,
+    product?.slug,
+    product?.description,
+    product?.shortDescription,
+    ...(Array.isArray(product?.categories) ? product.categories.map((category: any) => category?.name || category?.slug || '') : []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  for (const rule of CATEGORY_RULES) {
+    if (rule.patterns.some((pattern) => pattern.test(searchableText))) {
+      return { id: 0, name: rule.name, slug: rule.slug };
+    }
+  }
+
+  return null;
+}
+
+function resolveProductCategories(product: StoreProduct) {
+  const existing = Array.isArray(product.categories)
+    ? product.categories
+        .filter((category: any) => category && !isUncategorizedCategory(category.name) && !isUncategorizedCategory(category.slug))
+        .map((category: any) => ({
+          id: Number(category.id ?? 0),
+          name: String(category.name ?? ''),
+          slug: String(category.slug ?? ''),
+        }))
+        .filter((category) => category.name && category.slug)
+    : [];
+
+  if (existing.length > 0) {
+    return existing;
+  }
+
+  const inferred = inferCategoryFromProduct(product);
+  return inferred ? [inferred] : [];
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -458,20 +515,16 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
   const price = parsePrice((product as any).sale_price || product.salePrice || (product as any).price || product.price);
   const regularPrice = parsePrice((product as any).regular_price || product.regularPrice || (product as any).price || product.price);
 
+  const resolvedCategories = resolveProductCategories(product);
+
   return {
     id: (product.id ?? Math.random()).toString(),
     slug: product.slug || '',
     name: product.name || 'Unnamed Product',
     // Normalise categories — handle both WooCommerce raw format and already-mapped format
-    categories: Array.isArray(product.categories)
-      ? product.categories.map((c: any) => ({
-          id:   Number(c.id   ?? 0),
-          name: String(c.name ?? ''),
-          slug: String(c.slug ?? ''),
-        }))
-      : [],
-    category: product.categories?.[0]?.name || 'Uncategorized',
-    categoryId: product.categories?.[0]?.id,
+    categories: resolvedCategories,
+    category: resolvedCategories[0]?.name || 'Uncategorized',
+    categoryId: resolvedCategories[0]?.id,
     price: Math.round(price),
     oldPrice: regularPrice > price ? Math.round(regularPrice) : undefined,
     image: mainImage,

@@ -5,6 +5,71 @@
 
 import { ObjectId } from 'mongodb';
 
+const CATEGORY_RULES = [
+  { name: 'Smartphones', slug: 'smartphones', patterns: [/phone/i, /iphone/i, /mobile/i, /smartphone/i, /handset/i] },
+  { name: 'Laptops', slug: 'laptops', patterns: [/laptop/i, /macbook/i, /notebook/i, /ultrabook/i] },
+  { name: 'Audio', slug: 'audio', patterns: [/headphone/i, /earbud/i, /speaker/i, /audio/i, /sound/i, /buds?/i] },
+  { name: 'Wearables', slug: 'wearables', patterns: [/watch/i, /smartwatch/i, /wearable/i, /fitness band/i, /band/i] },
+  { name: 'Gaming', slug: 'gaming', patterns: [/gaming/i, /gamepad/i, /controller/i, /console/i, /ps5/i, /xbox/i] },
+  { name: 'Cameras', slug: 'cameras', patterns: [/camera/i, /dslr/i, /mirrorless/i, /lens/i, /photograph/i] },
+  { name: 'Chargers & Cables', slug: 'chargers-cables', patterns: [/charger/i, /cable/i, /adapter/i, /usb-c/i, /type-c/i, /power bank/i] },
+  { name: 'Smart Home', slug: 'smart-home', patterns: [/smart home/i, /home device/i, /automation/i, /robot/i, /sensor/i, /smart bulb/i] },
+];
+
+function normalizeCategoryName(name: string): string {
+  return String(name || '').trim().toLowerCase();
+}
+
+function isUncategorizedCategory(name: string): boolean {
+  const normalized = normalizeCategoryName(name);
+  return !normalized || normalized === 'uncategorized' || normalized === 'uncategorised';
+}
+
+function inferCategoryFromProduct(wooProduct: any): { id: number; name: string; slug: string } | null {
+  const searchableText = [
+    wooProduct?.name,
+    wooProduct?.slug,
+    wooProduct?.description,
+    wooProduct?.short_description,
+    ...(Array.isArray(wooProduct?.tags) ? wooProduct.tags.map((tag: any) => tag?.name || tag?.slug || '') : []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  for (const rule of CATEGORY_RULES) {
+    if (rule.patterns.some((pattern) => pattern.test(searchableText))) {
+      return {
+        id: Math.abs(rule.slug.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)),
+        name: rule.name,
+        slug: rule.slug,
+      };
+    }
+  }
+
+  return null;
+}
+
+function resolveProductCategories(wooProduct: any): Array<{ id: number; name: string; slug: string }> {
+  const categories = Array.isArray(wooProduct?.categories)
+    ? wooProduct.categories
+        .filter((category: any) => category && !isUncategorizedCategory(category.name) && !isUncategorizedCategory(category.slug))
+        .map((category: any) => ({
+          id: Number(category.id ?? 0),
+          name: String(category.name ?? ''),
+          slug: String(category.slug ?? ''),
+        }))
+        .filter((category: any) => category.name && category.slug)
+    : [];
+
+  if (categories.length > 0) {
+    return categories;
+  }
+
+  const inferred = inferCategoryFromProduct(wooProduct);
+  return inferred ? [inferred] : [];
+}
+
 /**
  * Product Document Model
  */
@@ -162,17 +227,15 @@ export interface UserSession {
  * Create Product Document from WooCommerce data
  */
 export function createProductDocument(wooProduct: any, variations?: any[]): MongoProduct {
+  const resolvedCategories = resolveProductCategories(wooProduct);
+
   return {
     id: wooProduct.id,
     slug: wooProduct.slug,
     name: wooProduct.name,
     description: wooProduct.description || '',
     shortDescription: wooProduct.short_description,
-    categories: (wooProduct.categories || []).map((c: any) => ({
-      id: c.id,
-      name: c.name,
-      slug: c.slug,
-    })),
+    categories: resolvedCategories,
     price: parseFloat(wooProduct.price || 0),
     salePrice: wooProduct.sale_price ? parseFloat(wooProduct.sale_price) : undefined,
     regularPrice: parseFloat(wooProduct.regular_price || wooProduct.price || 0),
@@ -221,7 +284,7 @@ export function createProductDocument(wooProduct: any, variations?: any[]): Mong
     updatedAt: new Date(),
     createdAt: new Date(),
     lastWooSyncAt: new Date(),
-    searchText: `${wooProduct.name} ${wooProduct.description} ${wooProduct.categories?.map((c: any) => c.name).join(' ')}`.toLowerCase(),
+    searchText: `${wooProduct.name} ${wooProduct.description} ${resolvedCategories.map((c: any) => c.name).join(' ')}`.toLowerCase(),
   };
 }
 
