@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import AnnouncementBar from "./AnnouncementBar";
+import ChatBot from "./ChatBot";
 
 // WhatsApp number — update to your actual number (country code + number, no + or spaces)
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "919999999999";
@@ -36,6 +37,7 @@ const Layout = ({ children }: { children: ReactNode }) => (
     <main className="flex-1 w-full overflow-x-hidden">{children}</main>
     <Footer />
     <WhatsAppButton />
+    <ChatBot />
   </div>
 );
 

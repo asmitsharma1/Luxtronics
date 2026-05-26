@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -7,6 +7,14 @@ import heroBgMobile from "@/assets/mob1.jpg";
 import heroGadget from "@/assets/hero-gadget.png";
 import heroLaptop from "@/assets/product-laptop.png";
 import heroHeadphones from "@/assets/product-headphones.png";
+import { fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
+
+type SpotlightItem = {
+  name: string;
+  image: string;
+  alt: string;
+  accent: string;
+};
 
 // ─── Slide data — edit text/links/colors freely ───────────────────────────────
 const SLIDES = [
@@ -25,6 +33,11 @@ const SLIDES = [
     darkBg: "dark:from-orange-950/40 dark:via-gray-950 dark:to-pink-950/30",
     tag: "SALE",
     tagColor: "bg-orange-500",
+    spotlights: [
+      { name: "Smartphones", image: heroGadget, alt: "Premium smartphones", accent: "from-orange-500 to-pink-600" },
+      { name: "Laptops", image: heroLaptop, alt: "Premium laptops", accent: "from-blue-500 to-violet-600" },
+      { name: "Audio", image: heroHeadphones, alt: "Premium headphones", accent: "from-emerald-500 to-cyan-600" },
+    ],
   },
   {
     id: 2,
@@ -41,6 +54,11 @@ const SLIDES = [
     darkBg: "dark:from-blue-950/40 dark:via-gray-950 dark:to-violet-950/30",
     tag: "NEW",
     tagColor: "bg-blue-500",
+    spotlights: [
+      { name: "Laptops", image: heroLaptop, alt: "Pro laptops collection", accent: "from-blue-500 to-violet-600" },
+      { name: "Smartphones", image: heroGadget, alt: "Premium smartphones", accent: "from-orange-500 to-pink-600" },
+      { name: "Audio", image: heroHeadphones, alt: "Premium headphones", accent: "from-emerald-500 to-cyan-600" },
+    ],
   },
   {
     id: 3,
@@ -57,6 +75,11 @@ const SLIDES = [
     darkBg: "dark:from-emerald-950/40 dark:via-gray-950 dark:to-cyan-950/30",
     tag: "TRENDING",
     tagColor: "bg-emerald-500",
+    spotlights: [
+      { name: "Audio", image: heroHeadphones, alt: "Premium headphones and earbuds", accent: "from-emerald-500 to-cyan-600" },
+      { name: "Smartphones", image: heroGadget, alt: "Premium smartphones", accent: "from-orange-500 to-pink-600" },
+      { name: "Laptops", image: heroLaptop, alt: "Pro laptops collection", accent: "from-blue-500 to-violet-600" },
+    ],
   },
 ];
 
@@ -65,11 +88,14 @@ const AUTOPLAY_INTERVAL = 4500;
 const Hero = () => {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [liveSpotlights, setLiveSpotlights] = useState<SpotlightItem[]>([]);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
 
   const goTo = useCallback((index: number, dir = 1) => {
     setDirection(dir);
     setCurrent(index);
+    setSpotlightIndex(0);
   }, []);
 
   const next = useCallback(() => {
@@ -87,7 +113,57 @@ const Hero = () => {
     return () => clearInterval(timer);
   }, [paused, next]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSpotlights = async () => {
+      try {
+        const storeProducts = await fetchStoreProducts(1, 6);
+        if (cancelled) return;
+
+        const mapped = storeProducts
+          .map(mapStoreProductToLocalProduct)
+          .filter((product) => Boolean(product.image))
+          .slice(0, 3)
+          .map((product, index) => ({
+            name: product.name,
+            image: product.image,
+            alt: product.name,
+            accent: ["from-orange-500 to-pink-600", "from-blue-500 to-violet-600", "from-emerald-500 to-cyan-600"][index % 3],
+          }));
+
+        setLiveSpotlights(mapped);
+      } catch {
+        if (!cancelled) setLiveSpotlights([]);
+      }
+    };
+
+    loadSpotlights();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const slide = SLIDES[current];
+  const spotlightItems = useMemo(
+    () => liveSpotlights.length > 0 ? liveSpotlights : ((slide as typeof slide & { spotlights?: SpotlightItem[] }).spotlights ?? []),
+    [liveSpotlights, slide]
+  );
+
+  useEffect(() => {
+    setSpotlightIndex(0);
+  }, [current]);
+
+  useEffect(() => {
+    if (spotlightItems.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setSpotlightIndex((index) => (index + 1) % spotlightItems.length);
+    }, 2200);
+    return () => window.clearInterval(timer);
+  }, [spotlightItems]);
+
+  const spotlight = spotlightItems[spotlightIndex % (spotlightItems.length || 1)];
 
   const variants = {
     enter: (dir: number) => ({
@@ -177,23 +253,24 @@ const Hero = () => {
                   </div>
 
                   {/* Product image — right side, tall */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.85, x: 20 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    transition={{ delay: 0.08, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-                    className="relative flex-shrink-0 w-[140px] h-[160px] flex items-center justify-center"
-                  >
-                    <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${slide.accent} opacity-15 blur-2xl`} />
-                    <img
-                      src={slide.image}
-                      alt={slide.imageAlt}
-                      className="relative z-10 h-full w-full object-contain drop-shadow-xl"
-                      loading="eager"
-                    />
-                    <span className={`absolute top-0 right-0 z-20 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-md ${slide.tagColor} shadow`}>
-                      {slide.tag}
-                    </span>
-                  </motion.div>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={`${slide.id}-${spotlightIndex}`}
+                      initial={{ opacity: 0, scale: 0.85, x: 20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.92, x: -16 }}
+                      transition={{ delay: 0.08, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+                      className="relative flex-shrink-0 w-[140px] h-[160px] flex items-center justify-center"
+                    >
+                      <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${spotlight.accent} opacity-15 blur-2xl`} />
+                      <img
+                        src={spotlight.image}
+                        alt={spotlight.alt}
+                        className="relative z-10 h-full w-full object-contain drop-shadow-xl"
+                        loading="eager"
+                      />
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 {/* CTAs */}
@@ -308,23 +385,24 @@ const Hero = () => {
                 </div>
 
                 {/* Product image */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.88 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1, duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
-                  className="relative flex items-center justify-center h-[220px] md:h-[300px] lg:h-[360px]"
-                >
-                  <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${slide.accent} opacity-10 blur-3xl scale-75`} />
-                  <img
-                    src={slide.image}
-                    alt={slide.imageAlt}
-                    className="relative z-10 h-full w-full object-contain drop-shadow-2xl"
-                    loading="eager"
-                  />
-                  <span className={`absolute top-2 right-2 sm:top-4 sm:right-4 z-20 text-[10px] sm:text-xs font-bold text-white px-2 py-1 rounded-lg ${slide.tagColor} shadow-lg`}>
-                    {slide.tag}
-                  </span>
-                </motion.div>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={`${slide.id}-${spotlightIndex}-desktop`}
+                    initial={{ opacity: 0, scale: 0.88 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: 0.1, duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
+                    className="relative flex items-center justify-center h-[220px] md:h-[300px] lg:h-[360px]"
+                  >
+                    <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${spotlight.accent} opacity-10 blur-3xl scale-75`} />
+                    <img
+                      src={spotlight.image}
+                      alt={spotlight.alt}
+                      className="relative z-10 h-full w-full object-contain drop-shadow-2xl"
+                      loading="eager"
+                    />
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
             </div>

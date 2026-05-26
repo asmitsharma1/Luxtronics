@@ -72,22 +72,27 @@ async function fetchAllCategories(): Promise<any[]> {
   }
 }
 
-// ── Write to Firestore in batches of 500 ─────────────────────────────────────
+// ── Write to Firestore in chunks of 1000, committed safely in sub-batches ───
 async function batchWrite(collectionName: string, items: any[]): Promise<void> {
   console.log(`🔄 Writing ${items.length} docs to "${collectionName}"...`);
-  const CHUNK = 500;
+  const CHUNK = 1000;
+  const FIRESTORE_BATCH_LIMIT = 500;
 
   for (let i = 0; i < items.length; i += CHUNK) {
     const chunk = items.slice(i, i + CHUNK);
-    const batch: WriteBatch = db.batch();
 
-    for (const item of chunk) {
-      const ref = db.collection(collectionName).doc(String(item.id));
-      batch.set(ref, { ...item, syncedAt: FieldValue.serverTimestamp() });
+    for (let j = 0; j < chunk.length; j += FIRESTORE_BATCH_LIMIT) {
+      const slice = chunk.slice(j, j + FIRESTORE_BATCH_LIMIT);
+      const batch: WriteBatch = db.batch();
+
+      for (const item of slice) {
+        const ref = db.collection(collectionName).doc(String(item.id));
+        batch.set(ref, { ...item, syncedAt: FieldValue.serverTimestamp() });
+      }
+
+      await batch.commit();
+      console.log(`   ✓ Committed ${Math.min(i + j + slice.length, items.length)} / ${items.length}`);
     }
-
-    await batch.commit();
-    console.log(`   ✓ Committed ${i + chunk.length} / ${items.length}`);
   }
 
   console.log(`✅ "${collectionName}" synced\n`);

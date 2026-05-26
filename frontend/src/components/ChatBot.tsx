@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Bot, ChevronDown, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchSearchSuggestions } from "@/services/store-api";
+import { useCart } from "@/context/CartContext";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -194,6 +196,8 @@ const ChatBot = () => {
   const [unread, setUnread] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -300,6 +304,31 @@ const ChatBot = () => {
     if (mapped) handleSend(mapped);
   };
 
+  const handleAddToCart = (product: ProductResult) => {
+    addItem(
+      {
+        id: product.id,
+        slug: product.slug,
+        name: product.name,
+        category: product.category,
+        price: product.price,
+        image: product.image,
+        description: product.name,
+        rating: 0,
+        reviews: 0,
+        categories: [],
+      } as any,
+      1
+    );
+
+    toast.success(`${product.name} added to cart`, { duration: 1800 });
+  };
+
+  const handleBuyNow = (product: ProductResult) => {
+    handleAddToCart(product);
+    navigate("/checkout");
+  };
+
   const reset = () => {
     setMessages([WELCOME]);
     setInput("");
@@ -385,7 +414,13 @@ const ChatBot = () => {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-hidden">
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} msg={msg} onQuickReply={handleQuickReply} />
+                <MessageBubble
+                  key={msg.id}
+                  msg={msg}
+                  onQuickReply={handleQuickReply}
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                />
               ))}
 
               {/* Typing indicator */}
@@ -458,9 +493,13 @@ const ChatBot = () => {
 const MessageBubble = ({
   msg,
   onQuickReply,
+  onAddToCart,
+  onBuyNow,
 }: {
   msg: Message;
   onQuickReply: (r: string) => void;
+  onAddToCart: (product: ProductResult) => void;
+  onBuyNow: (product: ProductResult) => void;
 }) => {
   const isBot = msg.role === "bot";
 
@@ -495,22 +534,40 @@ const MessageBubble = ({
         {msg.products && msg.products.length > 0 && (
           <div className="flex flex-col gap-2 w-full">
             {msg.products.map((p) => (
-              <Link
-                key={p.id}
-                to={`/product/${p.slug}`}
-                className="flex items-center gap-3 rounded-xl border border-border dark:bg-white/5 bg-black/5 p-2.5 hover:border-primary/40 transition-colors"
-              >
-                <img
-                  src={p.image}
-                  alt={p.name}
-                  className="h-12 w-12 rounded-lg object-cover shrink-0 border border-border"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{p.name}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{p.category}</p>
+              <div key={p.id} className="rounded-xl border border-border dark:bg-white/5 bg-black/5 p-2.5">
+                <Link
+                  to={`/product/${p.slug}`}
+                  className="flex items-center gap-3 hover:border-primary/40 transition-colors"
+                >
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    className="h-12 w-12 rounded-lg object-cover shrink-0 border border-border"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{p.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{p.category}</p>
+                  </div>
+                  <p className="text-xs font-bold text-primary shrink-0">₹{p.price.toLocaleString()}</p>
+                </Link>
+
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onAddToCart(p)}
+                    className="flex-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-semibold hover:border-primary/50 hover:text-primary transition-colors"
+                  >
+                    Add to cart
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onBuyNow(p)}
+                    className="flex-1 rounded-full bg-gradient-to-r from-primary to-accent px-3 py-1.5 text-[11px] font-semibold text-white shadow-glow"
+                  >
+                    Buy now
+                  </button>
                 </div>
-                <p className="text-xs font-bold text-primary shrink-0">₹{p.price.toLocaleString()}</p>
-              </Link>
+              </div>
             ))}
           </div>
         )}
