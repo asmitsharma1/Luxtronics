@@ -22,6 +22,25 @@ function wordMatchesToken(qw: string, pt: string): boolean {
 function allWordsInTokens(words: string[], tokens: string[]): boolean {
   return words.every(w => tokens.some(t => wordMatchesToken(w, t)));
 }
+
+// ─── Levenshtein distance ─────────────────────────────────────────────────────
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp: number[][] = Array.from({length: m+1}, (_, i) =>
+    Array.from({length: n+1}, (_, j) => i === 0 ? j : j === 0 ? i : 0)
+  );
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+// Returns true if queryWord fuzzy-matches any token in the product tokens
+function fuzzyWordMatchesAnyToken(qw: string, tokens: string[]): boolean {
+  const maxDist = qw.length >= 4 ? 1 : 0; // allow 1 typo for words 4+ chars
+  return tokens.some(t => levenshtein(qw, t) <= maxDist);
+}
+
 function scoreProduct(product: Product, q: string, words: string[]): number {
   const name = product.name.toLowerCase();
   const nt   = tokenise(name);
@@ -45,6 +64,23 @@ function scoreProduct(product: Product, q: string, words: string[]): number {
   }
   if (!inName && allWordsInTokens(words, [...nt, ...ct])) s += 120;
   if (!inName && allWordsInTokens(words, dt))             s += 40;
+
+  // ── Fuzzy matching: catch typos like "samsng" → "samsung", "iphon" → "iphone" ──
+  if (s === 0) {
+    const allTokens = [...nt, ...ct];
+    const fuzzyMatchCount = words.filter(w => fuzzyWordMatchesAnyToken(w, allTokens)).length;
+    if (fuzzyMatchCount === words.length) {
+      // All query words fuzzy-matched in name/category
+      s += 80 * fuzzyMatchCount;
+    } else if (fuzzyMatchCount > 0) {
+      // Partial fuzzy match in name/category
+      const dtFuzzyCount = words.filter(w => fuzzyWordMatchesAnyToken(w, dt)).length;
+      if (fuzzyMatchCount + dtFuzzyCount >= words.length) {
+        s += 80 * fuzzyMatchCount + 20 * dtFuzzyCount;
+      }
+    }
+  }
+
   if (s > 0) { s += (product.rating || 0) * 5; s -= name.length * 0.1; }
   return s;
 }
