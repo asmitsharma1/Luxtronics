@@ -106,7 +106,7 @@ const LimitedEdition = () => {
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="none"
         poster="/a3.jpg"
         aria-hidden="true"
       />

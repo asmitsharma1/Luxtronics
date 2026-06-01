@@ -115,12 +115,11 @@ const PromoBanner = () => {
           muted
           loop
           playsInline
-          preload="metadata"
-          poster="/logo.jpeg"
+          preload="none"
+          poster="/a2.jpg"
           className="absolute inset-0 h-full w-full object-cover"
         >
           <source src="/v3.mp4" type="video/mp4" />
-          <source src="/hero.mp4" type="video/mp4" />
         </video>
 
         <div className="absolute inset-0 opacity-20 dark:opacity-10"

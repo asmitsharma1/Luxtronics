@@ -2,11 +2,11 @@ import { lazy, Suspense } from "react";
 import Layout from "@/components/Layout";
 import Hero from "@/components/Hero";
 import BrandMarquee from "@/components/BrandMarquee";
-import CategoryStrip from "@/components/CategoryStrip";
-import FeaturedProducts from "@/components/FeaturedProducts";
 import SEO from "@/components/SEO";
 
 // Lazy load below-the-fold components
+const CategoryStrip = lazy(() => import("@/components/CategoryStrip"));
+const FeaturedProducts = lazy(() => import("@/components/FeaturedProducts"));
 const DealsBanner = lazy(() => import("@/components/DealsBanner"));
 const PromoBanner = lazy(() => import("@/components/PromoBanner"));
 const LimitedEdition = lazy(() => import("@/components/LimitedEdition"));
@@ -42,9 +42,9 @@ const Index = () => {
       />
       <Hero />
       <BrandMarquee />
-      <CategoryStrip />
-      <FeaturedProducts />
-      <Suspense fallback={<div className="h-20" />}>
+      <Suspense fallback={<div className="h-40" />}>
+        <CategoryStrip />
+        <FeaturedProducts />
         <DealsBanner />
         <PromoBanner />
         <LimitedEdition />
