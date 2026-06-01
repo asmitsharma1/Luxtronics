@@ -321,6 +321,12 @@
   animation: pulse-dot 1.5s ease-in-out infinite;
 }
 
+@keyframes preloader-slide {
+  0% { transform: translateX(-120%); }
+  50% { transform: translateX(60%); }
+  100% { transform: translateX(220%); }
+}
+
 @layer utilities {
   .scrollbar-hidden::-webkit-scrollbar { display: none; }
   .scrollbar-hidden { scrollbar-width: none; }
