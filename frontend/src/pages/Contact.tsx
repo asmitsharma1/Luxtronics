@@ -184,7 +184,7 @@ const Contact = () => {
               <option value="return">Return / Refund</option>
               <option value="product">Product question</option>
               <option value="shipping">Shipping issue</option>
-              <option value="warranty">Warranty claim</option>
+              <option value="coverage">Coverage / support request</option>
               <option value="partnership">Partnership / Business</option>
               <option value="other">Other</option>
             </select>

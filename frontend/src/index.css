@@ -187,19 +187,19 @@
   }
 
   html {
-    font-size: 16px;
+    font-size: 15px;
     scroll-behavior: smooth;
   }
 
   @media (min-width: 1024px) {
     html {
-      font-size: 17px;
+      font-size: 15px;
     }
   }
 
   @media (min-width: 1600px) {
     html {
-      font-size: 18px;
+      font-size: 16px;
     }
   }
 
@@ -336,12 +336,12 @@
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    max-width: 1280px;
+    max-width: 1180px;
   }
   
   @media (min-width: 1536px) {
     .container {
-      max-width: 1400px;
+      max-width: 1280px;
     }
   }
   

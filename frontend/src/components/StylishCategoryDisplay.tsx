@@ -190,8 +190,8 @@ const StylishCategoryDisplay = ({
                             {index === 0 ? "LIMITED EDITION" : index === 1 ? "NEW DROP" : "BEST SELLER"}
                           </span>
                           {index === 0 && (
-                            <span className="text-[10px] font-bold bg-gradient-brand px-2 py-0.5 rounded-full text-primary-foreground">
-                              -30%
+                              <span className="text-[10px] font-bold bg-gradient-brand px-2 py-0.5 rounded-full text-primary-foreground">
+                              Pick
                             </span>
                           )}
                         </div>

@@ -19,6 +19,7 @@ import {
   limit as firestoreLimit,
 } from 'firebase/firestore';
 import { productsDb, COLLECTIONS } from '@/lib/firebase-config';
+import { normalizeSmartQuery, scoreTextMatch, tokeniseSmart, wordMatchesToken } from '@/lib/smart-search';
 import type { StoreProduct, StoreCategory } from './store-api';
 
 // ── In-memory cache ───────────────────────────────────────────────────────────
@@ -205,12 +206,8 @@ export async function searchProductsInFirebase(searchQuery: string): Promise<Sto
     }
     const products = _productsCache?.data || [];
 
-    const q     = searchQuery.toLowerCase().trim();
-    const words = q.match(/[a-z0-9]+/g) || [];
-
-    const tok = (text: string) => (text || '').toLowerCase().match(/[a-z0-9]+/g) || [];
-    const wordMatchesToken = (qw: string, pt: string) =>
-      /^\d+$/.test(qw) ? pt === qw : pt.startsWith(qw);
+    const q = normalizeSmartQuery(searchQuery);
+    const words = tokeniseSmart(searchQuery);
     const allIn = (ws: string[], tokens: string[]) =>
       ws.every(w => tokens.some(t => wordMatchesToken(w, t)));
 
@@ -218,9 +215,10 @@ export async function searchProductsInFirebase(searchQuery: string): Promise<Sto
       const name = (product.name || '').toLowerCase();
       const cats = product.categories?.map((c: any) => c.name).join(' ') || '';
       const desc = (product.description || '').toLowerCase();
-      const nt = tok(name), ct = tok(cats), dt = tok(desc);
+      const slug = (product.slug || '').toLowerCase();
+      const nt = tokeniseSmart(name), ct = tokeniseSmart(cats), dt = tokeniseSmart(desc);
 
-      let s = 0;
+      let s = scoreTextMatch(searchQuery, [name, cats, slug, desc], [5, 3, 2, 1]);
       if (name === q)              s += 1000;
       if (name.startsWith(q + ' ')) s += 800;
 

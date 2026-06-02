@@ -19,7 +19,7 @@ const Index = () => {
     <Layout>
       <SEO
         title="Luxtronics — Premium Electronics & Gadgets Store | India, Australia, New Zealand"
-        description="Shop premium electronics: smartphones, audio, wearables, laptops, gaming and cameras. Curated brands, fast shipping, 2-year warranty. Ships to India, Australia & New Zealand."
+        description="Shop premium electronics: smartphones, audio, wearables, laptops, gaming and cameras. Curated catalog with regional stores for India, Australia and New Zealand."
         keywords="electronics store, premium gadgets, smartphones, laptops, audio equipment, wearables, gaming accessories, cameras, tech store India, electronics Australia"
         url="https://luxtronics.in"
         structuredData={{

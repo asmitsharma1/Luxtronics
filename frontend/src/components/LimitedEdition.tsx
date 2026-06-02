@@ -44,7 +44,7 @@ const highlights = [
   ["3", "Charging ports"],
   ["70cm", "Built-in cable"],
   ["120g", "Ultra light"],
-  ["18mo", "Warranty"],
+  ["Info", "Coverage"],
 ];
 
 const features = [
@@ -128,7 +128,7 @@ const LimitedEdition = () => {
         >
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-2xl backdrop-blur-xl">
             <Sparkles className="h-3.5 w-3.5" />
-            Limited offer - free shipping
+            Featured charger collection
           </div>
           <h2 className="font-display text-5xl font-black leading-[0.92] tracking-tight text-white sm:text-6xl lg:text-7xl xl:text-8xl">
             One charger.
@@ -213,7 +213,7 @@ const LimitedEdition = () => {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 text-sm font-bold text-white/72 backdrop-blur-xl">
-            {["Free shipping", "18-month warranty", "PC fireproof", "Universal voltage"].map((item) => (
+            {["Shipping calculated at checkout", "Coverage may vary", "PC fireproof", "Universal voltage"].map((item) => (
               <span key={item} className="inline-flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-white" />
                 {item}

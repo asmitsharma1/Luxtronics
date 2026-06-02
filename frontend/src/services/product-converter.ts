@@ -20,7 +20,7 @@ export function convertWooProductToLocalProduct(wooProduct: WooProduct): Product
     rating: parseFloat(wooProduct.average_rating) || 0,
     reviews: wooProduct.rating_count || 0,
     description: wooProduct.description || wooProduct.short_description || '',
-    badge: price < originalPrice ? '-20%' : undefined, // Adjust logic as needed
+    badge: price < originalPrice ? 'Sale' : undefined, // Adjust logic as needed
   };
 }
 

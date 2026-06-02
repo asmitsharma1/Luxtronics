@@ -221,6 +221,89 @@ app.get('/api/products/:id', async (req, res) => {
   }
 });
 
+// ── ADMIN WOOCOMMERCE PROXY ROUTES ───────────────────────────────────────────
+app.get('/api/woo/products', async (req, res) => {
+  try {
+    const wooUrl = getWooUrl(req);
+    const params = new URLSearchParams();
+    const allowed = ['per_page', 'page', 'category', 'search', 'orderby', 'order', 'after', 'status'];
+    for (const key of allowed) {
+      if (req.query[key]) params.set(key, String(req.query[key]));
+    }
+    if (!params.has('status')) params.set('status', 'publish');
+
+    const url = `${wooUrl}/wp-json/wc/v3/products?${params}`;
+    const auth = 'Basic ' + Buffer.from(
+      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
+    ).toString('base64');
+
+    const r = await fetch(url, { headers: { Authorization: auth, 'Content-Type': 'application/json' } });
+    const text = await r.text();
+    if (!r.ok) {
+      return res.status(r.status).json({ success: false, error: `WooCommerce API error: ${r.statusText}`, details: text.slice(0, 500) });
+    }
+
+    res.set('X-WP-Total', r.headers.get('X-WP-Total') || '0');
+    res.set('X-WP-TotalPages', r.headers.get('X-WP-TotalPages') || '0');
+    res.set('Cache-Control', 'no-store');
+    res.json(JSON.parse(text));
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/woo/products/:id', async (req, res) => {
+  try {
+    const wooUrl = getWooUrl(req);
+    const url = `${wooUrl}/wp-json/wc/v3/products/${req.params.id}`;
+    const auth = 'Basic ' + Buffer.from(
+      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
+    ).toString('base64');
+
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    });
+    const text = await r.text();
+
+    if (!r.ok) {
+      return res.status(r.status).json({ success: false, error: `Failed to update product: ${r.statusText}`, details: text.slice(0, 800) });
+    }
+
+    res.json({ success: true, data: JSON.parse(text) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/woo/categories', async (req, res) => {
+  try {
+    const wooUrl = getWooUrl(req);
+    const params = new URLSearchParams();
+    const allowed = ['per_page', 'page', 'search', 'orderby', 'order', 'hide_empty'];
+    for (const key of allowed) {
+      if (req.query[key]) params.set(key, String(req.query[key]));
+    }
+    if (!params.has('per_page')) params.set('per_page', '100');
+
+    const url = `${wooUrl}/wp-json/wc/v3/products/categories?${params}`;
+    const auth = 'Basic ' + Buffer.from(
+      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
+    ).toString('base64');
+
+    const r = await fetch(url, { headers: { Authorization: auth, 'Content-Type': 'application/json' } });
+    const text = await r.text();
+    if (!r.ok) {
+      return res.status(r.status).json({ success: false, error: `WooCommerce categories error: ${r.statusText}`, details: text.slice(0, 500) });
+    }
+
+    res.json(JSON.parse(text));
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/categories', async (req, res) => {
   try {
     const wooUrl = getWooUrl(req);
@@ -246,6 +329,60 @@ app.get('/api/categories', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// ── ADMIN LIVE ANALYTICS ─────────────────────────────────────────────────────
+const analyticsEvents = [];
+const liveVisitors = new Map();
+const LIVE_RETENTION_MS = 10 * 60 * 1000;
+
+function pruneLiveVisitors() {
+  const now = Date.now();
+  for (const [sessionId, visitor] of liveVisitors.entries()) {
+    if (now - Number(visitor.lastSeenAt || 0) > LIVE_RETENTION_MS) {
+      liveVisitors.delete(sessionId);
+    }
+  }
+}
+
+app.post('/api/analytics/events', (req, res) => {
+  const event = req.body || {};
+  if (!event.sessionId || !event.type) {
+    return res.status(400).json({ success: false, error: 'Invalid analytics event' });
+  }
+
+  analyticsEvents.unshift({ ...event, timestamp: event.timestamp || Date.now() });
+  analyticsEvents.splice(1000);
+  res.json({ success: true });
+});
+
+app.get('/api/analytics/events', (_req, res) => {
+  res.json({ success: true, events: analyticsEvents.slice(0, 500) });
+});
+
+app.post('/api/analytics/live', (req, res) => {
+  const visitor = req.body || {};
+  if (!visitor.sessionId) {
+    return res.status(400).json({ success: false, error: 'Invalid live visitor heartbeat' });
+  }
+
+  liveVisitors.set(visitor.sessionId, {
+    ...visitor,
+    lastSeenAt: Date.now(),
+    status: 'active',
+  });
+  pruneLiveVisitors();
+  res.json({ success: true });
+});
+
+app.get('/api/analytics/live', (_req, res) => {
+  pruneLiveVisitors();
+  const now = Date.now();
+  const visitors = [...liveVisitors.values()].map((visitor) => ({
+    ...visitor,
+    status: now - Number(visitor.lastSeenAt || 0) < 30 * 1000 ? 'active' : 'idle',
+  }));
+  res.json({ success: true, visitors });
 });
 
 // ── WOOCOMMERCE TEST ──────────────────────────────────────────────────────────

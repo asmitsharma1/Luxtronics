@@ -4,28 +4,28 @@ import { motion } from "framer-motion";
 const badges = [
   {
     icon: Truck,
-    title: "Free Shipping",
-    description: "On orders above ₹500. Express available.",
+    title: "Shipping Options",
+    description: "Rates and timelines shown at checkout.",
   },
   {
     icon: Shield,
-    title: "2-Year Warranty",
-    description: "Extended protection on selected items.",
+    title: "Coverage Info",
+    description: "Brand or seller coverage where applicable.",
   },
   {
     icon: RotateCcw,
-    title: "30-Day Returns",
-    description: "No questions asked, full refund.",
+    title: "Return Support",
+    description: "Eligibility depends on item condition and policy.",
   },
   {
     icon: Award,
-    title: "Authentic Only",
-    description: "100% genuine products guaranteed.",
+    title: "Curated Catalog",
+    description: "Products sourced from selected suppliers.",
   },
   {
     icon: Headphones,
-    title: "24/7 Support",
-    description: "Chat, call, or email us anytime.",
+    title: "Customer Support",
+    description: "Reach us by chat, WhatsApp, or email.",
   },
   {
     icon: Lock,

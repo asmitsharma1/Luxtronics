@@ -47,7 +47,7 @@ const KB: Array<{
   {
     patterns: [/ship|deliver|delivery|dispatch|courier|how long|when.*arrive|arrival/i],
     response:
-      "🚚 **Shipping Info:**\n\n• **India** — Free shipping on orders above ₹999. Standard delivery 3–7 business days.\n• **Australia** — Free shipping on orders above A$50. Delivery 5–10 business days.\n• **New Zealand** — Free shipping on orders above NZ$60. Delivery 5–10 business days.\n\nAll orders are dispatched within 24–48 hours of confirmation.",
+      "🚚 **Shipping Info:**\n\n• Shipping options and charges are shown at checkout.\n• Delivery timelines vary by location, product availability, and courier service.\n• Tracking details are shared once the order is dispatched.",
     quickReplies: ["Return policy", "Track my order", "Contact support"],
     link: { label: "Full Shipping Details", to: "/shipping-returns" },
   },
@@ -56,16 +56,16 @@ const KB: Array<{
   {
     patterns: [/return|refund|exchange|replace|money back|cancel.*order|damaged|broken/i],
     response:
-      "↩️ **Return & Refund Policy:**\n\n• **30-day** hassle-free returns on all products.\n• Item must be unused and in original packaging.\n• Refunds processed within **5–7 business days** after we receive the item.\n• Damaged or defective items get a **free replacement** or full refund.\n\nTo start a return, contact us via WhatsApp or email.",
-    quickReplies: ["Contact support", "Shipping info", "Warranty info"],
+      "↩️ **Return & Refund Policy:**\n\n• Return eligibility depends on product type, condition, and applicable policy.\n• Items generally need original packaging, accessories, and proof of purchase.\n• Refund timelines depend on inspection and payment-provider processing.\n• Damaged or defective cases are reviewed by support.\n\nTo start a request, contact us via WhatsApp or email.",
+    quickReplies: ["Contact support", "Shipping info", "Coverage info"],
     link: { label: "Full Return Policy", to: "/shipping-returns" },
   },
 
-  // Warranty
+  // Coverage
   {
-    patterns: [/warrant|guarantee|quality|authentic|original|genuine/i],
+    patterns: [/coverage|support.*request|guarantee|quality|authentic|original|genuine/i],
     response:
-      "🛡️ **Warranty & Quality:**\n\n• All products come with a **2-year warranty**.\n• 100% authentic products from verified suppliers.\n• Quality checked before dispatch.\n• Extended warranty available on select products.\n\nFor warranty claims, reach out to our support team.",
+      "🛡️ **Coverage & Quality:**\n\n• Product coverage varies by item, supplier, and brand terms.\n• We curate products from selected suppliers.\n• Eligible support cases are reviewed with proof of purchase.\n• Brand coverage, where applicable, follows the brand's own terms.\n\nFor coverage questions, reach out to our support team.",
     quickReplies: ["Return policy", "Contact support", "Browse products"],
   },
 
@@ -73,7 +73,7 @@ const KB: Array<{
   {
     patterns: [/pay|payment|cod|cash on delivery|upi|card|emi|credit|debit|razorpay|stripe|wallet/i],
     response:
-      "💳 **Payment Options:**\n\n• Credit / Debit Cards (Visa, Mastercard, Amex)\n• UPI (GPay, PhonePe, Paytm) — India only\n• Net Banking\n• EMI available on orders above ₹3,000\n• Cash on Delivery — select pin codes\n• PayPal — Australia & New Zealand\n\nAll payments are 100% secure and encrypted.",
+      "💳 **Payment Options:**\n\n• Credit / Debit Cards (Visa, Mastercard, Amex)\n• UPI (GPay, PhonePe, Paytm) — India only\n• Net Banking\n• EMI may be available on eligible orders\n• Cash on Delivery — select pin codes\n• PayPal — Australia & New Zealand\n\nPayments are processed through encrypted payment partners.",
     quickReplies: ["Shipping info", "Return policy", "Browse products"],
   },
 
@@ -99,7 +99,7 @@ const KB: Array<{
   {
     patterns: [/discount|coupon|promo|offer|deal|sale|code|voucher|cashback/i],
     response:
-      "🎁 **Deals & Discounts:**\n\n• Subscribe to our newsletter for **10% off** your first order.\n• Follow us on Instagram for flash sale alerts.\n• Check the **Shop** page for current deals and sale items.\n• Seasonal sales: Diwali, Christmas, New Year.",
+      "🎁 **Catalog Updates:**\n\n• Subscribe to our newsletter for new drops and early catalog updates.\n• Follow us on Instagram for product alerts.\n• Check the **Shop** page for current catalog picks and sale items when available.",
     quickReplies: ["Browse sale products", "Newsletter signup", "Browse products"],
     link: { label: "Shop Deals", to: "/shop" },
   },
@@ -117,7 +117,7 @@ const KB: Array<{
   {
     patterns: [/about|who.*you|company|brand|luxtronics|founded|story/i],
     response:
-      "⚡ **About Luxtronics:**\n\nLuxtronics is a premium electronics store serving India, Australia, and New Zealand. We curate the best tech products for creators, professionals, and enthusiasts.\n\n• Trusted by 10,000+ customers\n• Ships to 3 countries\n• 2-year warranty on all products\n• 30-day hassle-free returns",
+      "⚡ **About Luxtronics:**\n\nLuxtronics is a premium electronics store serving India, Australia, and New Zealand. We curate tech products for creators, professionals, and enthusiasts.\n\n• Curated product catalog\n• Regional stores for 3 markets\n• Support for eligible product and order requests",
     quickReplies: ["Browse products", "Contact us", "Shipping info"],
     link: { label: "About Us", to: "/about" },
   },
@@ -298,7 +298,7 @@ const ChatBot = () => {
       "Contact us": "contact",
       "See all results": "show me products",
       "Search something else": "",
-      "Warranty info": "warranty",
+      "Coverage info": "coverage",
     };
     const mapped = map[reply] ?? reply;
     if (mapped) handleSend(mapped);

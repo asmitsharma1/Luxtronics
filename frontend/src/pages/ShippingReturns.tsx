@@ -7,15 +7,15 @@ const ShippingReturns = () => {
     <Layout>
       <SEO
         title="Shipping & Returns Policy | Luxtronics"
-        description="Free shipping on orders over ₹200. 30-day hassle-free returns with full refund. Learn about Luxtronics shipping times, return policy and warranty."
-        keywords="luxtronics shipping policy, return policy, free shipping electronics, 30 day returns, refund policy"
+        description="Learn about Luxtronics shipping options, return eligibility, support process, and product coverage information."
+        keywords="luxtronics shipping policy, return policy, product coverage, support policy"
         url="https://luxtronics.in/shipping-returns"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "WebPage",
           "name": "Shipping & Returns Policy",
           "url": "https://luxtronics.in/shipping-returns",
-          "description": "Luxtronics shipping and returns policy. Free shipping, 30-day returns, full refunds.",
+          "description": "Luxtronics shipping, returns, and product support policy.",
           "publisher": { "@type": "Organization", "name": "Luxtronics", "url": "https://luxtronics.in" }
         }}
       />
@@ -42,8 +42,8 @@ const ShippingReturns = () => {
           </div>
           <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Standard Shipping:</strong> 3–7 business days across India</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Express Shipping:</strong> 1–3 business days for eligible pin codes</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Free Shipping:</strong> On all orders above ₹200</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Express Options:</strong> Available for eligible pin codes at checkout</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Shipping Charges:</strong> Calculated and shown before payment</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Tracking link sent via email and SMS once dispatched</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Delivery timelines may vary during peak seasons and holidays</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>International shipping available to Australia and New Zealand</span></li>
@@ -59,10 +59,10 @@ const ShippingReturns = () => {
             <h2 className="font-display font-bold text-2xl">Return Policy</h2>
           </div>
           <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Return Window:</strong> 30 days from the date of delivery</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Return Eligibility:</strong> Depends on product type, condition, and applicable policy</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Products must be unused, in original packaging with all accessories</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Original invoice/receipt required for all returns</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Refund processed within <strong className="text-foreground">5–7 business days</strong> after quality check</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Refund timelines depend on quality check and payment provider processing</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Refund credited to original payment method (UPI, card, bank account)</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Hygiene products and opened software are non-returnable</span></li>
           </ul>
@@ -77,28 +77,28 @@ const ShippingReturns = () => {
             <h2 className="font-display font-bold text-2xl">Refund Policy</h2>
           </div>
           <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Full Refund:</strong> If product is defective, damaged, or wrong item received</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Partial Refund:</strong> If product is returned with missing accessories</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>COD orders refunded via bank transfer within 7 business days</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Refund Review:</strong> Defective, damaged, or wrong-item cases are reviewed by support</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Return Condition:</strong> Missing accessories or damage may affect eligibility</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>COD refund method and timeline are confirmed by support</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Prepaid orders refunded to original payment source</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Shipping charges are non-refundable unless item is defective</span></li>
           </ul>
         </article>
 
-        {/* Warranty */}
+        {/* Product coverage */}
         <article className="rounded-3xl border border-border bg-gradient-card p-7">
           <div className="flex items-center gap-3 mb-5">
             <div className="h-10 w-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glow">
               <ShieldCheck className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h2 className="font-display font-bold text-2xl">Warranty</h2>
+            <h2 className="font-display font-bold text-2xl">Product Coverage</h2>
           </div>
           <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">2-Year Warranty</strong> on all electronics from Luxtronics</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Warranty covers manufacturing defects and hardware failures</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Coverage Varies</strong> by product, supplier, and brand policy</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Eligible manufacturing-defect cases are reviewed by support</span></li>
             <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Physical damage, water damage, and misuse are not covered</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Warranty claims processed within 10 business days</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Brand warranty (if applicable) is in addition to Luxtronics warranty</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Claim timelines depend on product inspection and supplier response</span></li>
+            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Brand coverage, where applicable, follows the brand's own terms</span></li>
           </ul>
         </article>
       </section>
@@ -112,7 +112,7 @@ const ShippingReturns = () => {
           <div className="flex-1">
             <h3 className="font-display font-bold text-xl mb-1">Need to initiate a return?</h3>
             <p className="text-sm text-muted-foreground">
-              Contact our support team within 30 days of delivery. We'll guide you through the process.
+              Contact our support team with your order details. We'll guide you through the applicable process.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">

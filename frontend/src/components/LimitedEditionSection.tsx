@@ -10,8 +10,8 @@ const LimitedEditionSection = () => {
     {
       id: 1,
       title: "Pro Laptops",
-      subtitle: "LIMITED EDITION",
-      discount: "up to 30% off",
+      subtitle: "CURATED PICK",
+      discount: "Performance-ready setups",
       image: laptopImage,
       link: "/shop?cat=laptops&sort=featured",
       color: "from-blue-500/20 to-cyan-500/20",
@@ -70,8 +70,7 @@ const LimitedEditionSection = () => {
             </span>
           </h2>
           <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground max-w-xl">
-            Discover exclusive collections and limited edition products with special pricing.
-            Don't miss out on these curated selections.
+            Discover curated collections and new product picks based on current catalog availability.
           </p>
         </div>
         <Link
@@ -152,10 +151,10 @@ const LimitedEditionSection = () => {
       {/* Stats bar */}
       <div className="relative z-10 mt-12 sm:mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         {[
-          { value: "24h", label: "Flash Sale", desc: "Ends soon" },
-          { value: "500+", label: "Limited Items", desc: "In stock" },
-          { value: "4.9★", label: "Customer Rating", desc: "Based on 10K+ reviews" },
-          { value: "Free", label: "Express Shipping", desc: "On all orders" },
+          { value: "New", label: "Catalog Picks", desc: "Updated regularly" },
+          { value: "500+", label: "Listed Items", desc: "Availability varies" },
+          { value: "4.9★", label: "Market Rating", desc: "Category benchmark" },
+          { value: "Info", label: "Shipping Options", desc: "Shown at checkout" },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}

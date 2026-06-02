@@ -72,12 +72,12 @@ const PromoBanner = () => {
       />
         <div className="relative z-10">
           <p className="text-[10px] sm:text-xs uppercase tracking-widest text-primary font-semibold mb-2 sm:mb-3">
-            Limited Edition
+            Curated Pick
           </p>
           <h3 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-tight">
             Pro Headphones 
             <br />
-            <span className="text-gradient">up to 30% off</span>
+            <span className="text-gradient">audio essentials</span>
           </h3>
         </div>
         <div className="relative z-10 flex items-end justify-between">

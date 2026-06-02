@@ -231,7 +231,7 @@ const AccountOrders = () => {
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Shipping</span>
-                          <span>{shippingTotal === 0 ? 'Free' : formatPrice(shippingTotal)}</span>
+                          <span>{shippingTotal === 0 ? 'Included' : formatPrice(shippingTotal)}</span>
                         </div>
                         {totalTax > 0 && (
                           <div className="flex justify-between text-xs text-muted-foreground">

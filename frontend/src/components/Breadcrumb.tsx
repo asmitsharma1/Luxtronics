@@ -42,7 +42,7 @@ const Breadcrumb = () => {
     product: {
       image: "/a2.jpg",
       eyebrow: "Product details",
-      subtitle: "Explore specs, pricing, warranty and availability before you buy.",
+      subtitle: "Explore specs, pricing, coverage notes and availability before you buy.",
     },
     cart: {
       image: "/a6.jpg",
@@ -77,7 +77,7 @@ const Breadcrumb = () => {
     faq: {
       image: "/a6.jpg",
       eyebrow: "Help center",
-      subtitle: "Quick answers about shipping, returns, payments and warranty.",
+      subtitle: "Quick answers about shipping, returns, payments and coverage.",
     },
     privacy: {
       image: "/a6.jpg",
@@ -92,7 +92,7 @@ const Breadcrumb = () => {
     "shipping-returns": {
       image: "/a6.jpg",
       eyebrow: "Shipping & returns",
-      subtitle: "Delivery, warranty and return information for your orders.",
+      subtitle: "Delivery, coverage and return information for your orders.",
     },
   };
 

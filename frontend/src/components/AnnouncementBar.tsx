@@ -1,7 +1,6 @@
 /**
  * AnnouncementBar
- * Scrolling promo ticker at the very top of every page.
- * Like Amazon/Flipkart's top banner — shows deals, free shipping, etc.
+ * Scrolling info ticker at the very top of every page.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -9,13 +8,13 @@ import { X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ANNOUNCEMENTS = [
-  { text: "🚚 Free Shipping on orders above ₹200",          link: "/shop" },
-  { text: "🔥 Up to 40% OFF on Premium Electronics",        link: "/shop" },
+  { text: "🚚 Shipping options shown at checkout",          link: "/shipping-returns" },
+  { text: "🔥 Fresh tech picks updated regularly",          link: "/shop" },
   { text: "⌚ New Wearables Collection — Shop Now",          link: "/shop?cat=wearables" },
-  { text: "📱 Latest Smartphones at Unbeatable Prices",     link: "/shop?cat=smart-phone" },
-  { text: "🎧 Premium Audio — Free Delivery Across India",  link: "/shop?cat=audio" },
-  { text: "🛡️ 2-Year Warranty + 30-Day Easy Returns",       link: "/shipping-returns" },
-  { text: "🌏 Now Shipping to Australia & New Zealand",     link: "/about" },
+  { text: "📱 Latest smartphone accessories and parts",     link: "/shop?cat=smart-phone" },
+  { text: "🎧 Premium audio picks in stock",                link: "/shop?cat=audio" },
+  { text: "🛡️ Support available for eligible products",     link: "/shipping-returns" },
+  { text: "🌏 Regional stores for India, Australia & NZ",   link: "/about" },
 ];
 
 const STORAGE_KEY = "lux_announcement_dismissed";

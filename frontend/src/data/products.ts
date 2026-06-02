@@ -19,7 +19,7 @@ export type Product = {
   images?: string[];
   rating: number;
   reviews: number;
-  badge?: "New" | "Hot" | "-20%";
+  badge?: "New" | "Hot" | "Sale";
   categories: Array<{ id: number; name: string }>;
   categoryId?: number;
   variations?: Array<{
@@ -56,7 +56,7 @@ export const products: Product[] = [
     image: headphones,
     rating: 4.8,
     reviews: 1247,
-    badge: "-20%",
+    badge: "Sale",
     categories: [{ id: 1, name: "Audio" }],
     description:
       "Studio-grade noise cancellation with 40-hour battery and adaptive spatial audio.",
@@ -127,7 +127,7 @@ export const products: Product[] = [
     image: camera,
     rating: 4.9,
     reviews: 318,
-    badge: "-20%",
+    badge: "Sale",
     categories: [{ id: 5, name: "Cameras" }],
     description:
       "Full-frame sensor, 8K video, and lightning-fast hybrid autofocus.",

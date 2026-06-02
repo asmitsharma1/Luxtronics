@@ -13,15 +13,15 @@ interface SEOProps {
   canonical?: string;
   noindex?: boolean;
   nofollow?: boolean;
-  structuredData?: Record<string, any>;
+  structuredData?: Record<string, any> | Record<string, any>[];
 }
 
 const SEO = ({
   title = "Luxtronics — Premium Electronics & Gadgets Store",
-  description = "Shop premium electronics: smartphones, audio, wearables, laptops, gaming and cameras. Curated brands, fast shipping, 2-year warranty.",
+  description = "Shop premium electronics: smartphones, audio, wearables, laptops, gaming and cameras. Curated catalog with product support information.",
   keywords = "electronics, gadgets, smartphones, laptops, audio, wearables, gaming, cameras, premium tech",
-  image = "https://luxtronics.com/og-image.jpg",
-  url = "https://luxtronics.com",
+  image = "https://luxtronics.in/og-image.jpg",
+  url = "https://luxtronics.in",
   type = "website",
   publishedTime,
   modifiedTime,
@@ -33,27 +33,37 @@ const SEO = ({
 }: SEOProps) => {
   const fullTitle = title.includes("Luxtronics") ? title : `${title} | Luxtronics`;
   const fullUrl = canonical || url;
-  const robots = `${noindex ? "noindex" : "index"}, ${nofollow ? "nofollow" : "follow"}`;
+  const robots = `${noindex ? "noindex" : "index"}, ${nofollow ? "nofollow" : "follow"}, max-image-preview:large, max-snippet:-1, max-video-preview:-1`;
 
   const defaultStructuredData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Luxtronics",
-    "url": "https://luxtronics.com",
+    "url": "https://luxtronics.in",
     "description": description,
+    "inLanguage": "en",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://luxtronics.in/shop?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
     "publisher": {
       "@type": "Organization",
       "name": "Luxtronics",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://luxtronics.com/logo.png",
+        "url": "https://luxtronics.in/logo.png",
         "width": 200,
         "height": 200,
       },
     },
   };
 
-  const dataToUse = structuredData || defaultStructuredData;
+  const dataToUse = structuredData
+    ? Array.isArray(structuredData)
+      ? structuredData
+      : [structuredData]
+    : [defaultStructuredData];
 
   useEffect(() => {
     // Update document title
@@ -85,6 +95,9 @@ const SEO = ({
     updateMetaTag("keywords", keywords);
     updateMetaTag("author", author);
     updateMetaTag("robots", robots);
+    updateMetaTag("googlebot", robots);
+    updateMetaTag("bingbot", robots);
+    updateMetaTag("theme-color", "#020617");
 
     // Update Open Graph tags
     updatePropertyTag("og:title", fullTitle);
@@ -94,6 +107,8 @@ const SEO = ({
     updatePropertyTag("og:type", type);
     updatePropertyTag("og:site_name", "Luxtronics");
     updatePropertyTag("og:locale", "en_US");
+    updatePropertyTag("og:image:width", "1200");
+    updatePropertyTag("og:image:height", "630");
 
     // Update Twitter tags
     updateMetaTag("twitter:card", "summary_large_image");
@@ -102,6 +117,10 @@ const SEO = ({
     updateMetaTag("twitter:image", image);
     updateMetaTag("twitter:site", "@luxtronics");
     updateMetaTag("twitter:creator", "@luxtronics");
+
+    if (publishedTime) updatePropertyTag("article:published_time", publishedTime);
+    if (modifiedTime) updatePropertyTag("article:modified_time", modifiedTime);
+    if (author) updatePropertyTag("article:author", author);
 
     // Update canonical link
     let canonicalLink = document.querySelector('link[rel="canonical"]');
@@ -112,14 +131,15 @@ const SEO = ({
     }
     canonicalLink.setAttribute("href", fullUrl);
 
-    // Update structured data
-    let structuredDataScript = document.querySelector('script[type="application/ld+json"]');
-    if (!structuredDataScript) {
-      structuredDataScript = document.createElement("script");
+    document.querySelectorAll('script[data-lux-seo="true"]').forEach((script) => script.remove());
+    dataToUse.forEach((data, index) => {
+      const structuredDataScript = document.createElement("script");
       structuredDataScript.setAttribute("type", "application/ld+json");
+      structuredDataScript.setAttribute("data-lux-seo", "true");
+      structuredDataScript.setAttribute("data-lux-seo-index", String(index));
+      structuredDataScript.textContent = JSON.stringify(data);
       document.head.appendChild(structuredDataScript);
-    }
-    structuredDataScript.textContent = JSON.stringify(dataToUse);
+    });
 
     // Cleanup function
     return () => {

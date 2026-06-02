@@ -6,8 +6,8 @@ const CategoryShowcase = () => {
   const categories = [
     {
       id: 1,
-      title: "LIMITED EDITION",
-      subtitle: "Pro Laptops up to 30% off",
+      title: "PRO LAPTOPS",
+      subtitle: "Performance-ready setups",
       cta: "Shop now",
       icon: Laptop,
       color: "from-blue-500 to-purple-600",
@@ -93,7 +93,7 @@ const CategoryShowcase = () => {
             Shop by <span className="text-gradient">Category</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
-            Browse our curated collections of premium electronics. Each category features exclusive products and special offers.
+            Browse curated collections of electronics, accessories, and parts based on current catalog availability.
           </p>
         </motion.div>
 

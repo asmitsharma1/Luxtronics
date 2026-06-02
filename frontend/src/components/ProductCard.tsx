@@ -9,7 +9,7 @@ import { useCart } from "@/context/CartContext";
 const badgeStyles: Record<string, string> = {
   New: "bg-foreground text-background",
   Hot: "bg-gradient-brand text-primary-foreground",
-  "-20%": "bg-accent text-accent-foreground",
+  Sale: "bg-accent text-accent-foreground",
 };
 
 const ProductCard = ({ product }: { product: Product }) => {
@@ -55,7 +55,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       
       <Link
         to={`/product/${product.slug}`}
-        className="group relative block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-elegant-hover sm:rounded-3xl"
+        className="group relative block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-elegant-hover sm:rounded-2xl"
         aria-label={`View ${product.name} - ${product.category}`}
         itemScope
         itemType="https://schema.org/Product"
@@ -64,7 +64,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         <div className="absolute inset-0 dark:bg-gradient-to-br dark:from-primary/10 dark:via-transparent dark:to-accent/10 bg-gradient-to-br from-primary/8 via-transparent to-accent/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
         <div className="relative">
-          <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary/15 to-accent/15 blur-3xl translate-y-8 scale-95 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100" />
+          <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 blur-3xl translate-y-8 scale-95 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100" />
 
           {product.badge && (
             <motion.span
@@ -72,7 +72,7 @@ const ProductCard = ({ product }: { product: Product }) => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 }}
               className={cn(
-                "absolute top-2 left-2 sm:top-4 sm:left-4 z-20 text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-md",
+                "absolute top-2 left-2 z-20 text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-md",
                 badgeStyles[product.badge]
               )}
             >
@@ -108,21 +108,21 @@ const ProductCard = ({ product }: { product: Product }) => {
             </div>
           </div>
 
-          <div className="space-y-1.5 p-3 sm:space-y-2 sm:p-4">
-            <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">
+          <div className="space-y-1.5 p-2.5 sm:p-3">
+            <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
               <span itemProp="category">{product.category}</span>
             </p>
-            <h3 className="font-display font-semibold text-sm leading-tight line-clamp-2 min-h-[2.5em] group-hover:text-gradient transition-all" itemProp="name">
+            <h3 className="font-display font-semibold text-xs leading-tight line-clamp-2 min-h-[2.35em] sm:text-sm group-hover:text-gradient transition-all" itemProp="name">
               {product.name}
             </h3>
 
-            <div className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs text-muted-foreground" itemProp="aggregateRating" itemScope itemType="https://schema.org/AggregateRating">
+            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-muted-foreground" itemProp="aggregateRating" itemScope itemType="https://schema.org/AggregateRating">
               <div className="flex items-center gap-0.5">
                 {[1,2,3,4,5].map((star) => (
                   <Star
                     key={star}
                     className={cn(
-                      "h-3 w-3 sm:h-3.5 sm:w-3.5",
+                      "h-2.5 w-2.5 sm:h-3 sm:w-3",
                       star <= Math.round(product.rating)
                         ? "fill-amber-400 text-amber-400"
                         : star - 0.5 <= product.rating
@@ -132,19 +132,19 @@ const ProductCard = ({ product }: { product: Product }) => {
                   />
                 ))}
               </div>
-              <span className="font-semibold text-foreground text-[11px] sm:text-xs" itemProp="ratingValue">{product.rating.toFixed(1)}</span>
-              <span className="text-[10px] sm:text-xs" itemProp="reviewCount">({product.reviews >= 1000 ? `${(product.reviews / 1000).toFixed(1)}k` : product.reviews})</span>
+              <span className="font-semibold text-foreground text-[10px] sm:text-[11px]" itemProp="ratingValue">{product.rating.toFixed(1)}</span>
+              <span className="text-[9px] sm:text-[10px]" itemProp="reviewCount">({product.reviews >= 1000 ? `${(product.reviews / 1000).toFixed(1)}k` : product.reviews})</span>
             </div>
 
-            <div className="flex items-end justify-between pt-1.5 sm:pt-2">
-              <div className="flex items-baseline gap-1.5 sm:gap-2" itemProp="offers" itemScope itemType="https://schema.org/Offer">
-                <span className="font-display font-bold text-base sm:text-lg text-foreground" itemProp="price">
+            <div className="flex items-end justify-between gap-2 pt-1">
+              <div className="min-w-0 flex flex-wrap items-baseline gap-1" itemProp="offers" itemScope itemType="https://schema.org/Offer">
+                <span className="font-display font-bold text-sm text-foreground sm:text-base" itemProp="price">
                   {formatPrice(product.price)}
                 </span>
                 <meta itemProp="priceCurrency" content="USD" />
                 <meta itemProp="availability" content="https://schema.org/InStock" />
                 {product.oldPrice && (
-                  <span className="text-xs text-muted-foreground line-through">
+                  <span className="text-[10px] text-muted-foreground line-through">
                     {formatPrice(product.oldPrice)}
                   </span>
                 )}
@@ -153,10 +153,10 @@ const ProductCard = ({ product }: { product: Product }) => {
                 onClick={handleAddToCart}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="h-8 w-8 rounded-full bg-secondary group-hover:bg-gradient-brand flex items-center justify-center transition-all duration-300 group-hover:shadow-glow cursor-pointer"
+                className="h-7 w-7 shrink-0 rounded-full bg-secondary group-hover:bg-gradient-brand flex items-center justify-center transition-all duration-300 group-hover:shadow-glow cursor-pointer"
                 aria-label={`Add ${product.name} to cart`}
               >
-                <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4" />
+                <ShoppingBag className="h-3 w-3" />
               </motion.button>
             </div>
           </div>

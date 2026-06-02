@@ -1,6 +1,7 @@
 import type { Product } from '@/data/products';
 import { storeConfig } from '@/config/storeConfig';
 import { getMarketRating } from '@/lib/market-ratings';
+import { scoreTextMatch } from '@/lib/smart-search';
 import { 
   fetchProductsFromFirebase, 
   fetchProductFromFirebase,
@@ -459,7 +460,7 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
       
       if (products.length > 0) {
         console.log(`[Store API] Firebase search returned ${products.length} results`);
-        return products.slice(0, 5).map(mapStoreProductToLocalProduct);
+        return products.slice(0, 8).map(mapStoreProductToLocalProduct).filter((product): product is Product => product !== null);
       }
     }
   } catch (error) {
@@ -473,7 +474,7 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
   const { apiUrl } = storeConfig;
   const { key, secret } = getStoreCredentials();
   
-  const url = `${apiUrl}/products?search=${encodeURIComponent(query)}&per_page=5&status=publish`;
+  const url = `${apiUrl}/products?search=${encodeURIComponent(query)}&per_page=8&status=publish`;
   const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
   
   try {
@@ -488,9 +489,33 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
     
     const products = await response.json();
     
-    if (!Array.isArray(products)) return [];
-    
-    return products.map(mapStoreProductToLocalProduct);
+    if (Array.isArray(products) && products.length > 0) {
+      return products.map(mapStoreProductToLocalProduct).filter((product): product is Product => product !== null);
+    }
+
+    const fallbackUrl = `${apiUrl}/products?per_page=100&status=publish`;
+    const fallbackResponse = await fetch(fallbackUrl, {
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!fallbackResponse.ok) return [];
+    const fallbackProducts = await fallbackResponse.json();
+    if (!Array.isArray(fallbackProducts)) return [];
+
+    return fallbackProducts
+      .map(mapStoreProductToLocalProduct)
+      .filter((product): product is Product => product !== null)
+      .map((product) => ({
+        product,
+        score: scoreTextMatch(query, [product.name, product.category, product.description, product.brand], [5, 3, 1, 2]),
+      }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map(({ product }) => product);
   } catch {
     return [];
   }
@@ -542,7 +567,7 @@ export function mapStoreProductToLocalProduct(product: StoreProduct): Product {
       };
     })(),
     description: (product as any).short_description || product.description || product.shortDescription || '',
-    badge: regularPrice > price ? '-20%' : undefined,
+    badge: regularPrice > price ? 'Sale' : undefined,
     variations: (Array.isArray(product.variations) ? product.variations : [])
       .map((variation) => {
         if (!variation) return null;

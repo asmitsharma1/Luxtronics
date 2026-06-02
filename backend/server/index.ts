@@ -125,6 +125,18 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
   let mongoError: string | null = null;
   let productService: any = null;
   let categoryService: any = null;
+  const analyticsEvents: any[] = [];
+  const liveVisitors = new Map<string, any>();
+  const liveRetentionMs = 10 * 60 * 1000;
+
+  const pruneLiveVisitors = () => {
+    const now = Date.now();
+    for (const [sessionId, visitor] of liveVisitors.entries()) {
+      if (now - Number(visitor.lastSeenAt || 0) > liveRetentionMs) {
+        liveVisitors.delete(sessionId);
+      }
+    }
+  };
 
   // ── Health / status ───────────────────────────────────────────────────────
   app.get('/health', (_req, res) => {
@@ -140,6 +152,47 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
       wooConfigured: !!(wooUrl() && wooKey() && wooSecret()),
       mongoError,
     });
+  });
+
+  // ── ADMIN LIVE ANALYTICS ─────────────────────────────────────────────────
+  app.post('/api/analytics/events', (req, res) => {
+    const event = req.body || {};
+    if (!event.sessionId || !event.type) {
+      return res.status(400).json({ success: false, error: 'Invalid analytics event' });
+    }
+
+    analyticsEvents.unshift({ ...event, timestamp: event.timestamp || Date.now() });
+    analyticsEvents.splice(1000);
+    res.json({ success: true });
+  });
+
+  app.get('/api/analytics/events', (_req, res) => {
+    res.json({ success: true, events: analyticsEvents.slice(0, 500) });
+  });
+
+  app.post('/api/analytics/live', (req, res) => {
+    const visitor = req.body || {};
+    if (!visitor.sessionId) {
+      return res.status(400).json({ success: false, error: 'Invalid live visitor heartbeat' });
+    }
+
+    liveVisitors.set(visitor.sessionId, {
+      ...visitor,
+      lastSeenAt: Date.now(),
+      status: 'active',
+    });
+    pruneLiveVisitors();
+    res.json({ success: true });
+  });
+
+  app.get('/api/analytics/live', (_req, res) => {
+    pruneLiveVisitors();
+    const now = Date.now();
+    const visitors = [...liveVisitors.values()].map((visitor) => ({
+      ...visitor,
+      status: now - Number(visitor.lastSeenAt || 0) < 30 * 1000 ? 'active' : 'idle',
+    }));
+    res.json({ success: true, visitors });
   });
 
   // ── GET /api/products ──────────────────────────────────────────────────────

@@ -78,10 +78,10 @@ const DealsBanner = () => {
               </div>
               <div>
                 <h3 className="font-display font-bold text-lg sm:text-2xl md:text-3xl">
-                  Flash <span className="text-gradient">Deals</span> Today
+                  Fresh <span className="text-gradient">Tech Picks</span>
                 </h3>
                 <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
-                  Up to 40% off on selected premium electronics. Limited time offer!
+                  Browse selected arrivals, popular accessories, and current catalog highlights.
                 </p>
               </div>
             </div>
@@ -89,7 +89,7 @@ const DealsBanner = () => {
               to="/shop?sort=deals"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-brand px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all hover:scale-105 flex-shrink-0 whitespace-nowrap"
             >
-              Shop deals
+              Browse picks
               <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
           </div>

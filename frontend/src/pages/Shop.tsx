@@ -7,8 +7,9 @@ import ImageCursorCard from "@/components/ImageCursorCard";
 import SEO from "@/components/SEO";
 import { fetchStoreCategories, fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
 import type { Product } from "@/data/products";
+import { scoreTextMatch } from "@/lib/smart-search";
 
-const PAGE_SIZE = 30; // products per page
+const PAGE_SIZE = 72; // denser shop pages
 
 type CategoryFilter = { id: number; name: string; slug: string; count: number };
 type PriceRange = "all" | "under-100" | "100-500" | "500-1000" | "1000-plus";
@@ -63,7 +64,7 @@ function scoreProduct(product: Product, q: string, words: string[]): number {
   const nt   = tokenise(name);
   const ct   = tokenise(product.category.toLowerCase());
   const dt   = tokenise((product.description || "").toLowerCase());
-  let s = 0;
+  let s = scoreTextMatch(q, [product.name, product.category, product.description, product.brand], [5, 3, 1, 2]);
   if (name === q)                                          s += 1000;
   if (name.startsWith(q + " ") || name.startsWith(q + ",")) s += 800;
   const inName = allWordsInTokens(words, nt);
@@ -197,24 +198,24 @@ function ShopSidebar({
   );
 
   return (
-    <aside className="rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between border-b border-border px-4 py-4">
+    <aside className="rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b border-border px-3 py-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Filters</p>
-          <h2 className="mt-1 font-display text-lg font-bold">Browse Store</h2>
+          <h2 className="mt-1 font-display text-base font-bold">Browse Store</h2>
         </div>
         <button onClick={onClear} className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">
           Reset
         </button>
       </div>
 
-      <div className="space-y-6 p-4">
+      <div className="space-y-4 p-3">
         <div>
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Department</h3>
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Department</h3>
           <div className="space-y-1">
             <button
               onClick={() => onCategoryChange("all")}
-              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+              className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors ${
                 activeCat === "all" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
               }`}
             >
@@ -225,7 +226,7 @@ function ShopSidebar({
               <button
                 key={cat.slug}
                 onClick={() => onCategoryChange(cat.slug)}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors ${
                   activeCat === cat.slug ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
@@ -236,28 +237,29 @@ function ShopSidebar({
           </div>
         </div>
 
-        <div className="border-t border-border pt-5">
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Sort By</h3>
+        <div className="border-t border-border pt-4">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Sort By</h3>
           <select
             value={sort}
             onChange={(e) => onSortChange(e.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm font-medium outline-none transition-colors focus:border-primary"
+            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs font-medium outline-none transition-colors focus:border-primary"
           >
             <option value="featured">Featured</option>
+            <option value="new">Latest Arrivals</option>
             <option value="low">Price: Low to High</option>
             <option value="high">Price: High to Low</option>
             <option value="rating">Top Rated</option>
           </select>
         </div>
 
-        <div className="border-t border-border pt-5">
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Price</h3>
+        <div className="border-t border-border pt-4">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Price</h3>
           <div className="space-y-1">
             {PRICE_RANGES.map((range) => (
               <button
                 key={range.value}
                 onClick={() => onPriceChange(range.value)}
-                className={`flex w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${
+                className={`flex w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
                   priceRange === range.value ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
@@ -267,14 +269,14 @@ function ShopSidebar({
           </div>
         </div>
 
-        <div className="border-t border-border pt-5">
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Rating</h3>
+        <div className="border-t border-border pt-4">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Rating</h3>
           <div className="space-y-1">
             {[0, 4, 4.5].map((rating) => (
               <button
                 key={rating}
                 onClick={() => onRatingChange(rating)}
-                className={`flex w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${
+                className={`flex w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
                   minRating === rating ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
@@ -295,7 +297,7 @@ const Shop = () => {
   const searchQuery = params.get("q")   || "";
   const currentPage = parseInt(params.get("page") || "1", 10);
 
-  const [sort,       setSort]       = useState("featured");
+  const [sort,       setSort]       = useState(params.get("sort") || "featured");
   const [priceRange, setPriceRange] = useState<PriceRange>("all");
   const [minRating,  setMinRating]  = useState(0);
   const [categories, setCategories] = useState<CategoryFilter[]>([]);
@@ -314,9 +316,7 @@ const Shop = () => {
         setLoading(true);
         const [catData, prodData] = await Promise.all([
           fetchStoreCategories(),
-          debouncedQuery
-            ? fetchStoreProducts(1, 500, debouncedQuery)
-            : fetchStoreProducts(1, 0),   // 0 = fetch ALL (Firebase ignores limit; WooCommerce paginates)
+          fetchStoreProducts(1, 0),   // 0 = fetch ALL so local fuzzy search can correct typos
         ]);
         if (!mounted) return;
         setCategories(catData.data.filter(c => c.name.toLowerCase() !== "uncategorized" || c.count > 0));
@@ -373,6 +373,11 @@ const Shop = () => {
           });
         }
       }
+      if (sort === "new") p = [...p].sort((a, b) => {
+        const aNew = a.badge === "New" ? 1 : 0;
+        const bNew = b.badge === "New" ? 1 : 0;
+        return bNew - aNew || String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
+      });
       if (sort === "low")    p = [...p].sort((a, b) => a.price - b.price);
       if (sort === "high")   p = [...p].sort((a, b) => b.price - a.price);
       if (sort === "rating") p = [...p].sort((a, b) => b.rating - a.rating);
@@ -419,11 +424,11 @@ const Shop = () => {
 
   // ── Loading skeleton ──
   const Skeleton = () => (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7">
       {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="rounded-2xl bg-card border border-border animate-pulse">
-          <div className="aspect-square bg-secondary/40 mb-4" />
-          <div className="px-4 pb-4">
+        <div key={i} className="rounded-xl bg-card border border-border animate-pulse">
+          <div className="aspect-square bg-secondary/40 mb-3" />
+          <div className="px-3 pb-3">
           <div className="h-3 w-1/3 bg-secondary/40 rounded mb-2" />
           <div className="h-4 w-3/4 bg-secondary/40 rounded mb-3" />
           <div className="h-6 w-1/2 bg-secondary/40 rounded" />
@@ -437,7 +442,7 @@ const Shop = () => {
     <Layout>
       <SEO
         title={pageTitle}
-        description={`Browse ${totalCount.toLocaleString()} premium electronics. Free shipping, 2-year warranty, 30-day returns.`}
+        description={`Browse ${totalCount.toLocaleString()} premium electronics. Check availability, product coverage, and shipping options before checkout.`}
         keywords={searchQuery ? `${searchQuery}, electronics, gadgets` : "electronics, gadgets, smartphones, laptops"}
         url={`https://luxtronics.com/shop`}
         structuredData={{
@@ -448,8 +453,8 @@ const Shop = () => {
         }}
       />
 
-      <section className="container py-8 sm:py-10 lg:py-12">
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
+      <section className="mx-auto w-full max-w-[1500px] px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-9">
+        <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)]">
           <div className="hidden lg:block">
             <div className="sticky top-24">
               <ShopSidebar
@@ -469,14 +474,14 @@ const Shop = () => {
           </div>
 
           <div className="min-w-0">
-            <div className="mb-5 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+            <div className="mb-4 rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-primary">
                     {searchQuery ? <Search className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
                     {searchQuery ? "Search Results" : "Marketplace"}
                   </div>
-                  <h1 className="mt-3 font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                  <h1 className="mt-2 font-display text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
                     {searchQuery
                       ? `Results for "${searchQuery}"`
                       : activeCat !== "all"
@@ -494,7 +499,7 @@ const Shop = () => {
                       value={activeCat}
                       onChange={(e) => setCat(e.target.value)}
                       aria-label="Select category"
-                      className="h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm font-medium outline-none focus:border-primary"
+                      className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-xs font-medium outline-none focus:border-primary"
                     >
                       <option value="all">All Departments</option>
                       {categories.map(c => (
@@ -504,9 +509,10 @@ const Shop = () => {
                     <select
                       value={sort}
                       onChange={(e) => { setSort(e.target.value); setPage(1); }}
-                      className="h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm font-medium outline-none focus:border-primary"
+                      className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-xs font-medium outline-none focus:border-primary"
                     >
                       <option value="featured">Featured</option>
+                      <option value="new">Latest</option>
                       <option value="low">Low to High</option>
                       <option value="high">High to Low</option>
                       <option value="rating">Top Rated</option>
@@ -516,7 +522,7 @@ const Shop = () => {
                   {searchQuery && (
                     <button
                       onClick={clearSearch}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+                      className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold transition-colors hover:border-primary/40 hover:text-primary"
                     >
                       <X className="h-4 w-4" />
                       Clear search
@@ -524,7 +530,7 @@ const Shop = () => {
                   )}
 
                   {!loading && list.length > PAGE_SIZE && (
-                    <span className="inline-flex h-10 items-center justify-center rounded-xl bg-muted px-3 text-xs font-semibold text-muted-foreground">
+                    <span className="inline-flex h-9 items-center justify-center rounded-lg bg-muted px-3 text-xs font-semibold text-muted-foreground">
                       {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, list.length)} of {list.length.toLocaleString()}
                     </span>
                   )}
@@ -583,7 +589,7 @@ const Shop = () => {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7">
                   {paginated.map(p => (
                     <ImageCursorCard key={p.id} imageUrl={p.image} category={p.category}>
                       <ProductCard product={p} />

@@ -396,7 +396,7 @@ const Checkout = () => {
 
             <div className="space-y-3 text-sm border-t border-border pt-6 mb-6">
               <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{shipping === 0 ? "Free" : `$${shipping}`}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{shipping === 0 ? "Included" : `$${shipping}`}</span></div>
               <div className="border-t border-border pt-3 flex justify-between font-display font-bold text-xl">
                 <span>Total</span><span className="text-gradient">${total.toLocaleString()}</span>
               </div>

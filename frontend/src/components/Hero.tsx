@@ -3,8 +3,8 @@ import { ArrowRight, BadgeCheck, ShieldCheck, Truck, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const trustItems = [
-  { icon: Truck, label: "Fast shipping" },
-  { icon: ShieldCheck, label: "2-year warranty" },
+  { icon: Truck, label: "Checkout shipping" },
+  { icon: ShieldCheck, label: "Support coverage" },
   { icon: Zap, label: "Latest tech" },
 ];
 

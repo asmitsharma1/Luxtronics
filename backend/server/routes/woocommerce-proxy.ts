@@ -264,7 +264,7 @@ export function createWooCommerceProxyRoutes(): Router {
    * Update a product in WooCommerce
    */
   router.put('/woo/products/:id', async (req: Request, res: Response) => {
-    try {      const host = req.headers.host || 'luxtronics.com';
+    try {      const host = req.headers.host || 'luxtronics.in';
       const SOURCE_URL = getSourceUrl(host);
       if (!SOURCE_URL) {
         return res.status(500).json({ success: false, error: 'WooCommerce URL not configured' });

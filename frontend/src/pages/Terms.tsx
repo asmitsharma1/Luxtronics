@@ -81,18 +81,18 @@ const Terms = () => {
         <article className="rounded-2xl border border-border bg-gradient-card p-6">
           <h2 className="font-semibold text-lg">Returns and Refunds</h2>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            We offer a 30-day return policy for most products. Items must be in original condition with all packaging 
-            and accessories. Refunds will be processed to the original payment method within 7-10 business days after 
-            we receive the returned item. Please refer to our Shipping & Returns page for detailed information.
+            Return eligibility depends on product type, condition, packaging, accessories, and applicable policy.
+            Refund timelines vary based on inspection outcome and payment-provider processing. Please refer to our
+            Shipping & Returns page for detailed information.
           </p>
         </article>
 
         <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Warranty</h2>
+          <h2 className="font-semibold text-lg">Product Coverage</h2>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            All products come with a 2-year manufacturer warranty unless otherwise stated. Warranty claims must be 
-            submitted with proof of purchase. Warranty does not cover damage caused by misuse, accidents, or unauthorized 
-            modifications.
+            Product coverage varies by item, supplier, and brand policy. Coverage or support claims must be submitted
+            with proof of purchase and are reviewed according to the applicable terms. Damage caused by misuse,
+            accidents, or unauthorized modifications may not be covered.
           </p>
         </article>
 

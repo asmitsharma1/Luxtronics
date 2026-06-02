@@ -1,0 +1,171 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { trackAnalyticsEvent, updateLiveVisitor } from "@/lib/analytics";
+
+const getElementLabel = (element: HTMLElement) => {
+  const explicit = element.getAttribute("data-analytics-label") || element.getAttribute("aria-label");
+  if (explicit) return explicit.trim();
+
+  const text = element.textContent?.replace(/\s+/g, " ").trim();
+  if (text) return text.slice(0, 120);
+
+  return element.tagName.toLowerCase();
+};
+
+const AnalyticsTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackAnalyticsEvent({
+      type: "page_view",
+      path: `${location.pathname}${location.search}`,
+      title: document.title,
+    });
+    updateLiveVisitor({
+      path: `${location.pathname}${location.search}`,
+      title: document.title,
+      section: "Page top",
+      lastAction: "Opened page",
+      scrollDepth: 0,
+    });
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    let lastScrollDepth = 0;
+
+    const getScrollDepth = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll <= 0) return 100;
+      return Math.min(100, Math.max(0, Math.round((window.scrollY / maxScroll) * 100)));
+    };
+
+    const heartbeat = () => {
+      const nextDepth = getScrollDepth();
+      if (nextDepth > lastScrollDepth) lastScrollDepth = nextDepth;
+      updateLiveVisitor({
+        path: `${window.location.pathname}${window.location.search}`,
+        title: document.title,
+        scrollDepth: lastScrollDepth,
+      });
+    };
+
+    const onScroll = () => {
+      const nextDepth = getScrollDepth();
+      if (nextDepth > lastScrollDepth) {
+        lastScrollDepth = nextDepth;
+        updateLiveVisitor({
+          path: `${window.location.pathname}${window.location.search}`,
+          title: document.title,
+          scrollDepth: lastScrollDepth,
+          lastAction: `Scrolled ${lastScrollDepth}%`,
+        });
+      }
+    };
+
+    heartbeat();
+    const interval = window.setInterval(heartbeat, 5000);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("focus", heartbeat);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("focus", heartbeat);
+    };
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const seenSections = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          const section = entry.target as HTMLElement;
+          const name =
+            section.getAttribute("data-section") ||
+            section.id ||
+            section.querySelector("h1,h2,h3")?.textContent?.replace(/\s+/g, " ").trim() ||
+            section.className?.toString().split(" ").slice(0, 2).join(" ") ||
+            "section";
+
+          const key = `${window.location.pathname}:${name}`;
+          if (seenSections.has(key)) return;
+          seenSections.add(key);
+
+          trackAnalyticsEvent({
+            type: "section_view",
+            section: name.slice(0, 100),
+            path: `${window.location.pathname}${window.location.search}`,
+          });
+          updateLiveVisitor({
+            section: name.slice(0, 100),
+            lastAction: `Viewing ${name.slice(0, 80)}`,
+            path: `${window.location.pathname}${window.location.search}`,
+          });
+        });
+      },
+      { threshold: 0.45, rootMargin: "0px 0px -12% 0px" },
+    );
+
+    const sections = document.querySelectorAll("main section, main [data-section]");
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const clickable = target?.closest("a,button,[role='button']") as HTMLElement | null;
+      if (!clickable) return;
+
+      const label = getElementLabel(clickable);
+      const href = clickable instanceof HTMLAnchorElement ? clickable.href : clickable.getAttribute("data-href") || undefined;
+      const lower = label.toLowerCase();
+      const type =
+        lower.includes("buy") || lower.includes("cart") || lower.includes("checkout")
+          ? "product_intent"
+          : "click";
+
+      trackAnalyticsEvent({
+        type,
+        label,
+        href,
+        path: `${window.location.pathname}${window.location.search}`,
+      });
+      updateLiveVisitor({
+        lastAction: label,
+        path: `${window.location.pathname}${window.location.search}`,
+      });
+    };
+
+    const onSubmit = (event: SubmitEvent) => {
+      const form = event.target as HTMLFormElement | null;
+      const input = form?.querySelector("input[type='search'], input[name='q']") as HTMLInputElement | null;
+      if (!input?.value.trim()) return;
+
+      trackAnalyticsEvent({
+        type: "search",
+        label: input.value.trim().slice(0, 120),
+        path: `${window.location.pathname}${window.location.search}`,
+      });
+      updateLiveVisitor({
+        lastAction: `Searched "${input.value.trim().slice(0, 80)}"`,
+        path: `${window.location.pathname}${window.location.search}`,
+      });
+    };
+
+    document.addEventListener("click", onClick, true);
+    document.addEventListener("submit", onSubmit, true);
+
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("submit", onSubmit, true);
+    };
+  }, []);
+
+  return null;
+};
+
+export default AnalyticsTracker;

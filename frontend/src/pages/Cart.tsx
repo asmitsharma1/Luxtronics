@@ -120,7 +120,7 @@ const Cart = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span>{shipping === 0 ? "Free" : formatPrice(shipping)}</span>
+                  <span>{shipping === 0 ? "Included" : formatPrice(shipping)}</span>
                 </div>
                 <div className="border-t border-border pt-3 flex justify-between font-display font-bold text-lg">
                   <span>Total</span>
@@ -154,7 +154,7 @@ const Cart = () => {
                 Proceed to Checkout <ArrowRight className="h-4 w-4" />
               </button>
               <p className="text-xs text-muted-foreground text-center mt-4">
-                Free shipping on orders over $200
+                Shipping options and charges are confirmed at checkout.
               </p>
             </aside>
           </div>

@@ -24,12 +24,12 @@ const Newsletter = () => {
     "@context": "https://schema.org",
     "@type": "NewsletterSubscription",
     "name": "Luxtronics Newsletter",
-    "description": "Subscribe for exclusive drops, early access, and the latest tech updates. Get 10% off your first order.",
+    "description": "Subscribe for exclusive drops, early access, and the latest tech updates.",
     "url": "https://luxtronics.com",
     "offers": {
       "@type": "Offer",
-      "description": "10% off your first order",
-      "price": "10",
+      "description": "Newsletter updates and early access",
+      "price": "0",
       "priceCurrency": "USD"
     }
   };
@@ -56,7 +56,7 @@ const Newsletter = () => {
             <Mail className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-primary-foreground" />
           </div>
           <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl tracking-tight leading-tight">
-            Get <span className="text-gradient">10% off</span> your first order
+            Get <span className="text-gradient">early access</span> to new drops
           </h2>
           <p className="mt-3 sm:mt-4 md:mt-5 text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed">
             Subscribe for exclusive drops, early access, and the latest tech updates from the world's top brands.

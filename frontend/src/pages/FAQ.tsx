@@ -11,8 +11,8 @@ const faqs = [
     a: "Yes. Most products are eligible for return within 30 days in original condition with packaging and proof of purchase.",
   },
   {
-    q: "Do your products come with warranty?",
-    a: "Yes. Warranty coverage depends on product category and brand. Warranty details are listed on each product page.",
+    q: "Do products include coverage or support?",
+    a: "Coverage depends on product category, supplier, and brand terms. Details are listed on product pages where available.",
   },
   {
     q: "How can I track my order?",
@@ -29,8 +29,8 @@ const FAQ = () => {
     <Layout>
       <SEO
         title="FAQ — Frequently Asked Questions | Luxtronics"
-        description="Answers to common questions about Luxtronics shipping, returns, warranty, payments and customer support."
-        keywords="luxtronics faq, electronics store questions, shipping policy, return policy, warranty"
+        description="Answers to common questions about Luxtronics shipping options, returns, product coverage, payments and customer support."
+        keywords="luxtronics faq, electronics store questions, shipping policy, return policy, product coverage"
         url="https://luxtronics.in/faq"
         structuredData={{
           "@context": "https://schema.org",

@@ -16,9 +16,11 @@ import Index from "./pages/Index.tsx";
 import Shop from "./pages/Shop.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import GeoRedirectPopup from "./components/GeoRedirectPopup.tsx";
+import AnalyticsTracker from "./components/AnalyticsTracker.tsx";
 
 // Lazy load non-critical pages
 const Categories = lazy(() => import("./pages/Categories.tsx"));
+const LatestArrivals = lazy(() => import("./pages/LatestArrivals.tsx"));
 const Cart = lazy(() => import("./pages/Cart.tsx"));
 const Blog = lazy(() => import("./pages/Blog.tsx"));
 const BlogPost = lazy(() => import("./pages/BlogPost.tsx"));
@@ -70,10 +72,12 @@ const App = () => {
                   <Sonner />
                   <BrowserRouter>
                     <GeoRedirectPopup />
+                    <AnalyticsTracker />
                     <Suspense fallback={<PageLoader />}>
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/shop" element={<Shop />} />
+                        <Route path="/latest-arrivals" element={<LatestArrivals />} />
                         <Route path="/product/:slug" element={<ProductDetail />} />
                         <Route path="/categories" element={<Categories />} />
                         <Route path="/cart" element={<Cart />} />
