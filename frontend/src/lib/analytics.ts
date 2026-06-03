@@ -115,14 +115,21 @@ export function getApproxLocation(): AnalyticsLocation {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const locale = navigator.language || "unknown";
   const store = localStorage.getItem("lux_store_code") || "";
+  const city = timezone?.includes("/") ? timezone.split("/").pop()?.replace(/_/g, " ") : undefined;
   const countryFromLocale = locale.includes("-") ? locale.split("-").pop()?.toUpperCase() : undefined;
+  const countryFromTimezone =
+    timezone?.startsWith("Asia/") ? "India" :
+    timezone?.startsWith("Australia/") ? "Australia" :
+    timezone?.startsWith("Pacific/Auckland") ? "New Zealand" :
+    undefined;
   const country =
     store === "IN" ? "India" :
     store === "AU" ? "Australia" :
     store === "NZ" ? "New Zealand" :
+    countryFromTimezone ||
     countryFromLocale;
 
-  return { timezone, locale, country };
+  return { timezone, locale, country, city };
 }
 
 export function getTrafficSource() {

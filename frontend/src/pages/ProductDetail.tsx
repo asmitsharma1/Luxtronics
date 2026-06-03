@@ -3,7 +3,6 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Star, ShoppingBag, Heart, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Check, AlertCircle } from "lucide-react";
 import Layout from "@/components/Layout";
-import { getProduct, products } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useCart } from "@/context/CartContext";
@@ -19,7 +18,6 @@ type Variation = NonNullable<Product["variations"]>[0];
 const ProductDetail = () => {
   const { slug = "" } = useParams();
   const { formatPrice, country } = useCurrency();
-  const fallbackProduct = getProduct(slug);
 
   const [selectedVariation, setSelectedVariation] = useState<Variation | null>(null);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
@@ -46,7 +44,7 @@ const ProductDetail = () => {
         if (mapped) return mapped;
       }
       
-      return fallbackProduct || null;
+      return null;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

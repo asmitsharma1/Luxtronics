@@ -10,8 +10,10 @@ import {
   checkFirebaseAvailability 
 } from './firebase-products';
 
-// Backend API URL - only used if backend is available
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+// Backend API URL - empty in production means same-origin Hostinger Express server.
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+
+const apiUrl = (path: string) => `${BACKEND_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
 export interface StoreImage {
   id: number;
@@ -203,12 +205,8 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
     console.warn('[Store API] Firebase fetch failed, falling back to WooCommerce:', error);
   }
 
-  // Fallback to WooCommerce API (slower but always works)
-  console.log('[Store API] Fetching from WooCommerce API (fallback)');
-  
-  const { apiUrl } = storeConfig;
-  const { key, secret } = getStoreCredentials();
-  const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
+  // Fallback to same-origin server proxy. This avoids browser CORS and keeps Woo keys server-side.
+  console.log('[Store API] Fetching from WooCommerce proxy (fallback)');
 
   // perPage=0 means "fetch ALL" — paginate through WooCommerce 100 at a time
   if (perPage === 0 || perPage > 100) {
@@ -217,12 +215,10 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
     let currentPage = 1;
 
     while (true) {
-      let url = `${apiUrl}/products?per_page=${maxPerPage}&page=${currentPage}&status=publish`;
+      let url = apiUrl(`/api/woo/products?per_page=${maxPerPage}&page=${currentPage}&status=publish`);
       if (search) url += `&search=${encodeURIComponent(search)}`;
 
-      const response = await fetch(url, {
-        headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-      });
+      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
 
       if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
 
@@ -244,12 +240,10 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
   }
 
   // Single page fetch (perPage ≤ 100)
-  let url = `${apiUrl}/products?per_page=${perPage}&page=${page}&status=publish`;
+  let url = apiUrl(`/api/woo/products?per_page=${perPage}&page=${page}&status=publish`);
   if (search) url += `&search=${encodeURIComponent(search)}`;
 
-  const response = await fetch(url, {
-    headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-  });
+  const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
 
   if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
 
@@ -297,20 +291,13 @@ export async function fetchStoreProduct(slug: string): Promise<StoreProduct | nu
       if (product) {
         console.log(`[Store API] Firebase returned product: ${product.name}`);
         
-        // If it's a variable product, fetch variations from WooCommerce
+        // If it's a variable product, fetch variations through the same-origin proxy
         if (product.type === 'variable' && product.id) {
           try {
-            const { apiUrl } = storeConfig;
-            const { key, secret } = getStoreCredentials();
-            const variationsUrl = `${apiUrl}/products/${product.id}/variations?per_page=100`;
-            const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
-            
-            const variationsResponse = await fetch(variationsUrl, {
-              headers: {
-                'Authorization': authHeader,
-                'Content-Type': 'application/json',
-              },
-            });
+            const variationsResponse = await fetch(
+              apiUrl(`/api/woo/products/${product.id}/variations?per_page=100`),
+              { headers: { 'Accept': 'application/json' } },
+            );
             
             if (variationsResponse.ok) {
               const variations = await variationsResponse.json();
@@ -328,23 +315,14 @@ export async function fetchStoreProduct(slug: string): Promise<StoreProduct | nu
     console.warn('[Store API] Firebase fetch failed, falling back to WooCommerce:', error);
   }
 
-  // Fallback to WooCommerce API
-  console.log('[Store API] Fetching product from WooCommerce API (fallback)');
+  // Fallback to same-origin WooCommerce proxy
+  console.log('[Store API] Fetching product from WooCommerce proxy (fallback)');
   
   try {
-    // Direct WooCommerce API call
-    const { apiUrl } = storeConfig;
-    const { key, secret } = getStoreCredentials();
-    
-    const url = `${apiUrl}/products?slug=${encodeURIComponent(slug)}&per_page=1&status=publish`;
-    const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(
+      apiUrl(`/api/woo/products?slug=${encodeURIComponent(slug)}&per_page=1&status=publish`),
+      { headers: { 'Accept': 'application/json' } },
+    );
     
     if (!response.ok) return null;
     
@@ -356,13 +334,10 @@ export async function fetchStoreProduct(slug: string): Promise<StoreProduct | nu
     // If it's a variable product, fetch variations
     if (product.type === 'variable' && product.id) {
       try {
-        const variationsUrl = `${apiUrl}/products/${product.id}/variations?per_page=100`;
-        const variationsResponse = await fetch(variationsUrl, {
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json',
-          },
-        });
+        const variationsResponse = await fetch(
+          apiUrl(`/api/woo/products/${product.id}/variations?per_page=100`),
+          { headers: { 'Accept': 'application/json' } },
+        );
         
         if (variationsResponse.ok) {
           const variations = await variationsResponse.json();
@@ -391,8 +366,8 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
     if (isFirebaseAvailable) {
       console.log('[Store API] Fetching categories from Firebase (fast)');
 
-      // Pre-load products cache so fetchCategoriesFromFirebase can enrich with sample images
-      try { await fetchProductsFromFirebase(); } catch { /* non-fatal */ }
+      // Warm product cache in the background; don't block first render on the full catalog.
+      void fetchProductsFromFirebase().catch(() => {});
 
       const categories = await fetchCategoriesFromFirebase();
       
@@ -413,22 +388,13 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
     console.warn('[Store API] Firebase fetch failed, falling back to WooCommerce:', error);
   }
 
-  // Fallback to WooCommerce API
-  console.log('[Store API] Fetching categories from WooCommerce API (fallback)');
+  // Fallback to same-origin WooCommerce proxy
+  console.log('[Store API] Fetching categories from WooCommerce proxy (fallback)');
   
-  // Direct WooCommerce API call
-  const { apiUrl } = storeConfig;
-  const { key, secret } = getStoreCredentials();
-  
-  const url = `${apiUrl}/products/categories?page=${page}&per_page=${perPage}&hide_empty=false`;
-  const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
-  
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': authHeader,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(
+    apiUrl(`/api/woo/categories?page=${page}&per_page=${perPage}&hide_empty=false`),
+    { headers: { 'Accept': 'application/json' } },
+  );
   
   if (!response.ok) {
     throw new Error(`Failed to fetch categories: ${response.statusText}`);
@@ -467,23 +433,14 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
     console.warn('[Store API] Firebase search failed, falling back to WooCommerce:', error);
   }
 
-  // Fallback to WooCommerce API
-  console.log('[Store API] Searching in WooCommerce API (fallback)');
-  
-  // Direct WooCommerce API call
-  const { apiUrl } = storeConfig;
-  const { key, secret } = getStoreCredentials();
-  
-  const url = `${apiUrl}/products?search=${encodeURIComponent(query)}&per_page=8&status=publish`;
-  const authHeader = 'Basic ' + btoa(`${key}:${secret}`);
+  // Fallback to same-origin WooCommerce proxy
+  console.log('[Store API] Searching in WooCommerce proxy (fallback)');
   
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(
+      apiUrl(`/api/woo/products?search=${encodeURIComponent(query)}&per_page=8&status=publish`),
+      { headers: { 'Accept': 'application/json' } },
+    );
     
     if (!response.ok) return [];
     
@@ -493,13 +450,10 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
       return products.map(mapStoreProductToLocalProduct).filter((product): product is Product => product !== null);
     }
 
-    const fallbackUrl = `${apiUrl}/products?per_page=100&status=publish`;
-    const fallbackResponse = await fetch(fallbackUrl, {
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-      },
-    });
+    const fallbackResponse = await fetch(
+      apiUrl('/api/woo/products?per_page=100&status=publish'),
+      { headers: { 'Accept': 'application/json' } },
+    );
 
     if (!fallbackResponse.ok) return [];
     const fallbackProducts = await fallbackResponse.json();

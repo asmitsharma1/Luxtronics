@@ -60,6 +60,19 @@ const getProductKey = (event: AnalyticsEvent) => {
   return match?.[1];
 };
 
+const getMapQuery = (visitor?: LiveVisitor) => {
+  if (!visitor) return "World";
+  if (visitor.latitude && visitor.longitude) return `${visitor.latitude},${visitor.longitude}`;
+  const label = getLocationLabel(visitor);
+  return label === "Unknown" ? "World" : label;
+};
+
+const getGoogleSatelliteMapUrl = (query: string) =>
+  `https://www.google.com/maps?q=${encodeURIComponent(query)}&t=k&z=${query === "World" ? "2" : "5"}&output=embed`;
+
+const getGoogleEarthUrl = (query: string) =>
+  `https://earth.google.com/web/search/${encodeURIComponent(query)}`;
+
 const StatCard = ({
   title,
   value,
@@ -89,7 +102,7 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState<AnalyticsEvent[]>(() => readAnalyticsEvents());
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>(() => readLiveVisitors());
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [followActive, setFollowActive] = useState(false);
+  const [followedSessionId, setFollowedSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const refresh = async () => {
@@ -176,7 +189,7 @@ export default function AdminDashboard() {
     return [...counts.values()].sort((a, b) => b.active - a.active || b.lastSeen - a.lastSeen).slice(0, 8);
   }, [liveVisitors]);
   const selectedVisitor = useMemo(
-    () => liveVisitors.find((visitor) => visitor.sessionId === selectedSessionId) || liveVisitors[0],
+    () => selectedSessionId ? liveVisitors.find((visitor) => visitor.sessionId === selectedSessionId) : liveVisitors[0],
     [liveVisitors, selectedSessionId],
   );
   const selectedSessionEvents = useMemo(() => {
@@ -184,12 +197,9 @@ export default function AdminDashboard() {
     return events.filter((event) => event.sessionId === selectedVisitor.sessionId).slice(0, 18);
   }, [events, selectedVisitor]);
   const recentEvents = events.slice(0, 18);
-
-  useEffect(() => {
-    if (!followActive) return;
-    const active = liveVisitors.find((visitor) => Date.now() - visitor.lastSeenAt < 30 * 1000) || liveVisitors[0];
-    if (active) setSelectedSessionId(active.sessionId);
-  }, [followActive, liveVisitors]);
+  const mapQuery = getMapQuery(selectedVisitor);
+  const mapUrl = getGoogleSatelliteMapUrl(mapQuery);
+  const earthUrl = getGoogleEarthUrl(mapQuery);
 
   const handleClear = () => {
     clearAnalyticsEvents();
@@ -283,16 +293,16 @@ export default function AdminDashboard() {
                         <tr key={visitor.sessionId} className="border-b border-border/70">
                           <td className="py-3 pr-4">
                             <Button
-                              variant={selectedVisitor?.sessionId === visitor.sessionId ? "default" : "outline"}
+                              variant={followedSessionId === visitor.sessionId ? "default" : "outline"}
                               size="sm"
                               className="h-8 gap-1.5 px-2.5 text-xs"
                               onClick={() => {
                                 setSelectedSessionId(visitor.sessionId);
-                                setFollowActive(true);
+                                setFollowedSessionId((current) => current === visitor.sessionId ? null : visitor.sessionId);
                               }}
                             >
                               <Crosshair className="h-3.5 w-3.5" />
-                              Follow
+                              {followedSessionId === visitor.sessionId ? "Following" : "Follow"}
                             </Button>
                           </td>
                           <td className="py-3 pr-4">
@@ -381,13 +391,15 @@ export default function AdminDashboard() {
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Session timeline</p>
                       <Button
-                        variant={followActive ? "default" : "outline"}
+                        variant={followedSessionId === selectedVisitor.sessionId ? "default" : "outline"}
                         size="sm"
                         className="h-8 gap-1.5 text-xs"
-                        onClick={() => setFollowActive((value) => !value)}
+                        onClick={() => setFollowedSessionId((current) =>
+                          current === selectedVisitor.sessionId ? null : selectedVisitor.sessionId
+                        )}
                       >
                         <Radio className="h-3.5 w-3.5" />
-                        {followActive ? "Following" : "Follow latest"}
+                        {followedSessionId === selectedVisitor.sessionId ? "Following session" : "Follow session"}
                       </Button>
                     </div>
                     <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -417,28 +429,35 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MapPin className="h-4 w-4 text-primary" />
-                Visitor Map
+              <CardTitle className="flex items-center justify-between gap-3 text-base">
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  Visitor Earth Map
+                </span>
+                <a
+                  href={earthUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-border px-3 py-1 text-xs font-bold text-primary transition hover:border-primary/40"
+                >
+                  Open Google Earth
+                </a>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="relative mb-4 h-44 overflow-hidden rounded-xl border border-border bg-[radial-gradient(circle_at_25%_35%,hsl(var(--primary)/0.24),transparent_26%),radial-gradient(circle_at_72%_58%,hsl(var(--accent)/0.18),transparent_24%),linear-gradient(135deg,hsl(var(--secondary)),hsl(var(--background)))]">
-                <div className="absolute inset-x-6 top-1/2 h-px bg-border/70" />
-                <div className="absolute inset-y-6 left-1/2 w-px bg-border/70" />
-                {locationRows.slice(0, 5).map((row, index) => (
-                  <div
-                    key={row.label}
-                    className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full bg-background/90 px-2 py-1 text-[10px] font-bold shadow-sm"
-                    style={{
-                      left: `${20 + ((index * 19) % 62)}%`,
-                      top: `${28 + ((index * 23) % 45)}%`,
-                    }}
-                  >
-                    <span className="h-2 w-2 rounded-full bg-primary" />
-                    {row.active}
-                  </div>
-                ))}
+              <div className="mb-4 overflow-hidden rounded-xl border border-border bg-background">
+                <iframe
+                  title={`Visitor map for ${mapQuery}`}
+                  src={mapUrl}
+                  className="h-64 w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
+              <div className="mb-4 rounded-lg border border-border bg-background/60 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Focused location</p>
+                <p className="mt-1 truncate text-sm font-semibold">{mapQuery}</p>
               </div>
               <div className="space-y-3">
                 {locationRows.length === 0 ? (

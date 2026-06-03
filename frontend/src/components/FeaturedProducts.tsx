@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { products as staticProducts } from "@/data/products";
 import type { Product } from "@/data/products";
 import { fetchStoreProducts, fetchStoreProduct, mapStoreProductToLocalProduct } from "@/services/store-api";
 import ProductCard from "./ProductCard";
@@ -37,11 +36,9 @@ const FeaturedProducts = () => {
   };
 
   const products = useMemo(() => {
-    const source = storeProducts.length > 0
-      ? storeProducts
-        .map(mapStoreProductToLocalProduct)
-        .filter((p): p is Product => p !== null)
-      : staticProducts;
+    const source = storeProducts
+      .map(mapStoreProductToLocalProduct)
+      .filter((p): p is Product => p !== null);
 
     return [...source]
       .map((product) => ({ product, score: featuredScore(product) }))

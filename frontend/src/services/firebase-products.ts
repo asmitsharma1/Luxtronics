@@ -82,6 +82,22 @@ export async function fetchProductsFromFirebase(
   try {
     // Use cache if still fresh (within 30 minutes)
     const now = Date.now();
+    const needsFullCatalog = _perPage === 0 || _perPage > 100 || Boolean(searchQuery);
+
+    if (!_productsCache && !needsFullCatalog) {
+      const productsRef = collection(productsDb, COLLECTIONS.PRODUCTS);
+      const q = query(productsRef, orderBy('name'), firestoreLimit(Math.max(1, _perPage)));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docSnap => ({
+        id: parseInt(docSnap.id),
+        ...docSnap.data()
+      })) as StoreProduct[];
+    }
+
+    if (!_productsCache && searchQuery) {
+      return [];
+    }
+
     if (!_productsCache || now - _productsCache.ts > PRODUCTS_TTL) {
       const productsRef = collection(productsDb, COLLECTIONS.PRODUCTS);
       const q = query(productsRef, orderBy('name'));
@@ -105,6 +121,10 @@ export async function fetchProductsFromFirebase(
         p.name.toLowerCase().includes(lower) ||
         p.categories?.some((c: any) => c.name?.toLowerCase().includes(lower))
       );
+    }
+
+    if (_perPage > 0 && _perPage <= 100) {
+      return products.slice((_page - 1) * _perPage, _page * _perPage);
     }
 
     return products;

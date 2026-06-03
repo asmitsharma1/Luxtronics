@@ -7,7 +7,7 @@ import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import ProductCard from "@/components/ProductCard";
 import ImageCursorCard from "@/components/ImageCursorCard";
-import { products as staticProducts, type Product } from "@/data/products";
+import type { Product } from "@/data/products";
 import { fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
 
 const tabs = ["All", "Smartphones", "Audio", "Wearables", "Gaming", "Chargers"] as const;
@@ -40,9 +40,7 @@ const LatestArrivals = () => {
   });
 
   const latestProducts = useMemo(() => {
-    const source = storeProducts.length
-      ? storeProducts.map(mapStoreProductToLocalProduct).filter((product): product is Product => product !== null)
-      : staticProducts;
+    const source = storeProducts.map(mapStoreProductToLocalProduct).filter((product): product is Product => product !== null);
 
     return [...source].sort((a, b) => productScore(b) - productScore(a)).slice(0, 36);
   }, [storeProducts]);
@@ -54,7 +52,7 @@ const LatestArrivals = () => {
   }, [activeTab, latestProducts]);
 
   const spotlightProducts = latestProducts.slice(0, 4);
-  const spotlight = spotlightProducts[spotlightIndex] ?? latestProducts[0] ?? staticProducts[0];
+  const spotlight = spotlightProducts[spotlightIndex] ?? latestProducts[0];
 
   return (
     <Layout>
@@ -131,6 +129,7 @@ const LatestArrivals = () => {
               </div>
             </motion.div>
 
+            {spotlight ? (
             <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -194,6 +193,11 @@ const LatestArrivals = () => {
                 ))}
               </div>
             </div>
+            ) : (
+              <div className="min-h-[430px] rounded-3xl border border-white/16 bg-white/10 p-8 backdrop-blur-xl">
+                <div className="h-full min-h-[360px] animate-pulse rounded-2xl bg-white/10" />
+              </div>
+            )}
           </div>
         </section>
 

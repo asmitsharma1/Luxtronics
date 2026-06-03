@@ -304,6 +304,7 @@ const Shop = () => {
   const [products,   setProducts]   = useState<Product[]>([]);
   const [totalCount, setTotalCount] = useState(0); // real total from source
   const [loading,    setLoading]    = useState(true);
+  const [hydratingAll, setHydratingAll] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
 
   const debouncedQuery = useDebounce(searchQuery, 350);
@@ -314,14 +315,15 @@ const Shop = () => {
     const load = async () => {
       try {
         setLoading(true);
+        const search = debouncedQuery.trim();
         const [catData, prodData] = await Promise.all([
           fetchStoreCategories(),
-          fetchStoreProducts(1, 0),   // 0 = fetch ALL so local fuzzy search can correct typos
+          fetchStoreProducts(1, 100, search || undefined),
         ]);
         if (!mounted) return;
         setCategories(catData.data.filter(c => c.name.toLowerCase() !== "uncategorized" || c.count > 0));
         setProducts(prodData.map(mapStoreProductToLocalProduct));
-        setTotalCount(prodData.length); // real count from source
+        setTotalCount(Math.max(prodData.length, catData.data.reduce((sum, cat) => sum + Number(cat.count || 0), 0)));
         setError(null);
       } catch (e) {
         if (!mounted) return;
@@ -333,6 +335,29 @@ const Shop = () => {
     load();
     return () => { mounted = false; };
   }, [debouncedQuery]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) return;
+    let mounted = true;
+    const hydrateCatalog = async () => {
+      try {
+        setHydratingAll(true);
+        const allProducts = await fetchStoreProducts(1, 0);
+        if (!mounted || allProducts.length === 0) return;
+        setProducts(allProducts.map(mapStoreProductToLocalProduct));
+        setTotalCount(allProducts.length);
+      } catch (e) {
+        console.warn("Background product hydration failed:", e);
+      } finally {
+        if (mounted) setHydratingAll(false);
+      }
+    };
+    const timer = window.setTimeout(hydrateCatalog, 250);
+    return () => {
+      mounted = false;
+      window.clearTimeout(timer);
+    };
+  }, [searchQuery]);
 
   // ── Filtered + sorted list ──
   const list = useMemo(() => {
@@ -489,7 +514,9 @@ const Shop = () => {
                         : "All Products"}
                   </h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {loading ? "Loading products..." : `${list.length.toLocaleString()} products matched`}
+                    {loading
+                      ? "Loading products..."
+                      : `${list.length.toLocaleString()} products matched${hydratingAll ? " · syncing more" : ""}`}
                   </p>
                 </div>
 

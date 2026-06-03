@@ -10,7 +10,9 @@ const __dirname = path.dirname(__filename);
 
 import { MongoClient } from 'mongodb';
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+for (const file of ['.env', '.env.local', '.env.india']) {
+  dotenv.config({ path: path.join(__dirname, file), override: false });
+}
 
 const app = express();
 const port = parseInt(process.env.PORT || '3001', 10);
@@ -62,6 +64,32 @@ function getWooUrl(req) {
   return WOO_DOMAINS.default;
 }
 
+function getWooCredentials(req) {
+  const host = req.headers.host || '';
+  if (host.includes('com.au')) {
+    return {
+      key: process.env.VITE_WOOCOMMERCE_KEY_AUSTRALIA || process.env.VITE_WOOCOMMERCE_KEY_INDIA || process.env.VITE_WOOCOMMERCE_KEY,
+      secret: process.env.VITE_WOOCOMMERCE_SECRET_AUSTRALIA || process.env.VITE_WOOCOMMERCE_SECRET_INDIA || process.env.VITE_WOOCOMMERCE_SECRET,
+    };
+  }
+  if (host.includes('co.nz')) {
+    return {
+      key: process.env.VITE_WOOCOMMERCE_KEY_NEWZEALAND || process.env.VITE_WOOCOMMERCE_KEY_INDIA || process.env.VITE_WOOCOMMERCE_KEY,
+      secret: process.env.VITE_WOOCOMMERCE_SECRET_NEWZEALAND || process.env.VITE_WOOCOMMERCE_SECRET_INDIA || process.env.VITE_WOOCOMMERCE_SECRET,
+    };
+  }
+  return {
+    key: process.env.VITE_WOOCOMMERCE_KEY_INDIA || process.env.VITE_WOOCOMMERCE_KEY,
+    secret: process.env.VITE_WOOCOMMERCE_SECRET_INDIA || process.env.VITE_WOOCOMMERCE_SECRET,
+  };
+}
+
+function getWooAuth(req) {
+  const { key, secret } = getWooCredentials(req);
+  if (!key || !secret) throw new Error('WooCommerce credentials are not configured');
+  return 'Basic ' + Buffer.from(`${key}:${secret}`).toString('base64');
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -76,9 +104,9 @@ app.get('/debug', (req, res) => {
     buildExists: existsSync(path.join(BUILD_DIR, 'index.html')),
     env_check: {
       FIREBASE_KEY: mask(process.env.VITE_FIREBASE_API_KEY),
-      WOO_URL: process.env.VITE_WOOCOMMERCE_URL,
-      WOO_KEY: mask(process.env.VITE_WOOCOMMERCE_KEY),
-      WOO_SEC: mask(process.env.VITE_WOOCOMMERCE_SECRET),
+      WOO_URL: process.env.VITE_WOOCOMMERCE_URL_INDIA || process.env.VITE_WOOCOMMERCE_URL,
+      WOO_KEY: mask(process.env.VITE_WOOCOMMERCE_KEY_INDIA || process.env.VITE_WOOCOMMERCE_KEY),
+      WOO_SEC: mask(process.env.VITE_WOOCOMMERCE_SECRET_INDIA || process.env.VITE_WOOCOMMERCE_SECRET),
     },
     assets: assets.filter(a => !a.startsWith('.')),
   });
@@ -122,9 +150,7 @@ app.get('/api/products', async (req, res) => {
   try {
     const wooUrl = getWooUrl(req);
     const url = `${wooUrl}/wp-json/wc/v3/products?${new URLSearchParams(req.query)}`;
-    const auth = 'Basic ' + Buffer.from(
-      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-    ).toString('base64');
+    const auth = getWooAuth(req);
 
     console.log(`Proxying to Woo: ${url}`);
     const r = await fetch(url, { headers: { 'Authorization': auth } });
@@ -152,9 +178,7 @@ app.get('/api/products/slug/:slug', async (req, res) => {
   // Fallback to WooCommerce
   try {
     const wooUrl = getWooUrl(req);
-    const auth = 'Basic ' + Buffer.from(
-      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-    ).toString('base64');
+    const auth = getWooAuth(req);
     const url = `${wooUrl}/wp-json/wc/v3/products?slug=${slug}`;
     const r = await fetch(url, { headers: { 'Authorization': auth } });
     const items = await r.json();
@@ -165,7 +189,7 @@ app.get('/api/products/slug/:slug', async (req, res) => {
     // Fetch variations if it's a variable product
     let variations = [];
     if (item.type === 'variable') {
-      const vUrl = `${process.env.VITE_WOOCOMMERCE_URL}/wp-json/wc/v3/products/${item.id}/variations`;
+      const vUrl = `${wooUrl}/wp-json/wc/v3/products/${item.id}/variations?per_page=100`;
       const vr = await fetch(vUrl, { headers: { 'Authorization': auth } });
       variations = await vr.json();
     }
@@ -198,9 +222,7 @@ app.get('/api/products/:id', async (req, res) => {
   // Fallback to WooCommerce
   try {
     const wooUrl = getWooUrl(req);
-    const auth = 'Basic ' + Buffer.from(
-      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-    ).toString('base64');
+    const auth = getWooAuth(req);
     const url = `${wooUrl}/wp-json/wc/v3/products/${id}`;
     const r = await fetch(url, { headers: { 'Authorization': auth } });
     const item = await r.json();
@@ -210,7 +232,7 @@ app.get('/api/products/:id', async (req, res) => {
     // Fetch variations if it's a variable product
     let variations = [];
     if (item.type === 'variable') {
-      const vUrl = `${process.env.VITE_WOOCOMMERCE_URL}/wp-json/wc/v3/products/${item.id}/variations`;
+      const vUrl = `${wooUrl}/wp-json/wc/v3/products/${item.id}/variations?per_page=100`;
       const vr = await fetch(vUrl, { headers: { 'Authorization': auth } });
       variations = await vr.json();
     }
@@ -226,16 +248,14 @@ app.get('/api/woo/products', async (req, res) => {
   try {
     const wooUrl = getWooUrl(req);
     const params = new URLSearchParams();
-    const allowed = ['per_page', 'page', 'category', 'search', 'orderby', 'order', 'after', 'status'];
+    const allowed = ['per_page', 'page', 'category', 'search', 'orderby', 'order', 'after', 'status', 'slug'];
     for (const key of allowed) {
       if (req.query[key]) params.set(key, String(req.query[key]));
     }
     if (!params.has('status')) params.set('status', 'publish');
 
     const url = `${wooUrl}/wp-json/wc/v3/products?${params}`;
-    const auth = 'Basic ' + Buffer.from(
-      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-    ).toString('base64');
+    const auth = getWooAuth(req);
 
     const r = await fetch(url, { headers: { Authorization: auth, 'Content-Type': 'application/json' } });
     const text = await r.text();
@@ -252,13 +272,34 @@ app.get('/api/woo/products', async (req, res) => {
   }
 });
 
+app.get('/api/woo/products/:id/variations', async (req, res) => {
+  try {
+    const wooUrl = getWooUrl(req);
+    const params = new URLSearchParams();
+    const allowed = ['per_page', 'page', 'status'];
+    for (const key of allowed) {
+      if (req.query[key]) params.set(key, String(req.query[key]));
+    }
+    if (!params.has('per_page')) params.set('per_page', '100');
+
+    const url = `${wooUrl}/wp-json/wc/v3/products/${req.params.id}/variations?${params}`;
+    const r = await fetch(url, { headers: { Authorization: getWooAuth(req), 'Content-Type': 'application/json' } });
+    const text = await r.text();
+    if (!r.ok) {
+      return res.status(r.status).json({ success: false, error: `WooCommerce variations error: ${r.statusText}`, details: text.slice(0, 500) });
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json(JSON.parse(text));
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.put('/api/woo/products/:id', async (req, res) => {
   try {
     const wooUrl = getWooUrl(req);
     const url = `${wooUrl}/wp-json/wc/v3/products/${req.params.id}`;
-    const auth = 'Basic ' + Buffer.from(
-      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-    ).toString('base64');
+    const auth = getWooAuth(req);
 
     const r = await fetch(url, {
       method: 'PUT',
@@ -288,9 +329,7 @@ app.get('/api/woo/categories', async (req, res) => {
     if (!params.has('per_page')) params.set('per_page', '100');
 
     const url = `${wooUrl}/wp-json/wc/v3/products/categories?${params}`;
-    const auth = 'Basic ' + Buffer.from(
-      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-    ).toString('base64');
+    const auth = getWooAuth(req);
 
     const r = await fetch(url, { headers: { Authorization: auth, 'Content-Type': 'application/json' } });
     const text = await r.text();
@@ -308,9 +347,7 @@ app.get('/api/categories', async (req, res) => {
   try {
     const wooUrl = getWooUrl(req);
     const url = `${wooUrl}/wp-json/wc/v3/products/categories?${new URLSearchParams(req.query)}`;
-    const auth = 'Basic ' + Buffer.from(
-      `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-    ).toString('base64');
+    const auth = getWooAuth(req);
 
     const r = await fetch(url, {
       headers: {
@@ -387,10 +424,8 @@ app.get('/api/analytics/live', (_req, res) => {
 
 // ── WOOCOMMERCE TEST ──────────────────────────────────────────────────────────
 app.get('/api/test-woo', async (req, res) => {
-  const url = `${process.env.VITE_WOOCOMMERCE_URL}/wp-json/wc/v3/products?per_page=1`;
-  const auth = 'Basic ' + Buffer.from(
-    `${process.env.VITE_WOOCOMMERCE_KEY}:${process.env.VITE_WOOCOMMERCE_SECRET}`
-  ).toString('base64');
+  const url = `${getWooUrl(req)}/wp-json/wc/v3/products?per_page=1`;
+  const auth = getWooAuth(req);
 
   try {
     const r = await fetch(url, { headers: { Authorization: auth } });
