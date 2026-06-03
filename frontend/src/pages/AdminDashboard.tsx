@@ -8,12 +8,14 @@ import {
   Crosshair,
   Eye,
   Gauge,
+  Globe2,
   LocateFixed,
   MapPin,
   MousePointerClick,
   Package,
   Radio,
   Search,
+  SlidersHorizontal,
   Trash2,
   Users,
 } from "lucide-react";
@@ -54,15 +56,35 @@ const shortSession = (sessionId: string) => sessionId.slice(-7).toUpperCase();
 const getLocationLabel = (item: Pick<AnalyticsEvent | LiveVisitor, "city" | "country" | "timezone" | "locale">) =>
   [item.city, item.country].filter(Boolean).join(", ") || item.timezone || item.locale || "Unknown";
 
+const hasCoordinates = (item: Pick<AnalyticsEvent | LiveVisitor, "latitude" | "longitude">) =>
+  typeof item.latitude === "number" && typeof item.longitude === "number";
+
+const getPrecisionLabel = (item: Pick<AnalyticsEvent | LiveVisitor, "accuracy" | "latitude" | "longitude">) => {
+  if (!hasCoordinates(item)) return "Approximate";
+  return typeof item.accuracy === "number" && item.accuracy > 0
+    ? `Exact GPS · +/- ${Math.round(item.accuracy)}m`
+    : "Exact GPS";
+};
+
 const getProductKey = (event: AnalyticsEvent) => {
   if (event.productName) return event.productSlug || event.productName;
   const match = event.path.match(/^\/product\/([^/?#]+)/);
   return match?.[1];
 };
 
+const getSiteLabel = (item: Pick<AnalyticsEvent | LiveVisitor, "siteHost" | "siteLabel">) => {
+  if (item.siteLabel) return item.siteLabel;
+  if (item.siteHost?.includes("com.au")) return "Australia";
+  if (item.siteHost?.includes("co.nz")) return "New Zealand";
+  return "India";
+};
+
+const getSiteHost = (item: Pick<AnalyticsEvent | LiveVisitor, "siteHost">) =>
+  item.siteHost || "luxtronics.in";
+
 const getMapQuery = (visitor?: LiveVisitor) => {
   if (!visitor) return "World";
-  if (visitor.latitude && visitor.longitude) return `${visitor.latitude},${visitor.longitude}`;
+  if (hasCoordinates(visitor)) return `${visitor.latitude},${visitor.longitude}`;
   const label = getLocationLabel(visitor);
   return label === "Unknown" ? "World" : label;
 };
@@ -103,6 +125,8 @@ export default function AdminDashboard() {
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>(() => readLiveVisitors());
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [followedSessionId, setFollowedSessionId] = useState<string | null>(null);
+  const [selectedSite, setSelectedSite] = useState("all");
+  const [liveOnly, setLiveOnly] = useState(false);
 
   useEffect(() => {
     const refresh = async () => {
@@ -121,23 +145,67 @@ export default function AdminDashboard() {
     };
   }, []);
 
+  const siteOptions = useMemo(() => {
+    const sites = new Map<string, { host: string; label: string; live: number; events: number }>();
+    liveVisitors.forEach((visitor) => {
+      const host = getSiteHost(visitor);
+      const existing = sites.get(host) || { host, label: getSiteLabel(visitor), live: 0, events: 0 };
+      if (Date.now() - visitor.lastSeenAt < 30 * 1000) existing.live += 1;
+      sites.set(host, existing);
+    });
+    events.forEach((event) => {
+      const host = getSiteHost(event);
+      const existing = sites.get(host) || { host, label: getSiteLabel(event), live: 0, events: 0 };
+      existing.events += 1;
+      sites.set(host, existing);
+    });
+    return [...sites.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }, [events, liveVisitors]);
+
+  const visibleEvents = useMemo(
+    () => selectedSite === "all" ? events : events.filter((event) => getSiteHost(event) === selectedSite),
+    [events, selectedSite],
+  );
+
+  const visibleLiveVisitors = useMemo(() => {
+    const scoped = selectedSite === "all"
+      ? liveVisitors
+      : liveVisitors.filter((visitor) => getSiteHost(visitor) === selectedSite);
+    return liveOnly ? scoped.filter((visitor) => Date.now() - visitor.lastSeenAt < 30 * 1000) : scoped;
+  }, [liveVisitors, liveOnly, selectedSite]);
+
   const stats = useMemo(() => {
-    const pageViews = events.filter((event) => event.type === "page_view");
-    const clicks = events.filter((event) => event.type === "click" || event.type === "product_intent");
-    const searches = events.filter((event) => event.type === "search");
-    const sections = events.filter((event) => event.type === "section_view");
-    const sessions = new Set(events.map((event) => event.sessionId)).size;
-    const lastHour = events.filter((event) => Date.now() - event.timestamp < 60 * 60 * 1000).length;
-    const activeVisitors = liveVisitors.filter((visitor) => Date.now() - visitor.lastSeenAt < 30 * 1000);
+    const pageViews = visibleEvents.filter((event) => event.type === "page_view");
+    const clicks = visibleEvents.filter((event) => event.type === "click" || event.type === "product_intent");
+    const searches = visibleEvents.filter((event) => event.type === "search");
+    const sections = visibleEvents.filter((event) => event.type === "section_view");
+    const sessions = new Set(visibleEvents.map((event) => event.sessionId)).size;
+    const lastHour = visibleEvents.filter((event) => Date.now() - event.timestamp < 60 * 60 * 1000).length;
+    const activeVisitors = visibleLiveVisitors.filter((visitor) => Date.now() - visitor.lastSeenAt < 30 * 1000);
 
     return { pageViews, clicks, searches, sections, sessions, lastHour, activeVisitors };
-  }, [events, liveVisitors]);
+  }, [visibleEvents, visibleLiveVisitors]);
 
   const topPages = useMemo(() => countBy(stats.pageViews, (event) => event.path).slice(0, 8), [stats.pageViews]);
   const topSections = useMemo(() => countBy(stats.sections, (event) => event.section).slice(0, 8), [stats.sections]);
   const topClicks = useMemo(() => countBy(stats.clicks, (event) => event.label).slice(0, 8), [stats.clicks]);
-  const trafficSources = useMemo(() => countBy(events, (event) => `${event.source} / ${event.medium}`).slice(0, 6), [events]);
-  const deviceSplit = useMemo(() => countBy(events, (event) => event.device).slice(0, 4), [events]);
+  const trafficSources = useMemo(() => countBy(visibleEvents, (event) => `${event.source} / ${event.medium}`).slice(0, 6), [visibleEvents]);
+  const deviceSplit = useMemo(() => countBy(visibleEvents, (event) => event.device).slice(0, 4), [visibleEvents]);
+  const siteSplit = useMemo(() => {
+    const visitors = visibleLiveVisitors.length > 0 ? visibleLiveVisitors : [];
+    const counts = new Map<string, number>();
+    visitors.forEach((visitor) => {
+      const key = `${getSiteLabel(visitor)} · ${getSiteHost(visitor)}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    if (counts.size === 0) {
+      visibleEvents.forEach((event) => {
+        const key = `${getSiteLabel(event)} · ${getSiteHost(event)}`;
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [visibleEvents, visibleLiveVisitors]);
   const productRows = useMemo(() => {
     const products = new Map<string, {
       key: string;
@@ -150,7 +218,7 @@ export default function AdminDashboard() {
       lastSeen: number;
     }>();
 
-    events.forEach((event) => {
+    visibleEvents.forEach((event) => {
       const key = getProductKey(event);
       if (!key) return;
       const row = products.get(key) || {
@@ -175,10 +243,10 @@ export default function AdminDashboard() {
     return [...products.values()]
       .sort((a, b) => (b.views + b.intents * 2) - (a.views + a.intents * 2))
       .slice(0, 10);
-  }, [events]);
+  }, [visibleEvents]);
   const locationRows = useMemo(() => {
     const counts = new Map<string, { label: string; sessions: Set<string>; active: number; lastSeen: number }>();
-    liveVisitors.forEach((visitor) => {
+    visibleLiveVisitors.forEach((visitor) => {
       const label = getLocationLabel(visitor);
       const row = counts.get(label) || { label, sessions: new Set<string>(), active: 0, lastSeen: 0 };
       row.sessions.add(visitor.sessionId);
@@ -187,16 +255,16 @@ export default function AdminDashboard() {
       counts.set(label, row);
     });
     return [...counts.values()].sort((a, b) => b.active - a.active || b.lastSeen - a.lastSeen).slice(0, 8);
-  }, [liveVisitors]);
+  }, [visibleLiveVisitors]);
   const selectedVisitor = useMemo(
-    () => selectedSessionId ? liveVisitors.find((visitor) => visitor.sessionId === selectedSessionId) : liveVisitors[0],
-    [liveVisitors, selectedSessionId],
+    () => selectedSessionId ? visibleLiveVisitors.find((visitor) => visitor.sessionId === selectedSessionId) : visibleLiveVisitors[0],
+    [visibleLiveVisitors, selectedSessionId],
   );
   const selectedSessionEvents = useMemo(() => {
     if (!selectedVisitor) return [];
-    return events.filter((event) => event.sessionId === selectedVisitor.sessionId).slice(0, 18);
-  }, [events, selectedVisitor]);
-  const recentEvents = events.slice(0, 18);
+    return visibleEvents.filter((event) => event.sessionId === selectedVisitor.sessionId).slice(0, 18);
+  }, [visibleEvents, selectedVisitor]);
+  const recentEvents = visibleEvents.slice(0, 18);
   const mapQuery = getMapQuery(selectedVisitor);
   const mapUrl = getGoogleSatelliteMapUrl(mapQuery);
   const earthUrl = getGoogleEarthUrl(mapQuery);
@@ -242,6 +310,68 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        <Card className="mb-5 border-border/70 bg-card/80">
+          <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-col gap-1">
+              <div className="flex items-center gap-2 text-sm font-black text-foreground">
+                <SlidersHorizontal className="h-4 w-4 text-primary" />
+                Monitoring Scope
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Showing {selectedSite === "all" ? "all Luxtronics domains" : selectedSite}
+                {liveOnly ? " · active sessions only" : " · active and idle sessions"}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant={selectedSite === "all" ? "default" : "outline"}
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                onClick={() => setSelectedSite("all")}
+              >
+                <Globe2 className="h-3.5 w-3.5" />
+                All sites
+              </Button>
+              {siteOptions.map((site) => (
+                <Button
+                  key={site.host}
+                  variant={selectedSite === site.host ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => setSelectedSite(site.host)}
+                >
+                  {site.label}
+                  <span className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] text-foreground">
+                    {site.live}
+                  </span>
+                </Button>
+              ))}
+              <Button
+                variant={liveOnly ? "default" : "outline"}
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                onClick={() => setLiveOnly((value) => !value)}
+              >
+                <Radio className="h-3.5 w-3.5" />
+                Live only
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                disabled={!selectedSessionId}
+                onClick={() => {
+                  setSelectedSessionId(null);
+                  setFollowedSessionId(null);
+                }}
+              >
+                Reset inspect
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <StatCard title="Live now" value={stats.activeVisitors.length} detail="Active in last 30 seconds" icon={Radio} />
           <StatCard title="Page views" value={stats.pageViews.length} detail={`${stats.lastHour} events in last hour`} icon={Eye} />
@@ -265,12 +395,14 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1040px] text-left text-sm">
+              <table className="w-full min-w-[1280px] text-left text-sm">
                 <thead className="border-b border-border text-xs uppercase tracking-widest text-muted-foreground">
                   <tr>
                     <th className="py-3 pr-4">Inspect</th>
+                    <th className="py-3 pr-4">Website</th>
                     <th className="py-3 pr-4">Status</th>
                     <th className="py-3 pr-4">Current page</th>
+                    <th className="py-3 pr-4">Location</th>
                     <th className="py-3 pr-4">Product</th>
                     <th className="py-3 pr-4">Current section</th>
                     <th className="py-3 pr-4">Last action</th>
@@ -280,14 +412,14 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {liveVisitors.length === 0 ? (
+                  {visibleLiveVisitors.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-6 text-center text-muted-foreground">
-                        No live sessions yet. Open the site in another tab/device and movement will appear here.
+                      <td colSpan={11} className="py-6 text-center text-muted-foreground">
+                        No sessions match this scope yet. Open one of the sites in another tab/device and movement will appear here.
                       </td>
                     </tr>
                   ) : (
-                    liveVisitors.map((visitor) => {
+                    visibleLiveVisitors.map((visitor) => {
                       const isActive = Date.now() - visitor.lastSeenAt < 30 * 1000;
                       return (
                         <tr key={visitor.sessionId} className="border-b border-border/70">
@@ -306,6 +438,12 @@ export default function AdminDashboard() {
                             </Button>
                           </td>
                           <td className="py-3 pr-4">
+                            <div className="whitespace-nowrap">
+                              <span className="block text-xs font-black uppercase tracking-wider text-primary">{getSiteLabel(visitor)}</span>
+                              <span className="block text-xs text-muted-foreground">{getSiteHost(visitor)}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 pr-4">
                             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
                               isActive ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
                             }`}>
@@ -314,6 +452,10 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td className="max-w-[220px] truncate py-3 pr-4 font-medium">{visitor.path}</td>
+                          <td className="max-w-[180px] py-3 pr-4">
+                            <span className="block truncate font-medium">{getLocationLabel(visitor)}</span>
+                            <span className="block truncate text-xs text-muted-foreground">{getPrecisionLabel(visitor)}</span>
+                          </td>
                           <td className="max-w-[180px] truncate py-3 pr-4">
                             {visitor.currentProductName ? (
                               <span className="font-medium text-primary">{visitor.currentProductName}</span>
@@ -368,12 +510,17 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-border bg-background/60 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Website</p>
+                      <p className="mt-1 truncate text-sm font-semibold">{getSiteLabel(selectedVisitor)} · {getSiteHost(selectedVisitor)}</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background/60 p-3">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Current page</p>
                       <p className="mt-1 truncate text-sm font-semibold">{selectedVisitor.path}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-background/60 p-3">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Location</p>
                       <p className="mt-1 truncate text-sm font-semibold">{getLocationLabel(selectedVisitor)}</p>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">{getPrecisionLabel(selectedVisitor)}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-background/60 p-3">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Current product</p>
@@ -458,6 +605,9 @@ export default function AdminDashboard() {
               <div className="mb-4 rounded-lg border border-border bg-background/60 p-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Focused location</p>
                 <p className="mt-1 truncate text-sm font-semibold">{mapQuery}</p>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {selectedVisitor ? getPrecisionLabel(selectedVisitor) : "No visitor selected"}
+                </p>
               </div>
               <div className="space-y-3">
                 {locationRows.length === 0 ? (
@@ -563,6 +713,18 @@ export default function AdminDashboard() {
                 ))
               )}
               <div className="border-t border-border pt-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Website split</p>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {siteSplit.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">No website data yet.</span>
+                  ) : (
+                    siteSplit.map(([site, count]) => (
+                      <span key={site} className="rounded-full border border-border px-3 py-1 text-xs font-semibold">
+                        {site}: {count}
+                      </span>
+                    ))
+                  )}
+                </div>
                 <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Device split</p>
                 <div className="flex flex-wrap gap-2">
                   {deviceSplit.map(([device, count]) => (
@@ -623,10 +785,11 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
+              <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="border-b border-border text-xs uppercase tracking-widest text-muted-foreground">
                   <tr>
                     <th className="py-3 pr-4">Time</th>
+                    <th className="py-3 pr-4">Website</th>
                     <th className="py-3 pr-4">Event</th>
                     <th className="py-3 pr-4">Page</th>
                     <th className="py-3 pr-4">Label / Section</th>
@@ -637,7 +800,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {recentEvents.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                      <td colSpan={7} className="py-6 text-center text-muted-foreground">
                         No events yet. Browse the website once and this dashboard will start filling.
                       </td>
                     </tr>
@@ -645,6 +808,10 @@ export default function AdminDashboard() {
                     recentEvents.map((event) => (
                       <tr key={event.id} className="border-b border-border/70">
                         <td className="whitespace-nowrap py-3 pr-4 text-muted-foreground">{formatTime(event.timestamp)}</td>
+                        <td className="max-w-[160px] truncate py-3 pr-4">
+                          <span className="font-semibold">{getSiteLabel(event)}</span>
+                          <span className="ml-1 text-xs text-muted-foreground">{getSiteHost(event)}</span>
+                        </td>
                         <td className="whitespace-nowrap py-3 pr-4 font-semibold">{event.type.replace("_", " ")}</td>
                         <td className="max-w-[220px] truncate py-3 pr-4">{event.path}</td>
                         <td className="max-w-[260px] truncate py-3 pr-4">{event.label || event.section || "-"}</td>

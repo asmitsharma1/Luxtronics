@@ -1,4 +1,11 @@
-export type AnalyticsEventType = "page_view" | "section_view" | "click" | "search" | "product_intent" | "product_view";
+export type AnalyticsEventType =
+  | "page_view"
+  | "section_view"
+  | "click"
+  | "search"
+  | "product_intent"
+  | "product_view"
+  | "location_resolved";
 
 export type AnalyticsLocation = {
   timezone?: string;
@@ -7,6 +14,7 @@ export type AnalyticsLocation = {
   city?: string;
   latitude?: number;
   longitude?: number;
+  accuracy?: number;
 };
 
 export type AnalyticsEvent = {
@@ -14,6 +22,8 @@ export type AnalyticsEvent = {
   type: AnalyticsEventType;
   path: string;
   title: string;
+  siteHost: string;
+  siteLabel: string;
   section?: string;
   label?: string;
   href?: string;
@@ -30,6 +40,7 @@ export type AnalyticsEvent = {
   city?: string;
   latitude?: number;
   longitude?: number;
+  accuracy?: number;
   productId?: string | number;
   productName?: string;
   productSlug?: string;
@@ -41,6 +52,8 @@ export type AnalyticsEvent = {
 
 export type LiveVisitor = {
   sessionId: string;
+  siteHost: string;
+  siteLabel: string;
   path: string;
   title: string;
   section?: string;
@@ -58,6 +71,7 @@ export type LiveVisitor = {
   city?: string;
   latitude?: number;
   longitude?: number;
+  accuracy?: number;
   currentProductId?: string | number;
   currentProductName?: string;
   currentProductSlug?: string;
@@ -72,11 +86,33 @@ const STORAGE_KEY = "lux_admin_analytics_events";
 const LIVE_STORAGE_KEY = "lux_admin_live_visitors";
 const SESSION_KEY = "lux_session_id";
 const SESSION_STARTED_KEY = "lux_session_started_at";
+const PRECISE_LOCATION_KEY = "lux_precise_location";
+const PRECISE_LOCATION_ATTEMPTED_KEY = "lux_precise_location_attempted";
 const MAX_EVENTS = 1200;
 const LIVE_ACTIVE_WINDOW = 30 * 1000;
 const LIVE_RETENTION = 10 * 60 * 1000;
+const CENTRAL_ANALYTICS_ORIGIN = "https://luxtronics.in";
+let preciseLocationRequestStarted = false;
 
 const nowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+function getSiteHost() {
+  return window.location.hostname.replace(/^www\./, "") || "luxtronics.in";
+}
+
+function getSiteLabel(host = getSiteHost()) {
+  if (host.includes("com.au")) return "Australia";
+  if (host.includes("co.nz")) return "New Zealand";
+  return "India";
+}
+
+function getAnalyticsEndpoint(path: string, override?: string) {
+  if (override) return override;
+  const host = getSiteHost();
+  const isLocal = host === "localhost" || host === "127.0.0.1";
+  const base = isLocal ? "" : CENTRAL_ANALYTICS_ORIGIN;
+  return `${base}${path}`;
+}
 
 export function getSessionId() {
   let sessionId = sessionStorage.getItem(SESSION_KEY);
@@ -130,6 +166,80 @@ export function getApproxLocation(): AnalyticsLocation {
     countryFromLocale;
 
   return { timezone, locale, country, city };
+}
+
+function readStoredPreciseLocation(): AnalyticsLocation {
+  try {
+    const raw = sessionStorage.getItem(PRECISE_LOCATION_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.latitude !== "number" || typeof parsed?.longitude !== "number") return {};
+    return {
+      latitude: parsed.latitude,
+      longitude: parsed.longitude,
+      accuracy: typeof parsed.accuracy === "number" ? parsed.accuracy : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+function storePreciseLocation(location: AnalyticsLocation) {
+  try {
+    sessionStorage.setItem(PRECISE_LOCATION_KEY, JSON.stringify(location));
+  } catch {
+    // Best-effort only. Analytics should never break the storefront.
+  }
+}
+
+function canRequestPreciseLocation() {
+  if (preciseLocationRequestStarted) return false;
+  if (typeof navigator === "undefined" || !("geolocation" in navigator)) return false;
+  if (sessionStorage.getItem(PRECISE_LOCATION_ATTEMPTED_KEY) === "1") return false;
+  if (window.location.pathname.startsWith("/admin")) return false;
+  return window.location.protocol === "https:" || window.location.hostname === "localhost";
+}
+
+function requestPreciseLocation() {
+  if (!canRequestPreciseLocation()) return;
+
+  preciseLocationRequestStarted = true;
+  try {
+    sessionStorage.setItem(PRECISE_LOCATION_ATTEMPTED_KEY, "1");
+  } catch {
+    // Ignore storage failures and still try the browser permission flow.
+  }
+
+  window.setTimeout(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const preciseLocation: AnalyticsLocation = {
+          latitude: Number(position.coords.latitude.toFixed(6)),
+          longitude: Number(position.coords.longitude.toFixed(6)),
+          accuracy: Math.round(position.coords.accuracy || 0),
+        };
+
+        storePreciseLocation(preciseLocation);
+        updateLiveVisitor({
+          ...preciseLocation,
+          lastAction: preciseLocation.accuracy
+            ? `Exact location resolved +/- ${preciseLocation.accuracy}m`
+            : "Exact location resolved",
+        });
+        trackAnalyticsEvent({
+          type: "location_resolved",
+          label: preciseLocation.accuracy
+            ? `Exact GPS +/- ${preciseLocation.accuracy}m`
+            : "Exact GPS",
+          ...preciseLocation,
+        });
+      },
+      () => {
+        // Permission denied or unavailable. Approximate location remains active.
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    );
+  }, 1800);
 }
 
 export function getTrafficSource() {
@@ -200,10 +310,15 @@ export function updateLiveVisitor(input: Partial<LiveVisitor> = {}) {
 
   const traffic = getTrafficSource();
   const location = getApproxLocation();
+  const preciseLocation = readStoredPreciseLocation();
   const sessionId = getSessionId();
+  const siteHost = getSiteHost();
+  const siteLabel = getSiteLabel(siteHost);
   const existing = readLiveVisitors().find((visitor) => visitor.sessionId === sessionId);
   const visitor: LiveVisitor = {
     sessionId,
+    siteHost: input.siteHost || existing?.siteHost || siteHost,
+    siteLabel: input.siteLabel || existing?.siteLabel || siteLabel,
     path: input.path || `${window.location.pathname}${window.location.search}`,
     title: input.title || document.title,
     section: input.section ?? existing?.section,
@@ -219,8 +334,9 @@ export function updateLiveVisitor(input: Partial<LiveVisitor> = {}) {
     locale: input.locale || existing?.locale || location.locale,
     country: input.country || existing?.country || location.country,
     city: input.city || existing?.city || location.city,
-    latitude: input.latitude ?? existing?.latitude ?? location.latitude,
-    longitude: input.longitude ?? existing?.longitude ?? location.longitude,
+    latitude: input.latitude ?? existing?.latitude ?? preciseLocation.latitude ?? location.latitude,
+    longitude: input.longitude ?? existing?.longitude ?? preciseLocation.longitude ?? location.longitude,
+    accuracy: input.accuracy ?? existing?.accuracy ?? preciseLocation.accuracy ?? location.accuracy,
     currentProductId: input.currentProductId ?? existing?.currentProductId,
     currentProductName: input.currentProductName ?? existing?.currentProductName,
     currentProductSlug: input.currentProductSlug ?? existing?.currentProductSlug,
@@ -238,13 +354,14 @@ export function updateLiveVisitor(input: Partial<LiveVisitor> = {}) {
   localStorage.setItem(LIVE_STORAGE_KEY, JSON.stringify(visitors));
   window.dispatchEvent(new CustomEvent("lux-live-visitor", { detail: visitor }));
 
-  const endpoint = import.meta.env.VITE_ANALYTICS_LIVE_ENDPOINT || "/api/analytics/live";
+  const endpoint = getAnalyticsEndpoint("/api/analytics/live", import.meta.env.VITE_ANALYTICS_LIVE_ENDPOINT);
   const body = JSON.stringify(visitor);
   fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+  requestPreciseLocation();
 }
 
 export async function fetchRemoteLiveVisitors(): Promise<LiveVisitor[]> {
-  const endpoint = import.meta.env.VITE_ANALYTICS_LIVE_ENDPOINT || "/api/analytics/live";
+  const endpoint = getAnalyticsEndpoint("/api/analytics/live", import.meta.env.VITE_ANALYTICS_LIVE_ENDPOINT);
   try {
     const response = await fetch(endpoint, { headers: { "Accept": "application/json" } });
     if (!response.ok) return [];
@@ -257,7 +374,7 @@ export async function fetchRemoteLiveVisitors(): Promise<LiveVisitor[]> {
 }
 
 export async function fetchRemoteAnalyticsEvents(): Promise<AnalyticsEvent[]> {
-  const endpoint = import.meta.env.VITE_ANALYTICS_EVENTS_ENDPOINT || "/api/analytics/events";
+  const endpoint = getAnalyticsEndpoint("/api/analytics/events", import.meta.env.VITE_ANALYTICS_EVENTS_ENDPOINT);
   try {
     const response = await fetch(endpoint, { headers: { "Accept": "application/json" } });
     if (!response.ok) return [];
@@ -274,11 +391,16 @@ export function trackAnalyticsEvent(input: Partial<AnalyticsEvent> & { type: Ana
 
   const traffic = getTrafficSource();
   const location = getApproxLocation();
+  const preciseLocation = readStoredPreciseLocation();
+  const siteHost = getSiteHost();
+  const siteLabel = getSiteLabel(siteHost);
   const event: AnalyticsEvent = {
     id: nowId(),
     type: input.type,
     path: input.path || `${window.location.pathname}${window.location.search}`,
     title: input.title || document.title,
+    siteHost: input.siteHost || siteHost,
+    siteLabel: input.siteLabel || siteLabel,
     section: input.section,
     label: input.label,
     href: input.href,
@@ -293,8 +415,9 @@ export function trackAnalyticsEvent(input: Partial<AnalyticsEvent> & { type: Ana
     locale: input.locale || location.locale,
     country: input.country || location.country,
     city: input.city || location.city,
-    latitude: input.latitude ?? location.latitude,
-    longitude: input.longitude ?? location.longitude,
+    latitude: input.latitude ?? preciseLocation.latitude ?? location.latitude,
+    longitude: input.longitude ?? preciseLocation.longitude ?? location.longitude,
+    accuracy: input.accuracy ?? preciseLocation.accuracy ?? location.accuracy,
     productId: input.productId,
     productName: input.productName,
     productSlug: input.productSlug,
@@ -309,6 +432,8 @@ export function trackAnalyticsEvent(input: Partial<AnalyticsEvent> & { type: Ana
   updateLiveVisitor({
     path: event.path,
     title: event.title,
+    siteHost: event.siteHost,
+    siteLabel: event.siteLabel,
     section: event.section,
     lastAction: event.label || event.section || event.type.replace("_", " "),
     currentProductId: event.productId,
@@ -329,15 +454,17 @@ export function trackAnalyticsEvent(input: Partial<AnalyticsEvent> & { type: Ana
     });
   }
 
-  const endpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT || "/api/analytics/events";
+  const endpoint = getAnalyticsEndpoint("/api/analytics/events", import.meta.env.VITE_ANALYTICS_ENDPOINT);
   if (endpoint) {
     const body = JSON.stringify(event);
-    if (navigator.sendBeacon) {
+    const isCrossOrigin = endpoint.startsWith("http") && !endpoint.startsWith(window.location.origin);
+    if (navigator.sendBeacon && !isCrossOrigin) {
       navigator.sendBeacon(endpoint, new Blob([body], { type: "application/json" }));
     } else {
       fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
     }
   }
+  requestPreciseLocation();
 }
 
 declare global {
