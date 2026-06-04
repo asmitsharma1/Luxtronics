@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, FileDown, Loader2, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
 import Layout from "@/components/Layout";
@@ -55,6 +55,11 @@ type InvoiceForm = {
   notes: string;
 };
 
+type ProductFetchOptions = {
+  search?: string;
+  fetchAll?: boolean;
+};
+
 const today = new Date().toISOString().slice(0, 10);
 
 const makeInvoiceNumber = (type: InvoiceType) => {
@@ -74,6 +79,7 @@ const makeLine = (): InvoiceLine => ({
 });
 
 const PRODUCTS_PER_PAGE = 100;
+const QUICK_PRODUCTS_PER_PAGE = 30;
 
 const formatMoney = (amount: number, currency: string) =>
   new Intl.NumberFormat("en-IN", {
@@ -120,49 +126,61 @@ export default function AdminInvoices() {
     notes: "Thank you for choosing Luxtronics.",
   });
   const { toast } = useToast();
+  const productRequestId = useRef(0);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async ({ search = "", fetchAll = false }: ProductFetchOptions = {}) => {
+    const requestId = productRequestId.current + 1;
+    productRequestId.current = requestId;
     setLoadingProducts(true);
     try {
       const allProducts: WooProduct[] = [];
       let page = 1;
       let totalPages = 1;
+      const perPage = fetchAll ? PRODUCTS_PER_PAGE : QUICK_PRODUCTS_PER_PAGE;
+      const trimmedSearch = search.trim();
 
       do {
         const params = new URLSearchParams({
-          per_page: String(PRODUCTS_PER_PAGE),
+          per_page: String(perPage),
           page: String(page),
           status: "publish",
           orderby: "title",
           order: "asc",
         });
+        if (trimmedSearch) params.set("search", trimmedSearch);
+
         const response = await fetch(`/api/woo/products?${params.toString()}`);
         const data = await response.json();
         if (!response.ok || data.success === false) throw new Error(data.error || "Product fetch failed");
 
         const pageProducts = Array.isArray(data) ? data : [];
         allProducts.push(...pageProducts);
-        totalPages = Math.max(1, Number(response.headers.get("X-WP-TotalPages") || (pageProducts.length === PRODUCTS_PER_PAGE ? page + 1 : page)));
+        totalPages = Math.max(1, Number(response.headers.get("X-WP-TotalPages") || (pageProducts.length === perPage ? page + 1 : page)));
         page += 1;
-      } while (page <= totalPages);
+      } while (fetchAll && page <= totalPages);
 
       const uniqueProducts = [...new Map(allProducts.map((product) => [product.id, product])).values()];
+      if (requestId !== productRequestId.current) return;
       setProducts(uniqueProducts);
     } catch (error) {
+      if (requestId !== productRequestId.current) return;
       setProducts([]);
       toast({
         title: "Products unavailable",
-        description: error instanceof Error ? error.message : "Could not load WooCommerce products.",
+        description: error instanceof Error ? error.message : "Could not search WooCommerce products.",
         variant: "destructive",
       });
     } finally {
-      setLoadingProducts(false);
+      if (requestId === productRequestId.current) setLoadingProducts(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    const timer = window.setTimeout(() => {
+      fetchProducts({ search: productSearch, fetchAll: false });
+    }, productSearch.trim() ? 350 : 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchProducts, productSearch]);
 
   const totals = useMemo(() => {
     const taxable = lines.reduce((sum, line) => sum + getLineTaxable(line, invoiceType), 0);
@@ -378,9 +396,14 @@ export default function AdminInvoices() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="gap-2" onClick={fetchProducts} disabled={loadingProducts}>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => fetchProducts({ search: productSearch, fetchAll: true })}
+              disabled={loadingProducts}
+            >
               {loadingProducts ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              {loadingProducts ? "Loading products" : `Products ${products.length ? `(${products.length})` : ""}`}
+              {loadingProducts ? "Searching products" : `Products ${products.length ? `(${products.length})` : ""}`}
             </Button>
             <Button className="gap-2" onClick={saveAsPdf}>
               <FileDown className="h-4 w-4" />
@@ -473,17 +496,22 @@ export default function AdminInvoices() {
               <CardContent>
                 <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
                   <div>
-                    <Label htmlFor="productSearch">Search products</Label>
+                    <Label htmlFor="productSearch">Search WooCommerce products</Label>
                     <Input
                       id="productSearch"
                       value={productSearch}
                       onChange={(event) => setProductSearch(event.target.value)}
-                      placeholder="Search all fetched products by name, SKU, or price"
+                      placeholder="Type product name or SKU"
                     />
                   </div>
-                  <Button variant="outline" className="gap-2" onClick={fetchProducts} disabled={loadingProducts}>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => fetchProducts({ search: productSearch, fetchAll: true })}
+                    disabled={loadingProducts}
+                  >
                     {loadingProducts ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    Fetch all
+                    Fetch all matches
                   </Button>
                 </div>
                 <Table>
