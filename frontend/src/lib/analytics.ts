@@ -86,12 +86,15 @@ const STORAGE_KEY = "lux_admin_analytics_events";
 const LIVE_STORAGE_KEY = "lux_admin_live_visitors";
 const SESSION_KEY = "lux_session_id";
 const SESSION_STARTED_KEY = "lux_session_started_at";
+const IP_LOCATION_KEY = "lux_ip_location";
+const IP_LOCATION_ATTEMPTED_KEY = "lux_ip_location_attempted";
 const PRECISE_LOCATION_KEY = "lux_precise_location";
 const PRECISE_LOCATION_ATTEMPTED_KEY = "lux_precise_location_attempted";
 const MAX_EVENTS = 1200;
 const LIVE_ACTIVE_WINDOW = 30 * 1000;
 const LIVE_RETENTION = 10 * 60 * 1000;
 const CENTRAL_ANALYTICS_ORIGIN = "https://luxtronics.in";
+let ipLocationRequestStarted = false;
 let preciseLocationRequestStarted = false;
 
 const nowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -151,7 +154,7 @@ export function getApproxLocation(): AnalyticsLocation {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const locale = navigator.language || "unknown";
   const store = localStorage.getItem("lux_store_code") || "";
-  const city = timezone?.includes("/") ? timezone.split("/").pop()?.replace(/_/g, " ") : undefined;
+  const ipLocation = readStoredIpLocation();
   const countryFromLocale = locale.includes("-") ? locale.split("-").pop()?.toUpperCase() : undefined;
   const countryFromTimezone =
     timezone?.startsWith("Asia/") ? "India" :
@@ -159,13 +162,90 @@ export function getApproxLocation(): AnalyticsLocation {
     timezone?.startsWith("Pacific/Auckland") ? "New Zealand" :
     undefined;
   const country =
-    store === "IN" ? "India" :
+    ipLocation.country ||
+    (store === "IN" ? "India" :
     store === "AU" ? "Australia" :
     store === "NZ" ? "New Zealand" :
+    undefined) ||
     countryFromTimezone ||
     countryFromLocale;
 
-  return { timezone, locale, country, city };
+  return {
+    timezone,
+    locale,
+    country,
+    city: ipLocation.city,
+    latitude: ipLocation.latitude,
+    longitude: ipLocation.longitude,
+  };
+}
+
+function readStoredIpLocation(): AnalyticsLocation {
+  try {
+    const raw = sessionStorage.getItem(IP_LOCATION_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return {
+      city: typeof parsed?.city === "string" ? parsed.city : undefined,
+      country: typeof parsed?.country === "string" ? parsed.country : undefined,
+      timezone: typeof parsed?.timezone === "string" ? parsed.timezone : undefined,
+      latitude: typeof parsed?.latitude === "number" ? parsed.latitude : undefined,
+      longitude: typeof parsed?.longitude === "number" ? parsed.longitude : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+function storeIpLocation(location: AnalyticsLocation) {
+  try {
+    sessionStorage.setItem(IP_LOCATION_KEY, JSON.stringify(location));
+  } catch {
+    // Best-effort only. Analytics should never break the storefront.
+  }
+}
+
+function requestIpLocation() {
+  if (ipLocationRequestStarted) return;
+  if (readStoredIpLocation().city || sessionStorage.getItem(IP_LOCATION_ATTEMPTED_KEY) === "1") return;
+  if (window.location.pathname.startsWith("/admin")) return;
+
+  ipLocationRequestStarted = true;
+  try {
+    sessionStorage.setItem(IP_LOCATION_ATTEMPTED_KEY, "1");
+  } catch {
+    // Ignore storage failures and still try the network lookup.
+  }
+
+  fetch("https://ipapi.co/json/?fields=city,region,country_name,country_code,latitude,longitude,timezone", {
+    headers: { Accept: "application/json" },
+  })
+    .then((response) => response.ok ? response.json() : null)
+    .then((data) => {
+      if (!data || typeof data !== "object") return;
+      const location: AnalyticsLocation = {
+        city: typeof data.city === "string" && data.city ? data.city : undefined,
+        country: typeof data.country_name === "string" && data.country_name ? data.country_name : data.country_code,
+        timezone: typeof data.timezone === "string" ? data.timezone : undefined,
+        latitude: typeof data.latitude === "number" ? Number(data.latitude.toFixed(6)) : undefined,
+        longitude: typeof data.longitude === "number" ? Number(data.longitude.toFixed(6)) : undefined,
+      };
+
+      if (!location.city && !location.country) return;
+      storeIpLocation(location);
+      updateLiveVisitor({
+        ...location,
+        lastAction: location.city ? `City resolved: ${location.city}` : "Location resolved",
+      });
+      trackAnalyticsEvent({
+        type: "location_resolved",
+        label: location.city ? `IP city: ${location.city}` : "IP location",
+        ...location,
+      });
+    })
+    .catch(() => {
+      // IP lookup is helpful, not required.
+    });
 }
 
 function readStoredPreciseLocation(): AnalyticsLocation {
@@ -357,6 +437,7 @@ export function updateLiveVisitor(input: Partial<LiveVisitor> = {}) {
   const endpoint = getAnalyticsEndpoint("/api/analytics/live", import.meta.env.VITE_ANALYTICS_LIVE_ENDPOINT);
   const body = JSON.stringify(visitor);
   fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+  requestIpLocation();
   requestPreciseLocation();
 }
 
@@ -464,6 +545,7 @@ export function trackAnalyticsEvent(input: Partial<AnalyticsEvent> & { type: Ana
       fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
     }
   }
+  requestIpLocation();
   requestPreciseLocation();
 }
 

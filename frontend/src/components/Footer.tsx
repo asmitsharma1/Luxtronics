@@ -145,7 +145,7 @@ const Footer = () => {
               {PAYMENT_LOGOS.map((logo) => (
                 <div
                   key={logo.label}
-                  className="flex h-10 min-w-0 items-center justify-center rounded-lg border border-white/12 bg-white px-2 shadow-sm sm:h-11 sm:w-[74px]"
+                  className="flex h-10 min-w-0 items-center justify-center overflow-hidden rounded-lg border border-white/12 bg-white p-0 shadow-sm sm:h-11 sm:w-[74px]"
                   title={logo.label}
                   aria-label={logo.label}
                 >
@@ -153,7 +153,7 @@ const Footer = () => {
                     src={logo.src}
                     alt={logo.label}
                     loading="lazy"
-                    className="max-h-6 max-w-full object-contain"
+                    className="h-full max-h-full w-full object-contain"
                   />
                 </div>
               ))}
