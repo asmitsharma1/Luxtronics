@@ -55,6 +55,7 @@ const Index = () => {
       <Hero />
       <BrandMarquee />
       <Suspense fallback={<div className="h-40" />}>
+        <FeaturedProducts />
         <CategoryStrip />
         <BrandMarquee
           brands={mobileBrandTrail}
@@ -62,7 +63,6 @@ const Index = () => {
           title="Compatible picks for OPPO, Vivo, Huawei, Realme, OnePlus, Tecno, Google, Motorola and Nokia devices."
           compact
         />
-        <FeaturedProducts />
         <DealsBanner />
         <PromoBanner />
         <LimitedEdition />

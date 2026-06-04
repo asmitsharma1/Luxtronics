@@ -8,11 +8,30 @@ export type BlogPost = {
   excerpt: string;
   date: string;
   img: string;
+  heroVideo?: string;
+  visual?: "gan-charger";
   tag: string;
   content: string[];
 };
 
 export const blogPosts: BlogPost[] = [
+  {
+    slug: "gan-wall-charger-fast-compact-powerful",
+    title: "GaN Wall Chargers: Fast, Compact, and Built for Daily Carry",
+    excerpt: "Why 65W and 80W GaN chargers with retractable USB-C cables are becoming the smarter travel and desk setup.",
+    date: "Jun 04, 2026",
+    img: "/a3.jpg",
+    heroVideo: "/v8.mp4?v=gan-blog",
+    visual: "gan-charger",
+    tag: "Charging",
+    content: [
+      "GaN chargers are replacing bulky adapters because they deliver high wattage from a smaller body. Gallium nitride runs more efficiently than older silicon designs, which helps chargers stay compact while powering phones, tablets, earbuds, smart watches, and many USB-C laptops.",
+      "The practical upgrade is convenience. A 65W or 80W wall charger with a built-in retractable USB-C cable means one less cable to forget, one cleaner desk, and one compact adapter that can move from office bag to bedside table without turning into cable clutter.",
+      "For most buyers, the sweet spot is multi-device charging. A 3-port GaN charger lets you top up your phone, accessories, and a second device from one plug. Look for USB-C Power Delivery support, clear wattage sharing, solid heat control, and a compact plug design before choosing only by the highest watt number.",
+      "If you travel or commute daily, the retractable cable matters more than it sounds. It protects the cable, keeps the setup neat, and makes quick charging easier in airports, cafes, coworking spaces, and hotel rooms.",
+      "Luxtronics is highlighting compact 65W and 80W GaN wall charger options for shoppers who want faster charging without carrying multiple adapters. Check current availability, regional pricing, and shipping options before checkout.",
+    ],
+  },
   {
     slug: "top-10-laptops-for-creators-2025",
     title: "Top 10 Laptops for Creators in 2025",

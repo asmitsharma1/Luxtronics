@@ -10,12 +10,13 @@ import ImageCursorCard from "@/components/ImageCursorCard";
 import type { Product } from "@/data/products";
 import { fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
 
-const tabs = ["All", "Smartphones", "Audio", "Wearables", "Gaming", "Chargers"] as const;
+const tabs = ["All", "Smartphones", "Audio", "Wearables", "Smart Glasses", "Gaming", "Chargers"] as const;
 
 const tagMatches: Record<string, RegExp> = {
   Smartphones: /phone|iphone|samsung|mobile|galaxy|android/i,
   Audio: /audio|headphone|earbud|speaker|airpod|buds/i,
   Wearables: /watch|wearable|band|fitbit|garmin/i,
+  "Smart Glasses": /smart\s*glasses|eyewear|spectacle|ar\s*glass|vr\s*glass/i,
   Gaming: /gaming|game|controller|console|playstation|xbox|nintendo/i,
   Chargers: /charger|cable|adapter|usb|power/i,
 };
@@ -24,6 +25,7 @@ function productScore(product: Product) {
   const text = `${product.name} ${product.category} ${product.description}`.toLowerCase();
   let score = product.badge === "New" ? 600 : 0;
   if (/new|latest|2026|pro|max|ultra|gen|gan|usb-c/.test(text)) score += 160;
+  if (/smart\s*glasses|eyewear|ar\s*glass|vr\s*glass/.test(text)) score += 180;
   score += Math.round((product.rating || 0) * 20);
   score += Math.min(product.reviews || 0, 2000) / 30;
   return score;

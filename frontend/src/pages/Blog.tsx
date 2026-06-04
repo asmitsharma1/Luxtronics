@@ -4,6 +4,47 @@ import { ArrowRight, BookOpen, Calendar, Clock3, ShoppingBag, Tag } from "lucide
 import { Link } from "react-router-dom";
 import { blogPosts } from "@/data/blog-posts";
 
+const GanChargerVisual = ({ compact = false }: { compact?: boolean }) => (
+  <div className="relative flex h-full min-h-[320px] items-center justify-center overflow-hidden bg-black">
+    <video
+      className="absolute inset-0 h-full w-full object-cover"
+      src="/v8.mp4?v=gan-blog-card"
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="none"
+      poster="/a3.jpg"
+      aria-hidden="true"
+    />
+    <div className="absolute inset-0 bg-black/45" />
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_30%,rgba(255,107,43,0.38),transparent_42%),radial-gradient(circle_at_75%_70%,rgba(231,84,128,0.25),transparent_40%)]" />
+    <div className={`relative rounded-[1.7rem] border border-white/25 bg-white/15 p-3 shadow-2xl backdrop-blur-xl ${compact ? "h-48 w-36" : "h-64 w-44"}`}>
+      <div className="absolute inset-3 rounded-[1.25rem] bg-gradient-to-br from-orange-400 to-pink-500" />
+      <div className="absolute inset-0 rounded-[1.7rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.7),rgba(255,255,255,0.08)_45%,rgba(0,0,0,0.22))]" />
+      <div className="relative flex h-full flex-col justify-between rounded-[1.1rem] border border-white/25 bg-black/10 p-4 text-white">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-black uppercase tracking-[0.22em]">GaN</span>
+          <span className="rounded-full bg-white/20 px-2 py-1 text-[10px] font-bold">3 Port</span>
+        </div>
+        <div>
+          <div className={`font-display font-black ${compact ? "text-4xl" : "text-5xl"}`}>80W</div>
+          <p className="text-xs font-semibold text-white/75">Wall Charger</p>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {["C1", "C2", "A"].map((port) => (
+            <span key={port} className="rounded-full bg-black/30 px-2 py-1 text-center text-[10px] font-black">
+              {port}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="absolute -right-10 top-16 h-16 w-20 rounded-full border-[8px] border-white/60 border-b-transparent border-l-transparent" />
+      <div className="absolute -right-12 top-28 h-3.5 w-9 rounded-full bg-white/70" />
+    </div>
+  </div>
+);
+
 const Blog = () => {
   const featured = blogPosts[0];
   const latest = blogPosts.slice(1);
@@ -74,12 +115,16 @@ const Blog = () => {
               className="group relative z-10 grid overflow-hidden rounded-2xl border border-border bg-card shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/35 lg:grid-cols-[1.12fr_0.88fr]"
             >
               <div className="relative min-h-[360px] overflow-hidden bg-muted">
-                <img
-                  src={featured.img}
-                  alt={featured.title}
-                  loading="eager"
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                {featured.visual === "gan-charger" ? (
+                  <GanChargerVisual />
+                ) : (
+                  <img
+                    src={featured.img}
+                    alt={featured.title}
+                    loading="eager"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                )}
                 <div className="absolute left-5 top-5 rounded-full bg-black/65 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur">
                   Editor's pick
                 </div>
