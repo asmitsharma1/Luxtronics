@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, FileDown, Loader2, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, FileDown, Loader2, Plus, ReceiptText, RefreshCw, Save, Trash2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,21 @@ type ProductFetchOptions = {
   fetchAll?: boolean;
 };
 
+type SavedInvoice = {
+  id: string;
+  invoiceType: InvoiceType;
+  invoiceNumber: string;
+  customerName: string;
+  customerCompanyName: string;
+  total: number;
+  currency: string;
+  savedAt: string;
+  form: InvoiceForm;
+  lines: InvoiceLine[];
+};
+
 const today = new Date().toISOString().slice(0, 10);
+const SAVED_INVOICES_KEY = "luxtronics_admin_saved_invoices";
 
 const makeInvoiceNumber = (type: InvoiceType) => {
   const prefix = type === "tax" ? "TAX" : "PRO";
@@ -129,6 +143,15 @@ export default function AdminInvoices() {
     customerTaxId: "",
     currency: "INR",
     notes: "Thank you for choosing Luxtronics.",
+  });
+  const [savedInvoices, setSavedInvoices] = useState<SavedInvoice[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(SAVED_INVOICES_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
   const { toast } = useToast();
   const productRequestId = useRef(0);
@@ -206,6 +229,26 @@ export default function AdminInvoices() {
 
   const updateLine = (lineId: string, patch: Partial<InvoiceLine>) => {
     setLines((current) => current.map((line) => line.id === lineId ? { ...line, ...patch } : line));
+  };
+
+  const getValidLines = () => lines.filter((line) => line.description.trim() && line.quantity > 0);
+
+  const validateInvoice = (action: "saving") => {
+    const validLines = getValidLines();
+    if ((!form.customerName.trim() && !form.customerCompanyName.trim()) || validLines.length === 0) {
+      toast({
+        title: "Invoice needs details",
+        description: `Add a company or customer name and at least one product line before ${action}.`,
+        variant: "destructive",
+      });
+      return null;
+    }
+    return validLines;
+  };
+
+  const persistSavedInvoices = (nextInvoices: SavedInvoice[]) => {
+    setSavedInvoices(nextInvoices);
+    window.localStorage.setItem(SAVED_INVOICES_KEY, JSON.stringify(nextInvoices));
   };
 
   const selectProduct = (lineId: string, productId: string) => {
@@ -384,13 +427,7 @@ export default function AdminInvoices() {
   };
 
   const saveAsPdf = () => {
-    const validLines = lines.filter((line) => line.description.trim() && line.quantity > 0);
-    if ((!form.customerName.trim() && !form.customerCompanyName.trim()) || validLines.length === 0) {
-      toast({
-        title: "Invoice needs details",
-        description: "Add a company or customer name and at least one product line before saving.",
-        variant: "destructive",
-      });
+    if (!validateInvoice("saving")) {
       return;
     }
 
@@ -431,6 +468,29 @@ export default function AdminInvoices() {
     }, 250);
   };
 
+  const saveInvoiceRecord = () => {
+    const validLines = validateInvoice("saving");
+    if (!validLines) return;
+
+    const savedInvoice: SavedInvoice = {
+      id: crypto.randomUUID(),
+      invoiceType,
+      invoiceNumber: form.invoiceNumber,
+      customerName: form.customerName,
+      customerCompanyName: form.customerCompanyName,
+      total: totals.grandTotal,
+      currency: form.currency,
+      savedAt: new Date().toISOString(),
+      form: { ...form },
+      lines: validLines.map((line) => ({ ...line })),
+    };
+    persistSavedInvoices([savedInvoice, ...savedInvoices].slice(0, 25));
+    toast({
+      title: "Invoice saved",
+      description: `${form.invoiceNumber} saved in this admin browser.`,
+    });
+  };
+
   return (
     <Layout>
       <SEO title="Admin Invoices" description="Admin-only invoice generator." canonical="https://luxtronics.in/admin/invoices" noindex nofollow />
@@ -461,6 +521,10 @@ export default function AdminInvoices() {
             <Button className="gap-2" onClick={saveAsPdf}>
               <FileDown className="h-4 w-4" />
               Save as PDF
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={saveInvoiceRecord}>
+              <Save className="h-4 w-4" />
+              Save record
             </Button>
           </div>
         </div>
@@ -717,9 +781,36 @@ export default function AdminInvoices() {
                 <FileDown className="h-4 w-4" />
                 Save as PDF
               </Button>
+              <Button variant="outline" className="w-full gap-2" onClick={saveInvoiceRecord}>
+                <Save className="h-4 w-4" />
+                Save record
+              </Button>
               <p className="text-xs text-muted-foreground">
                 The PDF opens in the browser print dialog. Choose Save as PDF as the destination.
               </p>
+              {savedInvoices.length > 0 && (
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Saved invoices</p>
+                  <div className="mt-3 space-y-3">
+                    {savedInvoices.slice(0, 5).map((invoice) => (
+                      <div key={invoice.id} className="rounded-md border border-border/70 p-3 text-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-bold">{invoice.invoiceNumber}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {invoice.customerCompanyName || invoice.customerName || "Customer"}
+                            </p>
+                          </div>
+                          <strong className="text-right">{formatMoney(invoice.total, invoice.currency)}</strong>
+                        </div>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          {new Date(invoice.savedAt).toLocaleString("en-IN")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
