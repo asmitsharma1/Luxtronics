@@ -47,6 +47,7 @@ type InvoiceForm = {
   sellerName: string;
   sellerAddress: string;
   sellerTaxId: string;
+  bankAccountName: string;
   bankAccountNumber: string;
   bankIfsc: string;
   customerCompanyName: string;
@@ -119,6 +120,7 @@ export default function AdminInvoices() {
     sellerName: "Luxtronics",
     sellerAddress: "Luxtronics Online Store",
     sellerTaxId: "",
+    bankAccountName: "",
     bankAccountNumber: "",
     bankIfsc: "",
     customerCompanyName: "",
@@ -253,37 +255,43 @@ export default function AdminInvoices() {
         <head>
           <title>${escapeHtml(title)} ${escapeHtml(form.invoiceNumber)}</title>
           <style>
-            body { color: #111827; font-family: Arial, sans-serif; margin: 32px; }
-            .letterhead { align-items: center; display: flex; justify-content: space-between; gap: 24px; padding-bottom: 16px; }
+            @page { margin: 10mm; size: A4; }
+            * { box-sizing: border-box; }
+            body { color: #111827; font-family: Arial, sans-serif; font-size: 11px; margin: 0; }
+            .letterhead { align-items: center; display: flex; justify-content: space-between; gap: 18px; padding-bottom: 10px; }
             .brand { align-items: center; display: flex; gap: 14px; }
-            .logo-box { align-items: center; border: 1px solid #e5e7eb; border-radius: 14px; display: flex; height: 72px; justify-content: center; overflow: hidden; padding: 6px; width: 72px; }
+            .logo-box { align-items: center; border: 1px solid #e5e7eb; border-radius: 12px; display: flex; height: 58px; justify-content: center; overflow: hidden; padding: 5px; width: 58px; }
             .brand img { display: block; height: 100%; object-fit: contain; width: 100%; }
-            .brand-name { font-size: 26px; font-weight: 800; letter-spacing: 0.06em; margin: 0; text-transform: uppercase; }
-            .letterhead-details { max-width: 320px; text-align: right; }
-            .invoice-banner { align-items: center; background: #111827; border-radius: 12px; color: #ffffff; display: flex; justify-content: space-between; gap: 18px; margin-top: 18px; overflow: hidden; padding: 18px 22px; position: relative; }
-            .invoice-banner h1 { color: #ffffff; font-size: 28px; letter-spacing: 0.06em; margin: 0; text-transform: uppercase; }
-            .invoice-banner p { color: #d1d5db; margin: 4px 0 0; }
-            .invoice-stamp { align-items: center; background: rgba(255,255,255,0.96); border: 1px solid rgba(255,255,255,0.75); border-radius: 10px; display: flex; height: 78px; justify-content: center; overflow: hidden; padding: 0; position: absolute; right: 250px; top: 50%; transform: translateY(-50%) rotate(-8deg); width: 142px; }
+            .brand-name { font-size: 22px; font-weight: 800; letter-spacing: 0.06em; margin: 0; text-transform: uppercase; }
+            .letterhead-details { max-width: 300px; text-align: right; }
+            .invoice-banner { align-items: center; background: #111827; border-radius: 10px; color: #ffffff; display: flex; justify-content: space-between; gap: 18px; margin-top: 10px; padding: 12px 16px; }
+            .invoice-banner h1 { color: #ffffff; font-size: 23px; letter-spacing: 0.06em; margin: 0; text-transform: uppercase; }
+            .invoice-banner p { color: #d1d5db; margin: 3px 0 0; }
+            .invoice-stamp { align-items: center; background: rgba(255,255,255,0.96); border: 1px solid #e5e7eb; border-radius: 10px; display: flex; height: 78px; justify-content: center; overflow: hidden; padding: 0; transform: rotate(-8deg); width: 142px; }
             .invoice-stamp img { display: block; height: 108px; object-fit: cover; object-position: center 38%; width: 154px; }
             .invoice-stamp.unpaid img { height: 118px; object-position: center 22%; transform: translateY(-8px); }
             .invoice-stamp.paid img { height: 96px; object-fit: contain; width: 132px; }
             .invoice-meta { min-width: 220px; text-align: right; }
             .invoice-meta strong { color: #ffffff; display: block; font-size: 15px; }
-            .top { align-items: flex-start; display: flex; justify-content: space-between; gap: 32px; margin-top: 22px; }
-            h1 { font-size: 30px; margin: 0 0 8px; text-transform: uppercase; }
-            h2 { font-size: 15px; margin: 0 0 8px; text-transform: uppercase; }
-            p { line-height: 1.45; margin: 4px 0; white-space: pre-line; }
-            .muted { color: #6b7280; font-size: 12px; }
-            .notice { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; color: #065f46; font-size: 12px; margin-top: 16px; padding: 10px 12px; }
-            .panel { border: 1px solid #d1d5db; border-radius: 8px; margin-top: 24px; padding: 16px; }
-            .grid { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
-            table { border-collapse: collapse; margin-top: 24px; width: 100%; }
-            th, td { border-bottom: 1px solid #e5e7eb; font-size: 12px; padding: 10px; text-align: left; vertical-align: top; }
+            .top { align-items: flex-start; display: flex; justify-content: space-between; gap: 24px; margin-top: 12px; }
+            h1 { font-size: 24px; margin: 0 0 6px; text-transform: uppercase; }
+            h2 { font-size: 13px; margin: 0 0 5px; text-transform: uppercase; }
+            p { line-height: 1.35; margin: 3px 0; white-space: pre-line; }
+            .muted { color: #6b7280; font-size: 10px; }
+            .notice { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 7px; color: #065f46; font-size: 10px; margin-top: 8px; padding: 7px 9px; }
+            .panel { border: 1px solid #d1d5db; border-radius: 8px; margin-top: 10px; padding: 10px; break-inside: avoid; }
+            .grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+            table { border-collapse: collapse; margin-top: 10px; width: 100%; }
+            th, td { border-bottom: 1px solid #e5e7eb; font-size: 10px; padding: 6px; text-align: left; vertical-align: top; }
             th { background: #f9fafb; color: #374151; text-transform: uppercase; }
-            .totals { margin-left: auto; margin-top: 18px; width: 320px; }
-            .totals div { display: flex; justify-content: space-between; padding: 8px 0; }
-            .grand { border-top: 2px solid #111827; font-size: 18px; font-weight: 700; }
-            @media print { body { margin: 18mm; } button { display: none; } }
+            .totals { margin-left: auto; margin-top: 8px; width: 300px; break-inside: avoid; }
+            .totals div { display: flex; justify-content: space-between; padding: 5px 0; }
+            .grand { border-top: 2px solid #111827; font-size: 15px; font-weight: 700; }
+            .footer-row { align-items: flex-end; display: flex; justify-content: space-between; gap: 24px; margin-top: 12px; break-inside: avoid; }
+            .status-block { align-items: center; display: flex; flex-direction: column; gap: 4px; }
+            .status-label { color: #6b7280; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+            .signature-line { border-top: 1px solid #9ca3af; color: #6b7280; font-size: 10px; min-width: 170px; padding-top: 6px; text-align: center; }
+            @media print { button { display: none; } }
           </style>
         </head>
         <body>
@@ -306,9 +314,6 @@ export default function AdminInvoices() {
             <div>
               <h1>${escapeHtml(title)}</h1>
               <p>GST-inclusive pricing with tax calculation</p>
-            </div>
-            <div class="invoice-stamp ${invoiceType === "tax" ? "paid" : "unpaid"}">
-              <img src="${stampSrc}" alt="${stampAlt}">
             </div>
             <div class="invoice-meta">
               <strong>${escapeHtml(form.invoiceNumber)}</strong>
@@ -357,14 +362,24 @@ export default function AdminInvoices() {
             <div><span>GST included in price</span><strong>${formatMoney(totals.tax, form.currency)}</strong></div>
             <div class="grand"><span>Total</span><span>${formatMoney(totals.grandTotal, form.currency)}</span></div>
           </div>
-          ${invoiceType === "proforma" && (form.bankAccountNumber || form.bankIfsc) ? `
+          ${invoiceType === "proforma" && (form.bankAccountName || form.bankAccountNumber || form.bankIfsc) ? `
             <div class="panel">
               <h2>Payment Details</h2>
+              ${form.bankAccountName ? `<p><strong>Account Name:</strong> ${escapeHtml(form.bankAccountName)}</p>` : ""}
               ${form.bankAccountNumber ? `<p><strong>Account No:</strong> ${escapeHtml(form.bankAccountNumber)}</p>` : ""}
               ${form.bankIfsc ? `<p><strong>IFSC:</strong> ${escapeHtml(form.bankIfsc)}</p>` : ""}
             </div>
           ` : ""}
           ${form.notes ? `<div class="panel"><h2>Notes</h2><p>${escapeHtml(form.notes)}</p></div>` : ""}
+          <div class="footer-row">
+            <div class="signature-line">Authorized Signatory</div>
+            <div class="status-block">
+              <div class="status-label">Payment Status</div>
+              <div class="invoice-stamp ${invoiceType === "tax" ? "paid" : "unpaid"}">
+                <img src="${stampSrc}" alt="${stampAlt}">
+              </div>
+            </div>
+          </div>
         </body>
       </html>
     `;
@@ -496,6 +511,10 @@ export default function AdminInvoices() {
                   <div className="md:col-span-2">
                     <Label htmlFor="sellerAddress">Seller address</Label>
                     <Textarea id="sellerAddress" rows={3} value={form.sellerAddress} onChange={(event) => setForm({ ...form, sellerAddress: event.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bankAccountName">Account name</Label>
+                    <Input id="bankAccountName" value={form.bankAccountName} onChange={(event) => setForm({ ...form, bankAccountName: event.target.value })} placeholder="Shown on proforma only" />
                   </div>
                   <div>
                     <Label htmlFor="bankAccountNumber">Account number</Label>
