@@ -247,11 +247,17 @@ export default function AdminInvoices() {
           <title>${escapeHtml(title)} ${escapeHtml(form.invoiceNumber)}</title>
           <style>
             body { color: #111827; font-family: Arial, sans-serif; margin: 32px; }
-            .letterhead { align-items: center; border-bottom: 2px solid #111827; display: flex; justify-content: space-between; gap: 24px; padding-bottom: 16px; }
+            .letterhead { align-items: center; display: flex; justify-content: space-between; gap: 24px; padding-bottom: 16px; }
             .brand { align-items: center; display: flex; gap: 14px; }
-            .brand img { border-radius: 12px; height: 64px; object-fit: cover; width: 64px; }
+            .logo-box { align-items: center; border: 1px solid #e5e7eb; border-radius: 14px; display: flex; height: 72px; justify-content: center; overflow: hidden; padding: 6px; width: 72px; }
+            .brand img { display: block; height: 100%; object-fit: contain; width: 100%; }
             .brand-name { font-size: 26px; font-weight: 800; letter-spacing: 0.06em; margin: 0; text-transform: uppercase; }
             .letterhead-details { max-width: 320px; text-align: right; }
+            .invoice-banner { align-items: center; background: #111827; border-radius: 12px; color: #ffffff; display: flex; justify-content: space-between; gap: 18px; margin-top: 18px; padding: 18px 22px; }
+            .invoice-banner h1 { color: #ffffff; font-size: 28px; letter-spacing: 0.06em; margin: 0; text-transform: uppercase; }
+            .invoice-banner p { color: #d1d5db; margin: 4px 0 0; }
+            .invoice-meta { min-width: 220px; text-align: right; }
+            .invoice-meta strong { color: #ffffff; display: block; font-size: 15px; }
             .top { align-items: flex-start; display: flex; justify-content: space-between; gap: 32px; margin-top: 22px; }
             h1 { font-size: 30px; margin: 0 0 8px; text-transform: uppercase; }
             h2 { font-size: 15px; margin: 0 0 8px; text-transform: uppercase; }
@@ -272,7 +278,9 @@ export default function AdminInvoices() {
         <body>
           <div class="letterhead">
             <div class="brand">
-              <img src="/logo.jpeg" alt="Luxtronics logo">
+              <div class="logo-box">
+                <img src="/logo.jpeg" alt="Luxtronics logo">
+              </div>
               <div>
                 <p class="brand-name">${escapeHtml(form.sellerName || "Luxtronics")}</p>
                 <p class="muted">Premium Electronics & Gadgets</p>
@@ -283,9 +291,20 @@ export default function AdminInvoices() {
               ${form.sellerTaxId ? `<p class="muted">Tax ID: ${escapeHtml(form.sellerTaxId)}</p>` : ""}
             </div>
           </div>
-          <div class="top">
+          <div class="invoice-banner">
             <div>
               <h1>${escapeHtml(title)}</h1>
+              <p>${invoiceType === "tax" ? "GST-inclusive pricing with tax calculation" : "Formal quotation for requested products"}</p>
+            </div>
+            <div class="invoice-meta">
+              <strong>${escapeHtml(form.invoiceNumber)}</strong>
+              <p>Date: ${escapeHtml(form.invoiceDate)}</p>
+              <p>Due: ${escapeHtml(form.dueDate)}</p>
+            </div>
+          </div>
+          <div class="top">
+            <div>
+              <h2>Invoice Details</h2>
               <p class="muted">Invoice No. ${escapeHtml(form.invoiceNumber)}</p>
               <p class="muted">Date: ${escapeHtml(form.invoiceDate)} · Due: ${escapeHtml(form.dueDate)}</p>
             </div>
