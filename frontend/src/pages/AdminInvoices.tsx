@@ -245,7 +245,6 @@ export default function AdminInvoices() {
             <div class="grand"><span>Total</span><span>${formatMoney(totals.grandTotal, form.currency)}</span></div>
           </div>
           ${form.notes ? `<div class="panel"><h2>Notes</h2><p>${escapeHtml(form.notes)}</p></div>` : ""}
-          <script>window.onload = () => { window.print(); };</script>
         </body>
       </html>
     `;
@@ -262,18 +261,41 @@ export default function AdminInvoices() {
       return;
     }
 
-    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=960,height=720");
-    if (!printWindow) {
+    const previousFrame = document.getElementById("invoice-print-frame");
+    previousFrame?.remove();
+
+    const frame = document.createElement("iframe");
+    frame.id = "invoice-print-frame";
+    frame.title = "Invoice PDF print frame";
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    frame.style.visibility = "hidden";
+    document.body.appendChild(frame);
+
+    const frameWindow = frame.contentWindow;
+    const frameDocument = frame.contentDocument || frameWindow?.document;
+    if (!frameWindow || !frameDocument) {
+      frame.remove();
       toast({
-        title: "Popup blocked",
-        description: "Allow popups for this site, then try saving the PDF again.",
+        title: "PDF preview failed",
+        description: "The browser could not prepare the invoice print view.",
         variant: "destructive",
       });
       return;
     }
-    printWindow.document.open();
-    printWindow.document.write(buildInvoiceHtml());
-    printWindow.document.close();
+
+    frameDocument.open();
+    frameDocument.write(buildInvoiceHtml());
+    frameDocument.close();
+
+    window.setTimeout(() => {
+      frameWindow.focus();
+      frameWindow.print();
+    }, 250);
   };
 
   return (
