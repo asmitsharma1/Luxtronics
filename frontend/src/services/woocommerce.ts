@@ -4,8 +4,13 @@
  * The backend proxy forwards requests to luxtronics.luxtronics.in securely.
  */
 
-// Backend API URL - absolute for parked domains
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://luxtronics.in';
+// Backend API URL. In production, same-origin keeps parked domains working and
+// avoids accidentally shipping localhost from .env.local into the browser.
+const configuredBackendUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+const isLocalBackendUrl = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(configuredBackendUrl);
+const isBrowserOnLocalhost =
+  typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+const BACKEND_URL = isLocalBackendUrl && !isBrowserOnLocalhost ? '' : configuredBackendUrl;
 const API_BASE = `${BACKEND_URL}/api/woo`;
 
 export interface WooProduct {
