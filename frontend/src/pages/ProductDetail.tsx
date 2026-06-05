@@ -47,7 +47,8 @@ const ProductDetail = () => {
       
       // If not found by slug directly, try to find in the products list as a backup
       const allProducts = await fetchStoreProducts(1, 100);
-      const found = allProducts.find(p => p.slug === slug);
+      const productList = Array.isArray(allProducts) ? allProducts : [];
+      const found = productList.find(p => p.slug === slug);
       if (found) {
         const mapped = mapStoreProductToLocalProduct(found);
         if (mapped) return mapped;
@@ -63,7 +64,8 @@ const ProductDetail = () => {
     queryKey: ['products', 'related', product?.category],
     queryFn: async () => {
       const storeProducts = await fetchStoreProducts(1, 12); // Fetch fewer for speed
-      const mapped = storeProducts
+      const rawProducts = Array.isArray(storeProducts) ? storeProducts : [];
+      const mapped = rawProducts
         .map(mapStoreProductToLocalProduct)
         .filter((item): item is Product => item !== null && item.slug !== slug);
       return mapped.slice(0, 4);

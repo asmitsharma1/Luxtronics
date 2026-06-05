@@ -43,7 +43,8 @@ const LatestArrivals = () => {
   });
 
   const latestProducts = useMemo(() => {
-    const source = storeProducts.map(mapStoreProductToLocalProduct).filter((product): product is Product => product !== null);
+    const rawProducts = Array.isArray(storeProducts) ? storeProducts : [];
+    const source = rawProducts.map(mapStoreProductToLocalProduct).filter((product): product is Product => product !== null);
 
     return [...source].sort((a, b) => productScore(b) - productScore(a)).slice(0, 36);
   }, [storeProducts]);

@@ -219,7 +219,8 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
   // even when sync_status is stale or missing.
   try {
     console.log('[Store API] Fetching from Firestore (fast)');
-    const products = await fetchProductsFromFirebase(page, perPage, search);
+    const firebaseProducts = await fetchProductsFromFirebase(page, perPage, search);
+    const products = Array.isArray(firebaseProducts) ? firebaseProducts : [];
 
     if (products.length > 0) {
       console.log(`[Store API] Firestore returned ${products.length} products`);
@@ -240,7 +241,9 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
       let currentPage = 1;
 
       while (true) {
-        const { products, totalPages } = await fetchProductsFromStoreCache(currentPage, maxPerPage, search);
+        const cacheResult = await fetchProductsFromStoreCache(currentPage, maxPerPage, search);
+        const products = Array.isArray(cacheResult.products) ? cacheResult.products : [];
+        const totalPages = Number(cacheResult.totalPages || 1);
         if (products.length === 0) break;
 
         allProducts.push(...products);
@@ -284,7 +287,8 @@ export async function fetchStoreProducts(page = 1, perPage = 100, search?: strin
 
   // Single page fetch (perPage ≤ 100)
   try {
-    const { products } = await fetchProductsFromStoreCache(page, perPage, search);
+    const cacheResult = await fetchProductsFromStoreCache(page, perPage, search);
+    const products = Array.isArray(cacheResult.products) ? cacheResult.products : [];
     if (products.length > 0) return products;
   } catch (error) {
     console.warn('[Store API] Store cache failed, falling back to WooCommerce proxy:', error);
@@ -410,7 +414,8 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
     // Warm product cache in the background; don't block first render on the full catalog.
     void fetchProductsFromFirebase().catch(() => {});
 
-    const categories = await fetchCategoriesFromFirebase();
+    const firebaseCategories = await fetchCategoriesFromFirebase();
+    const categories = Array.isArray(firebaseCategories) ? firebaseCategories : [];
 
     if (categories.length > 0) {
       console.log(`[Store API] Firestore returned ${categories.length} categories`);
@@ -459,7 +464,8 @@ export async function fetchSearchSuggestions(query: string): Promise<Product[]> 
   // Try Firestore first (fastest path)
   try {
     console.log('[Store API] Searching in Firestore (fast)');
-    const products = await searchProductsInFirebase(query);
+    const firebaseProducts = await searchProductsInFirebase(query);
+    const products = Array.isArray(firebaseProducts) ? firebaseProducts : [];
 
     if (products.length > 0) {
       console.log(`[Store API] Firestore search returned ${products.length} results`);

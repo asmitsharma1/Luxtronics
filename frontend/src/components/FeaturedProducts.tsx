@@ -36,7 +36,8 @@ const FeaturedProducts = () => {
   };
 
   const products = useMemo(() => {
-    const source = storeProducts
+    const rawProducts = Array.isArray(storeProducts) ? storeProducts : [];
+    const source = rawProducts
       .map(mapStoreProductToLocalProduct)
       .filter((p): p is Product => p !== null);
 

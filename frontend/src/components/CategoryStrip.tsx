@@ -27,8 +27,9 @@ const CategoryStrip = () => {
   });
 
   const displayCategories: DisplayCategory[] = useMemo(() => {
-    if (categoryResult?.data && categoryResult.data.length > 0) return categoryResult.data;
-    return staticCategories;
+    const apiCategories = Array.isArray(categoryResult?.data) ? categoryResult.data : [];
+    if (apiCategories.length > 0) return apiCategories;
+    return Array.isArray(staticCategories) ? staticCategories : [];
   }, [categoryResult]);
 
   return (

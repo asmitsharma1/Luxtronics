@@ -24,7 +24,8 @@ const Cart = () => {
     const loadRelated = async () => {
       try {
         const products = await fetchStoreProducts(1, 8);
-        const mapped = products.map(mapStoreProductToLocalProduct);
+        const rawProducts = Array.isArray(products) ? products : [];
+        const mapped = rawProducts.map(mapStoreProductToLocalProduct);
         // Filter out items already in cart
         const filtered = mapped.filter(p => !items.some(item => item.product.id === p.id));
         setRelatedProducts(filtered.slice(0, 8));

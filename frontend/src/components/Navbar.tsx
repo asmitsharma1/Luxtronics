@@ -87,7 +87,7 @@ const CAT_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 function getCatIcon(name: string): React.ComponentType<{ className?: string }> {
-  return CAT_ICON_MAP[name.toLowerCase()] ?? Package;
+  return CAT_ICON_MAP[String(name || "").toLowerCase()] ?? Package;
 }
 
 const simpleLinks = [
@@ -169,7 +169,7 @@ function scoreSuggestion(product: Product, query: string) {
 }
 
 function categoryMatchesDepartment(category: StoreCategory, department: MegaDepartment) {
-  const text = `${category.name} ${category.slug} ${category.description ?? ""}`;
+  const text = `${category.name || ""} ${category.slug || ""} ${category.description ?? ""}`;
   return department.patterns.some((pattern) => pattern.test(text));
 }
 
@@ -188,14 +188,15 @@ const CompactCategoriesMega = ({
   categories: StoreCategory[];
   onClose: () => void;
 }) => {
+  const safeCategories = useMemo(() => (Array.isArray(categories) ? categories : []), [categories]);
   const groupedDepartments = useMemo(() => {
-    const sorted = [...categories].sort((a, b) => (b.count || 0) - (a.count || 0));
+    const sorted = [...safeCategories].sort((a, b) => (b.count || 0) - (a.count || 0));
 
     return COMPACT_DEPARTMENTS.map((department) => {
       const items = sorted.filter((category) => categoryMatchesDepartment(category, department));
       return { ...department, items };
     }).filter((department, index) => department.items.length > 0 || index < 10);
-  }, [categories]);
+  }, [safeCategories]);
 
   const [activeDepartment, setActiveDepartment] = useState(COMPACT_DEPARTMENTS[0].name);
   const active =
@@ -204,7 +205,7 @@ const CompactCategoriesMega = ({
   const activeItems =
     active?.items.length
       ? active.items
-      : categories.slice(0, 24);
+      : safeCategories.slice(0, 24);
   const columns = chunkCategories(activeItems.slice(0, 24), 8);
 
   return (
@@ -417,11 +418,12 @@ const Navbar = () => {
     queryFn: () => fetchStoreCategories(1, 100),
     staleTime: 1000 * 60 * 30,
   });
+  const fetchedCategories = Array.isArray(catResult?.data) ? catResult.data : [];
 
   // Top 12 categories by count (exclude uncategorized)
-  const navCategories: StoreCategory[] = (catResult?.data ?? [])
-    .filter(c => c.name.toLowerCase() !== "uncategorized")
-    .sort((a, b) => b.count - a.count)
+  const navCategories: StoreCategory[] = fetchedCategories
+    .filter(c => String(c.name || "").toLowerCase() !== "uncategorized")
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0))
     .slice(0, 12);
 
   const col1 = navCategories.slice(0, 6);
@@ -551,7 +553,7 @@ const Navbar = () => {
                       >
                         {key === "Categories" ? (
                           <CompactCategoriesMega
-                            categories={(catResult?.data ?? []).filter(c => c.name.toLowerCase() !== "uncategorized")}
+                            categories={fetchedCategories.filter(c => String(c.name || "").toLowerCase() !== "uncategorized")}
                             onClose={() => setActiveMega(null)}
                           />
                         ) : (
@@ -1168,13 +1170,15 @@ const SearchSuggestions = ({
   const liveQuery = query.trim() || debouncedQuery.trim();
   const smartQuery = normalizeSmartQuery(liveQuery);
 
-  const { data: suggestions = [], isLoading, isError, error } = useQuery({
+  const { data: rawSuggestions = [], isLoading, isError, error } = useQuery({
     queryKey: ["search-suggestions", smartQuery],
     queryFn: () => fetchSearchSuggestions(smartQuery),
     enabled: liveQuery.length >= 2,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
+  const suggestions = useMemo(() => (Array.isArray(rawSuggestions) ? rawSuggestions : []), [rawSuggestions]);
+  const safeCategories = useMemo(() => (Array.isArray(categories) ? categories : []), [categories]);
 
   const instantSuggestions = useMemo(() => {
     if (smartQuery.length < 2) return [];
@@ -1190,7 +1194,7 @@ const SearchSuggestions = ({
   const rankedSuggestions = useMemo(() => {
     const source = suggestions.length > 0 ? suggestions : instantSuggestions;
 
-    return [...source]
+    return (Array.isArray(source) ? source : [])
       .map((product) => ({ product, score: scoreSuggestion(product, smartQuery) }))
       .sort((a, b) => b.score - a.score)
       .map(({ product }) => product)
@@ -1198,7 +1202,7 @@ const SearchSuggestions = ({
   }, [suggestions, instantSuggestions, smartQuery]);
 
   const categoryMatches = useMemo(() => {
-    return categories
+    return safeCategories
       .map((cat) => ({
         cat,
         score: scoreTextMatch(smartQuery, [cat.name, cat.slug, cat.description], [4, 2, 1]),
@@ -1207,7 +1211,7 @@ const SearchSuggestions = ({
       .sort((a, b) => b.score - a.score || (b.cat.count ?? 0) - (a.cat.count ?? 0))
       .map(({ cat }) => cat)
       .slice(0, 3);
-  }, [categories, smartQuery]);
+  }, [safeCategories, smartQuery]);
 
   const brandMatches = useMemo(() => {
     const q = smartQuery.toLowerCase();

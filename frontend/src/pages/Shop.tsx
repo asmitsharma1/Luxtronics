@@ -322,9 +322,11 @@ const Shop = () => {
           fetchStoreProducts(1, 100, search || undefined),
         ]);
         if (!mounted) return;
-        setCategories(catData.data.filter(c => c.name.toLowerCase() !== "uncategorized" || c.count > 0));
-        setProducts(prodData.map(mapStoreProductToLocalProduct));
-        setTotalCount(Math.max(prodData.length, catData.data.reduce((sum, cat) => sum + Number(cat.count || 0), 0)));
+        const categoryList = Array.isArray(catData?.data) ? catData.data : [];
+        const productList = Array.isArray(prodData) ? prodData : [];
+        setCategories(categoryList.filter(c => String(c.name || "").toLowerCase() !== "uncategorized" || c.count > 0));
+        setProducts(productList.map(mapStoreProductToLocalProduct));
+        setTotalCount(Math.max(productList.length, categoryList.reduce((sum, cat) => sum + Number(cat.count || 0), 0)));
         setError(null);
       } catch (e) {
         if (!mounted) return;
@@ -344,9 +346,10 @@ const Shop = () => {
       try {
         setHydratingAll(true);
         const allProducts = await fetchStoreProducts(1, 0);
-        if (!mounted || allProducts.length === 0) return;
-        setProducts(allProducts.map(mapStoreProductToLocalProduct));
-        setTotalCount(allProducts.length);
+        const productList = Array.isArray(allProducts) ? allProducts : [];
+        if (!mounted || productList.length === 0) return;
+        setProducts(productList.map(mapStoreProductToLocalProduct));
+        setTotalCount(productList.length);
       } catch (e) {
         console.warn("Background product hydration failed:", e);
       } finally {
