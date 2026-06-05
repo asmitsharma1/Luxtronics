@@ -16,7 +16,7 @@ const Contact = () => {
         title="Contact Luxtronics — Customer Support & Enquiries"
         description="Contact Luxtronics for order support, returns, or partnerships. Email, phone, WhatsApp available. Response within 24 hours."
         keywords="contact luxtronics, customer support, electronics store contact, luxtronics phone number"
-        url="https://luxtronics.in/contact"
+        url="/contact"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "ContactPage",

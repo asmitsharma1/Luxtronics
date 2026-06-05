@@ -3,6 +3,12 @@ import { Calendar, ArrowLeft, ArrowRight } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { getBlogPost } from "@/data/blog-posts";
 import SEO from "@/components/SEO";
+import { absoluteUrl, breadcrumbSchema } from "@/lib/seo";
+
+const toIsoDate = (date: string) => {
+  const parsed = new Date(date);
+  return Number.isNaN(parsed.getTime()) ? date : parsed.toISOString().split("T")[0];
+};
 
 const GanChargerHeroVisual = () => (
   <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] items-center justify-center lg:flex">
@@ -56,26 +62,38 @@ const BlogPost = () => {
     );
   }
 
+  const isoDate = toIsoDate(post.date);
+
   return (
     <Layout>
       <SEO
         title={`${post.title} | Luxtronics Blog`}
         description={post.excerpt}
         keywords={`${post.tag}, electronics, tech guide, luxtronics`}
-        url={`https://luxtronics.in/blog/${post.slug}`}
+        url={`/blog/${post.slug}`}
         type="article"
-        publishedTime={post.date}
+        publishedTime={isoDate}
         image={typeof post.img === 'string' ? post.img : undefined}
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "Article",
-          "headline": post.title,
-          "description": post.excerpt,
-          "datePublished": post.date,
-          "author": { "@type": "Organization", "name": "Luxtronics" },
-          "publisher": { "@type": "Organization", "name": "Luxtronics", "url": "https://luxtronics.in" },
-          "url": `https://luxtronics.in/blog/${post.slug}`
-        }}
+        structuredData={[
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Blog", path: "/blog" },
+            { name: post.title, path: `/blog/${post.slug}` },
+          ]),
+          {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": post.title,
+            "description": post.excerpt,
+            "datePublished": isoDate,
+            "dateModified": isoDate,
+            "author": { "@type": "Organization", "name": "Luxtronics" },
+            "publisher": { "@type": "Organization", "name": "Luxtronics", "url": absoluteUrl("/") },
+            "image": typeof post.img === "string" ? absoluteUrl(post.img) : undefined,
+            "mainEntityOfPage": absoluteUrl(`/blog/${post.slug}`),
+            "url": absoluteUrl(`/blog/${post.slug}`)
+          },
+        ]}
       />
       <section className="container pt-10 pb-10">
         <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

@@ -281,7 +281,7 @@ export default function AdminDashboard() {
       <SEO
         title="Admin Monitoring Dashboard"
         description="Admin-only Luxtronics monitoring dashboard."
-        canonical="https://luxtronics.in/admin"
+        url="/admin"
         noindex
         nofollow
       />

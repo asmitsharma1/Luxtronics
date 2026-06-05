@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { absoluteUrl, getSiteUrl, organizationSchema, websiteSchema } from "@/lib/seo";
 
 interface SEOProps {
   title?: string;
@@ -20,8 +21,8 @@ const SEO = ({
   title = "Luxtronics — Premium Electronics & Gadgets Store",
   description = "Shop premium electronics: smartphones, audio, wearables, laptops, gaming and cameras. Curated catalog with product support information.",
   keywords = "electronics, gadgets, smartphones, laptops, audio, wearables, gaming, cameras, premium tech",
-  image = "https://luxtronics.in/og-image.jpg",
-  url = "https://luxtronics.in",
+  image = "/logo.jpeg",
+  url,
   type = "website",
   publishedTime,
   modifiedTime,
@@ -32,38 +33,31 @@ const SEO = ({
   structuredData,
 }: SEOProps) => {
   const fullTitle = title.includes("Luxtronics") ? title : `${title} | Luxtronics`;
-  const fullUrl = canonical || url;
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "/";
+  const fullUrl = canonical || absoluteUrl(url || currentPath);
+  const fullImage = absoluteUrl(image);
   const robots = `${noindex ? "noindex" : "index"}, ${nofollow ? "nofollow" : "follow"}, max-image-preview:large, max-snippet:-1, max-video-preview:-1`;
 
-  const defaultStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Luxtronics",
-    "url": "https://luxtronics.in",
-    "description": description,
-    "inLanguage": "en",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://luxtronics.in/shop?q={search_term_string}",
-      "query-input": "required name=search_term_string",
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Luxtronics",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://luxtronics.in/logo.png",
-        "width": 200,
-        "height": 200,
-      },
-    },
-  };
+  const dataToUse = useMemo(() => {
+    const pageSchema = {
+      "@context": "https://schema.org",
+      "@type": type === "article" ? "Article" : type === "product" ? "ItemPage" : "WebPage",
+      "@id": `${fullUrl}#webpage`,
+      name: fullTitle,
+      description,
+      url: fullUrl,
+      inLanguage: "en",
+      isPartOf: { "@id": `${getSiteUrl()}/#website` },
+    };
 
-  const dataToUse = structuredData
-    ? Array.isArray(structuredData)
-      ? structuredData
-      : [structuredData]
-    : [defaultStructuredData];
+    const pageData = structuredData
+      ? Array.isArray(structuredData)
+        ? structuredData
+        : [structuredData]
+      : [];
+
+    return [organizationSchema(), websiteSchema(description), pageSchema, ...pageData];
+  }, [description, fullTitle, fullUrl, structuredData, type]);
 
   useEffect(() => {
     // Update document title
@@ -102,7 +96,7 @@ const SEO = ({
     // Update Open Graph tags
     updatePropertyTag("og:title", fullTitle);
     updatePropertyTag("og:description", description);
-    updatePropertyTag("og:image", image);
+    updatePropertyTag("og:image", fullImage);
     updatePropertyTag("og:url", fullUrl);
     updatePropertyTag("og:type", type);
     updatePropertyTag("og:site_name", "Luxtronics");
@@ -114,7 +108,7 @@ const SEO = ({
     updateMetaTag("twitter:card", "summary_large_image");
     updateMetaTag("twitter:title", fullTitle);
     updateMetaTag("twitter:description", description);
-    updateMetaTag("twitter:image", image);
+    updateMetaTag("twitter:image", fullImage);
     updateMetaTag("twitter:site", "@luxtronics");
     updateMetaTag("twitter:creator", "@luxtronics");
 
@@ -130,6 +124,23 @@ const SEO = ({
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.setAttribute("href", fullUrl);
+
+    const alternates = [
+      { hreflang: "en-in", href: "https://luxtronics.in" },
+      { hreflang: "en-au", href: "https://luxtronics.com.au" },
+      { hreflang: "en-nz", href: "https://luxtronics.co.nz" },
+      { hreflang: "x-default", href: "https://luxtronics.in" },
+    ];
+
+    document.querySelectorAll('link[data-lux-hreflang="true"]').forEach((link) => link.remove());
+    alternates.forEach((alternate) => {
+      const link = document.createElement("link");
+      link.setAttribute("rel", "alternate");
+      link.setAttribute("hreflang", alternate.hreflang);
+      link.setAttribute("href", `${alternate.href}${window.location.pathname}`);
+      link.setAttribute("data-lux-hreflang", "true");
+      document.head.appendChild(link);
+    });
 
     document.querySelectorAll('script[data-lux-seo="true"]').forEach((script) => script.remove());
     dataToUse.forEach((data, index) => {
@@ -152,7 +163,7 @@ const SEO = ({
     keywords,
     author,
     robots,
-    image,
+    fullImage,
     fullUrl,
     type,
     dataToUse,

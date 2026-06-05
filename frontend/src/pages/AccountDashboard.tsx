@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Package, Heart, MapPin, UserRound } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -36,6 +37,13 @@ const AccountDashboard = () => {
   if (!isLoaded) {
     return (
       <Layout>
+        <SEO
+          title="Account Dashboard | Luxtronics"
+          description="Manage your Luxtronics account, orders, saved products, addresses, and profile settings."
+          url="/account"
+          noindex
+          nofollow
+        />
         <section className="container pt-10 pb-24 max-w-xl">
           <p className="text-muted-foreground">Loading account...</p>
         </section>
@@ -46,6 +54,13 @@ const AccountDashboard = () => {
   if (!isSignedIn || !user) {
     return (
       <Layout>
+        <SEO
+          title="Account Dashboard | Luxtronics"
+          description="Sign in to manage your Luxtronics account, orders, saved products, addresses, and profile settings."
+          url="/account"
+          noindex
+          nofollow
+        />
         <section className="container pt-10 pb-24 max-w-xl">
           <h1 className="font-display font-bold text-4xl tracking-tight">Please sign in</h1>
           <p className="mt-3 text-muted-foreground">Sign in to access your dashboard.</p>
@@ -75,6 +90,13 @@ const AccountDashboard = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Account Dashboard | Luxtronics"
+        description="Manage your Luxtronics account, orders, saved products, addresses, and profile settings."
+        url="/account"
+        noindex
+        nofollow
+      />
       <section className="container pt-10 pb-12">
         <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">My account</p>
         <h1 className="font-display font-bold text-5xl tracking-tight">

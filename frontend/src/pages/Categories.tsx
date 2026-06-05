@@ -32,6 +32,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
+import { absoluteUrl, breadcrumbSchema } from "@/lib/seo";
 import { scoreTextMatch } from "@/lib/smart-search";
 import { fetchStoreCategories } from "@/services/store-api";
 import type { StoreCategory } from "@/services/store-api";
@@ -434,7 +435,30 @@ const Categories = () => {
         title="Shop by Category | Luxtronics"
         description={`Browse ${allCategories.length} categories of premium electronics.`}
         keywords="electronics categories, smartphones, laptops, audio, cameras"
-        url="https://luxtronics.com/categories"
+        url="/categories"
+        structuredData={[
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Categories", path: "/categories" },
+          ]),
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "@id": `${absoluteUrl("/categories")}#categories`,
+            "name": "Shop by Category",
+            "url": absoluteUrl("/categories"),
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": allCategories.length,
+              "itemListElement": allCategories.slice(0, 50).map((category, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "name": category.name,
+                "url": absoluteUrl(`/shop?category=${category.slug}`),
+              })),
+            },
+          },
+        ]}
       />
 
       <main className="bg-background">

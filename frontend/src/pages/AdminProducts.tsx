@@ -218,7 +218,7 @@ export default function AdminProducts() {
 
   return (
     <Layout>
-      <SEO title="Admin Products" description="Admin-only WooCommerce product management." canonical="https://luxtronics.in/admin/products" noindex nofollow />
+      <SEO title="Admin Products" description="Admin-only WooCommerce product management." url="/admin/products" noindex nofollow />
 
       <section className="container py-8">
         <div className="mb-6 flex flex-col justify-between gap-4 border-b border-border pb-5 lg:flex-row lg:items-end">

@@ -9,7 +9,7 @@ const ShippingReturns = () => {
         title="Shipping & Returns Policy | Luxtronics"
         description="Learn about Luxtronics shipping options, return eligibility, support process, and product coverage information."
         keywords="luxtronics shipping policy, return policy, product coverage, support policy"
-        url="https://luxtronics.in/shipping-returns"
+        url="/shipping-returns"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "WebPage",

@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import Hero from "@/components/Hero";
 import BrandMarquee from "@/components/BrandMarquee";
 import SEO from "@/components/SEO";
+import { absoluteUrl } from "@/lib/seo";
 
 // Lazy load below-the-fold components
 const CategoryStrip = lazy(() => import("@/components/CategoryStrip"));
@@ -33,23 +34,17 @@ const Index = () => {
         title="Luxtronics — Premium Electronics & Gadgets Store | India, Australia, New Zealand"
         description="Shop premium electronics: smartphones, audio, wearables, laptops, gaming and cameras. Curated catalog with regional stores for India, Australia and New Zealand."
         keywords="electronics store, premium gadgets, smartphones, laptops, audio equipment, wearables, gaming accessories, cameras, tech store India, electronics Australia"
-        url="https://luxtronics.in"
+        url="/"
         structuredData={{
           "@context": "https://schema.org",
-          "@type": "WebSite",
+          "@type": "Store",
           "name": "Luxtronics",
-          "url": "https://luxtronics.in",
+          "url": absoluteUrl("/"),
           "description": "Premium electronics store shipping to India, Australia and New Zealand.",
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://luxtronics.in/shop?q={search_term_string}",
-            "query-input": "required name=search_term_string"
-          },
-          "publisher": {
-            "@type": "Organization",
-            "name": "Luxtronics",
-            "logo": { "@type": "ImageObject", "url": "https://luxtronics.in/logo.png" }
-          }
+          "image": absoluteUrl("/logo.jpeg"),
+          "areaServed": ["IN", "AU", "NZ"],
+          "currenciesAccepted": "INR, AUD, NZD",
+          "paymentAccepted": "Credit Card, Debit Card, UPI, Digital Wallet"
         }}
       />
       <Hero />

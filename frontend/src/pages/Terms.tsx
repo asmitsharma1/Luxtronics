@@ -1,8 +1,15 @@
 import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 
 const Terms = () => {
   return (
     <Layout>
+      <SEO
+        title="Terms of Service | Luxtronics"
+        description="Luxtronics terms of service for website use, orders, pricing, shipping, returns, product coverage, and customer responsibilities."
+        keywords="luxtronics terms, terms of service, electronics store terms"
+        url="/terms"
+      />
       <section className="container pt-10 sm:pt-12 lg:pt-14 pb-12 sm:pb-16">
         <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">Legal</p>
         <h1 className="font-display font-bold text-5xl sm:text-6xl tracking-tight">

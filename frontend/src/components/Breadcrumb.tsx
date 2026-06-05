@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { absoluteUrl } from "@/lib/seo";
 
 interface BreadcrumbItem {
   label: string;
@@ -183,7 +184,7 @@ const Breadcrumb = () => {
               "@type": "ListItem",
               "position": index + 1,
               "name": item.label,
-              "item": `https://luxtronics.com${item.href}`,
+              "item": absoluteUrl(item.href),
             })),
           }),
         }}

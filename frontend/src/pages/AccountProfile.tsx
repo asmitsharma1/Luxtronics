@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { useAuth } from "@/context/AuthContext";
 import { updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -15,6 +16,13 @@ const AccountProfile = () => {
   if (!isLoaded) {
     return (
       <Layout>
+        <SEO
+          title="Profile Settings | Luxtronics"
+          description="Manage your Luxtronics profile, display name, and account email."
+          url="/account/profile"
+          noindex
+          nofollow
+        />
         <section className="container pt-10 sm:pt-12 lg:pt-14 pb-16 sm:pb-20 lg:pb-24">
           <p className="text-muted-foreground">Loading profile...</p>
         </section>
@@ -25,6 +33,13 @@ const AccountProfile = () => {
   if (!isSignedIn || !user) {
     return (
       <Layout>
+        <SEO
+          title="Profile Settings | Luxtronics"
+          description="Sign in to manage your Luxtronics profile, display name, and account email."
+          url="/account/profile"
+          noindex
+          nofollow
+        />
         <section className="container pt-10 sm:pt-12 lg:pt-14 pb-16 sm:pb-20 lg:pb-24 max-w-xl">
           <h1 className="font-display font-bold text-4xl tracking-tight">Please sign in</h1>
           <p className="mt-3 text-muted-foreground">Sign in to manage your profile.</p>
@@ -64,6 +79,13 @@ const AccountProfile = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Profile Settings | Luxtronics"
+        description="Manage your Luxtronics profile, display name, and account email."
+        url="/account/profile"
+        noindex
+        nofollow
+      />
       <section className="container pt-10 sm:pt-12 lg:pt-14 pb-12 sm:pb-16 max-w-3xl">
         <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">My account</p>
         <h1 className="font-display font-bold text-5xl tracking-tight">

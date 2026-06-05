@@ -21,38 +21,9 @@ const ProductCard = ({ product }: { product: Product }) => {
     e.stopPropagation();
     addItem(product, 1);
   };
-  
-  // Generate structured data for SEO
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": product.name,
-    "description": product.description,
-    "image": product.image,
-    "sku": product.id.toString(),
-    "brand": {
-      "@type": "Brand",
-      "name": product.brand || "Luxtronics"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": product.price,
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock",
-      "url": `https://luxtronics.com/product/${product.slug}`
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": product.rating,
-      "reviewCount": product.reviews
-    }
-  };
 
   return (
     <>
-      {/* Structured data for SEO */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-      
       <Link
         to={`/product/${product.slug}`}
         className="group relative block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-elegant-hover sm:rounded-2xl"

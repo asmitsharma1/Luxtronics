@@ -35,7 +35,7 @@ const About = () => {
         title="About Luxtronics — Premium Electronics Store"
         description="Luxtronics curates premium electronics for India, Australia and New Zealand. We bridge high-performance technology with refined lifestyle aesthetics."
         keywords="about luxtronics, premium electronics store, tech store India, electronics Australia"
-        url="https://luxtronics.in/about"
+        url="/about"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "AboutPage",

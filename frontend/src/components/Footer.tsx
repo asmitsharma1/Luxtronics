@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Zap, Instagram, Twitter, Youtube, Facebook } from "lucide-react";
+import { absoluteUrl } from "@/lib/seo";
 
 // ── Update these URLs to your real social media pages ──────────────────────────
 const SOCIAL_LINKS = [
@@ -55,8 +56,8 @@ const Footer = () => {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Luxtronics",
-    "url": "https://luxtronics.com",
-    "logo": "https://luxtronics.com/logo.png",
+    "url": absoluteUrl("/"),
+    "logo": absoluteUrl("/logo.jpeg"),
     "description": "Premium electronics curated for the next generation of creators and tech enthusiasts",
     "sameAs": [
       "https://instagram.com/luxtronics",

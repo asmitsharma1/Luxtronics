@@ -5,6 +5,7 @@ import Layout from "@/components/Layout";
 import ProductCard from "@/components/ProductCard";
 import ImageCursorCard from "@/components/ImageCursorCard";
 import SEO from "@/components/SEO";
+import { absoluteUrl, breadcrumbSchema } from "@/lib/seo";
 import { fetchStoreCategories, fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
 import type { Product } from "@/data/products";
 import { scoreTextMatch } from "@/lib/smart-search";
@@ -469,13 +470,30 @@ const Shop = () => {
         title={pageTitle}
         description={`Browse ${totalCount.toLocaleString()} premium electronics. Check availability, product coverage, and shipping options before checkout.`}
         keywords={searchQuery ? `${searchQuery}, electronics, gadgets` : "electronics, gadgets, smartphones, laptops"}
-        url={`https://luxtronics.com/shop`}
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          "name": pageTitle,
-          "url": "https://luxtronics.com/shop",
-        }}
+        url="/shop"
+        structuredData={[
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Shop", path: "/shop" },
+          ]),
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "@id": `${absoluteUrl("/shop")}#collection`,
+            "name": pageTitle,
+            "url": absoluteUrl("/shop"),
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": filtered.length,
+              "itemListElement": filtered.slice(0, 24).map((product, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "url": absoluteUrl(`/product/${product.slug}`),
+                "name": product.name,
+              })),
+            },
+          },
+        ]}
       />
 
       <section className="mx-auto w-full max-w-[1500px] px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-9">

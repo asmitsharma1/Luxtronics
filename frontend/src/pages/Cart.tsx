@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Minus, Plus, X, ArrowRight, ExternalLink } from "lucide-react";
 import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useCart } from "@/context/CartContext";
@@ -38,6 +39,13 @@ const Cart = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Cart | Luxtronics"
+        description="Review items in your Luxtronics shopping cart."
+        url="/cart"
+        noindex
+        nofollow
+      />
       <section className="container pt-10 sm:pt-12 lg:pt-14 pb-12 sm:pb-16">
         <h1 className="font-display font-bold text-5xl sm:text-6xl tracking-tight mb-12">
           Your <span className="text-gradient">cart</span>

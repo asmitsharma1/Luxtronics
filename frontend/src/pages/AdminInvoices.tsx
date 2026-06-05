@@ -493,7 +493,7 @@ export default function AdminInvoices() {
 
   return (
     <Layout>
-      <SEO title="Admin Invoices" description="Admin-only invoice generator." canonical="https://luxtronics.in/admin/invoices" noindex nofollow />
+      <SEO title="Admin Invoices" description="Admin-only invoice generator." url="/admin/invoices" noindex nofollow />
 
       <section className="container py-8">
         <div className="mb-6 flex flex-col justify-between gap-4 border-b border-border pb-5 lg:flex-row lg:items-end">

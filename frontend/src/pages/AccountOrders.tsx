@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -52,6 +53,13 @@ const AccountOrders = () => {
   if (!isLoaded || loading) {
     return (
       <Layout>
+        <SEO
+          title="Order History | Luxtronics"
+          description="View your Luxtronics order history, invoices, and tracking details."
+          url="/account/orders"
+          noindex
+          nofollow
+        />
         <section className="container pt-10 pb-24 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
@@ -65,6 +73,13 @@ const AccountOrders = () => {
   if (!isSignedIn || !user) {
     return (
       <Layout>
+        <SEO
+          title="Order History | Luxtronics"
+          description="Sign in to view your Luxtronics order history, invoices, and tracking details."
+          url="/account/orders"
+          noindex
+          nofollow
+        />
         <section className="container pt-10 pb-24 max-w-xl">
           <h1 className="font-display font-bold text-4xl tracking-tight">Please sign in</h1>
           <p className="mt-3 text-muted-foreground">Sign in to view your orders.</p>
@@ -89,6 +104,13 @@ const AccountOrders = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Order History | Luxtronics"
+        description="View your Luxtronics order history, invoices, and tracking details."
+        url="/account/orders"
+        noindex
+        nofollow
+      />
       <section className="container pt-10 pb-10">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>

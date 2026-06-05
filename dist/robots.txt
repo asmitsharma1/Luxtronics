@@ -1,8 +1,18 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /admin/
 Disallow: /account
+Disallow: /account/
 Disallow: /cart
 Disallow: /checkout
 
+Allow: /shop
+Allow: /product/
+Allow: /categories
+Allow: /latest-arrivals
+Allow: /blog
+
 Sitemap: https://luxtronics.in/sitemap.xml
+Sitemap: https://luxtronics.com.au/sitemap.xml
+Sitemap: https://luxtronics.co.nz/sitemap.xml

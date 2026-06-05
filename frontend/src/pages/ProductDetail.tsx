@@ -10,6 +10,14 @@ import { fetchStoreProduct, fetchStoreProducts, mapStoreProductToLocalProduct } 
 import { sanitizeHtml } from "@/lib/sanitize";
 import { redirectToWooCheckout } from "@/lib/woo-checkout";
 import { trackAnalyticsEvent, updateLiveVisitor } from "@/lib/analytics";
+import {
+  absoluteUrl,
+  breadcrumbSchema,
+  cleanText,
+  offerReturnPolicyReference,
+  offerShippingDetailsSchema,
+  toSchemaPrice,
+} from "@/lib/seo";
 import SEO from "@/components/SEO";
 import type { Product } from "@/data/products";
 
@@ -96,6 +104,9 @@ const ProductDetail = () => {
   const currentPrice = selectedVariation?.price ?? product?.price ?? 0;
   const currentOldPrice = selectedVariation?.oldPrice ?? product?.oldPrice;
   const variationImage = activeImageIndex === -1 ? (selectedVariation?.image ?? null) : null;
+  const offerCurrency = country.currency || "INR";
+  const schemaPrice = currentPrice * (country.exchangeRate || 1);
+  const schemaShippingMax = 15 * (country.exchangeRate || 1);
 
   // Build images list (product images)
   const productImages: string[] = useMemo(() => {
@@ -219,56 +230,64 @@ const ProductDetail = () => {
 
   return (
     <Layout>
-      {/* ── Full Product Schema for Google Shopping ── */}
       <SEO
         title={`${product.name} — Buy Online | Luxtronics`}
-        description={product.description
-          ? product.description.replace(/<[^>]+>/g, '').slice(0, 160)
-          : `Buy ${product.name} online at Luxtronics. Check product availability, coverage details, and shipping options before checkout.`
-        }
+        description={cleanText(product.description || `Buy ${product.name} online at Luxtronics. Check product availability, coverage details, and shipping options before checkout.`)}
         keywords={`${product.name}, ${product.category}, buy ${product.name} online, luxtronics`}
-        url={`https://luxtronics.in/product/${slug}`}
+        url={`/product/${slug}`}
         image={product.image}
         type="product"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          "name": product.name,
-          "description": product.description?.replace(/<[^>]+>/g, '') || product.name,
-          "image": [product.image, ...(product.images || [])].filter(Boolean),
-          "sku": product.id,
-          "brand": {
-            "@type": "Brand",
-            "name": "Luxtronics"
-          },
-          "offers": {
-            "@type": "Offer",
-            "url": `https://luxtronics.in/product/${slug}`,
-            "priceCurrency": "INR",
-            "price": currentPrice,
-            "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            "availability": inStock
-              ? "https://schema.org/InStock"
-              : "https://schema.org/OutOfStock",
-            "seller": {
-              "@type": "Organization",
-              "name": "Luxtronics",
-              "url": "https://luxtronics.in"
+        structuredData={[
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Shop", path: "/shop" },
+            { name: product.category, path: `/shop?category=${product.category}` },
+            { name: product.name, path: `/product/${slug}` },
+          ]),
+          {
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "@id": `${absoluteUrl(`/product/${slug}`)}#product`,
+            "name": product.name,
+            "description": cleanText(product.description || product.name, 5000),
+            "image": [product.image, ...(product.images || [])].filter(Boolean).map((src) => absoluteUrl(src)),
+            "sku": product.id,
+            "brand": {
+              "@type": "Brand",
+              "name": product.brand || "Luxtronics"
             },
-            "hasMerchantReturnPolicy": {
-              "@type": "MerchantReturnPolicy",
-              "returnPolicyCategory": "https://schema.org/MerchantReturnUnspecified"
-            }
+            "offers": {
+              "@type": "Offer",
+              "url": absoluteUrl(`/product/${slug}`),
+              "priceCurrency": offerCurrency,
+              "price": toSchemaPrice(schemaPrice),
+              "availability": inStock
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+              "itemCondition": "https://schema.org/NewCondition",
+              "seller": {
+                "@type": "Organization",
+                "name": "Luxtronics",
+                "url": absoluteUrl("/"),
+                "@id": `${absoluteUrl("/")}#organization`
+              },
+              "hasMerchantReturnPolicy": offerReturnPolicyReference(country.code),
+              "shippingDetails": offerShippingDetailsSchema({
+                countryCode: country.code,
+                currency: offerCurrency,
+                maxShippingValue: schemaShippingMax,
+              })
+            },
+            "aggregateRating": product.reviews > 0 ? {
+              "@type": "AggregateRating",
+              "ratingValue": product.rating,
+              "reviewCount": product.reviews,
+              "bestRating": 5,
+              "worstRating": 1
+            } : undefined,
+            "category": product.category
           },
-          "aggregateRating": product.reviews > 0 ? {
-            "@type": "AggregateRating",
-            "ratingValue": product.rating,
-            "reviewCount": product.reviews,
-            "bestRating": 5,
-            "worstRating": 1
-          } : undefined,
-          "category": product.category
-        }}
+        ]}
       />
       <section className="container pt-6 pb-16">
         {/* Breadcrumb */}

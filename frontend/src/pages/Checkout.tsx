@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, CreditCard, Lock, Package, Truck, Shield, ShieldCheck } from "lucide-react";
 import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { useCart } from "@/context/CartContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { redirectToWooCheckout } from "@/lib/woo-checkout";
@@ -148,6 +149,13 @@ const Checkout = () => {
   if (isSuccess) {
     return (
       <Layout>
+        <SEO
+          title="Order Confirmed | Luxtronics"
+          description="Your Luxtronics order confirmation page."
+          url="/checkout"
+          noindex
+          nofollow
+        />
         <section className="container pt-40 pb-24 text-center">
           <div className="max-w-md mx-auto space-y-6 flex flex-col items-center">
             <div className="h-24 w-24 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 mb-4">
@@ -168,6 +176,13 @@ const Checkout = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Secure Checkout | Luxtronics"
+        description="Complete your Luxtronics order through secure checkout."
+        url="/checkout"
+        noindex
+        nofollow
+      />
       <section className="container pt-10 pb-16">
         <Link
           to="/cart"

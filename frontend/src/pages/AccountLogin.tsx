@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 import { useAuth } from "@/context/AuthContext";
 
 const AccountLogin = () => {
@@ -45,6 +46,13 @@ const AccountLogin = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Sign In | Luxtronics"
+        description="Sign in to your Luxtronics account to manage orders, saved products, and profile details."
+        url="/account/login"
+        noindex
+        nofollow
+      />
       <section className="container pt-10 sm:pt-12 lg:pt-14 pb-16 sm:pb-20 lg:pb-24 max-w-md">
         <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">Account</p>
         <h1 className="font-display font-bold text-5xl tracking-tight">

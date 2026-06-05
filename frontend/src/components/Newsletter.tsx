@@ -2,6 +2,7 @@ import { Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import newsletterBgDesktop from "@/assets/newsletter.jpg";
 import newsletterBgMobile from "@/assets/mob3.jpg";
+import { absoluteUrl } from "@/lib/seo";
 
 const Newsletter = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -25,7 +26,7 @@ const Newsletter = () => {
     "@type": "NewsletterSubscription",
     "name": "Luxtronics Newsletter",
     "description": "Subscribe for exclusive drops, early access, and the latest tech updates.",
-    "url": "https://luxtronics.com",
+    "url": absoluteUrl("/"),
     "offers": {
       "@type": "Offer",
       "description": "Newsletter updates and early access",

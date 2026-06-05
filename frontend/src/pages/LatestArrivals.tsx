@@ -9,6 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import ImageCursorCard from "@/components/ImageCursorCard";
 import type { Product } from "@/data/products";
 import { fetchStoreProducts, mapStoreProductToLocalProduct } from "@/services/store-api";
+import { absoluteUrl, breadcrumbSchema } from "@/lib/seo";
 
 const tabs = ["All", "Smartphones", "Audio", "Wearables", "Smart Glasses", "Gaming", "Chargers"] as const;
 
@@ -62,7 +63,30 @@ const LatestArrivals = () => {
         title="Latest Arrivals | Luxtronics"
         description="Explore the newest electronics, accessories, chargers, smart devices and premium gadgets at Luxtronics."
         keywords="latest arrivals, new electronics, new gadgets, premium tech"
-        url="https://luxtronics.com/latest-arrivals"
+        url="/latest-arrivals"
+        structuredData={[
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Latest Arrivals", path: "/latest-arrivals" },
+          ]),
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "@id": `${absoluteUrl("/latest-arrivals")}#collection`,
+            "name": "Latest Arrivals",
+            "url": absoluteUrl("/latest-arrivals"),
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": latestProducts.length,
+              "itemListElement": latestProducts.slice(0, 24).map((product, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "url": absoluteUrl(`/product/${product.slug}`),
+                "name": product.name,
+              })),
+            },
+          },
+        ]}
       />
 
       <main className="bg-background">

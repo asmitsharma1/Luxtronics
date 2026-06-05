@@ -8,7 +8,7 @@ const Privacy = () => {
         title="Privacy Policy | Luxtronics"
         description="Luxtronics privacy policy. How we collect, use and protect your personal data. GDPR and Indian IT Act compliant."
         keywords="luxtronics privacy policy, data protection, personal data"
-        url="https://luxtronics.in/privacy"
+        url="/privacy"
       />
 
       <section className="container pt-10 pb-16">

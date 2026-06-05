@@ -31,7 +31,7 @@ const FAQ = () => {
         title="FAQ — Frequently Asked Questions | Luxtronics"
         description="Answers to common questions about Luxtronics shipping options, returns, product coverage, payments and customer support."
         keywords="luxtronics faq, electronics store questions, shipping policy, return policy, product coverage"
-        url="https://luxtronics.in/faq"
+        url="/faq"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "FAQPage",
