@@ -1,136 +1,177 @@
+import type { MouseEvent } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
-import { Truck, RotateCcw, ShieldCheck, Clock, Package, Phone } from "lucide-react";
 
 const ShippingReturns = () => {
+  const scrollToSection = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+
+  const shippingSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Shipping and Returns Policy",
+    "description": "Luxtronics official shipping timelines, delivery coverage across India, Australia, NZ, and product return eligibility rules.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Luxtronics",
+      "url": "https://luxtronics.in"
+    }
+  };
+
   return (
     <Layout>
       <SEO
-        title="Shipping & Returns Policy | Luxtronics"
-        description="Learn about Luxtronics shipping options, return eligibility, support process, and product coverage information."
-        keywords="luxtronics shipping policy, return policy, product coverage, support policy"
+        title="Shipping & Returns Policy"
+        description="Understand Luxtronics shipping timelines, international coverage to AU/NZ, return eligibility criteria, and secure refund workflows."
+        keywords="luxtronics shipping, delivery time, return policy, refund status, international shipping electronics"
         url="/shipping-returns"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "WebPage",
-          "name": "Shipping & Returns Policy",
-          "url": "https://luxtronics.in/shipping-returns",
-          "description": "Luxtronics shipping, returns, and product support policy.",
-          "publisher": { "@type": "Organization", "name": "Luxtronics", "url": "https://luxtronics.in" }
-        }}
+        type="article"
+        modifiedTime="2026-06-06T12:00:00+05:30"
+        structuredData={shippingSchema}
       />
 
-      <section className="container pt-10 sm:pt-12 lg:pt-14 pb-12 sm:pb-16">
-        <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">Policy</p>
-        <h1 className="font-display font-bold text-5xl sm:text-6xl tracking-tight">
-          Shipping & <span className="text-gradient">Returns</span>
-        </h1>
-        <p className="mt-4 text-muted-foreground max-w-xl">
-          We want you to shop with confidence. Here's everything you need to know about our shipping and return policies.
-        </p>
-      </section>
 
-      <section className="container pb-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* Shipping */}
-        <article className="rounded-3xl border border-border bg-gradient-card p-7">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="h-10 w-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glow">
-              <Truck className="h-5 w-5 text-primary-foreground" />
+      {/* Main Layout with Sticky Navigation */}
+      <section className="container py-16 max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-10">
+
+        {/* Sticky Sidebar Navigation */}
+        <aside className="lg:col-span-1 block">
+          <div className="sticky top-24 p-5 rounded-2xl border border-border bg-gradient-card">
+            <h3 className="font-semibold text-sm uppercase tracking-wider mb-4 text-foreground">Policy Index</h3>
+            <nav className="space-y-2.5 text-xs font-medium text-muted-foreground">
+              <a href="#shipping-policy" onClick={(e) => scrollToSection(e, "shipping-policy")} className="block hover:text-primary transition-colors">1. Shipping Policy</a>
+              <a href="#return-policy" onClick={(e) => scrollToSection(e, "return-policy")} className="block hover:text-primary transition-colors">2. Return Eligibility</a>
+              <a href="#refund-workflow" onClick={(e) => scrollToSection(e, "refund-workflow")} className="block hover:text-primary transition-colors">3. Refund Workflow</a>
+              <a href="#coverage" onClick={(e) => scrollToSection(e, "coverage")} className="block hover:text-primary transition-colors">4. Product Coverage</a>
+              <a href="#initiate" onClick={(e) => scrollToSection(e, "initiate")} className="block hover:text-primary transition-colors">5. Initiate a Return</a>
+            </nav>
+          </div>
+        </aside>
+
+        {/* Content Node */}
+        <div className="lg:col-span-3 space-y-8 max-w-3xl">
+
+          {/* Shipping Policy */}
+          <article id="shipping-policy" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+
+              <h2 className="font-semibold text-xl text-foreground">1. Shipping & Dispatch Policy</h2>
             </div>
-            <h2 className="font-display font-bold text-2xl">Shipping Policy</h2>
-          </div>
-          <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Standard Shipping:</strong> 3–7 business days across India</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Express Options:</strong> Available for eligible pin codes at checkout</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Shipping Charges:</strong> Calculated and shown before payment</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Tracking link sent via email and SMS once dispatched</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Delivery timelines may vary during peak seasons and holidays</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>International shipping available to Australia and New Zealand</span></li>
-          </ul>
-        </article>
-
-        {/* Returns */}
-        <article className="rounded-3xl border border-border bg-gradient-card p-7">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="h-10 w-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glow">
-              <RotateCcw className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <h2 className="font-display font-bold text-2xl">Return Policy</h2>
-          </div>
-          <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Return Eligibility:</strong> Depends on product type, condition, and applicable policy</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Products must be unused, in original packaging with all accessories</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Original invoice/receipt required for all returns</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Refund timelines depend on quality check and payment provider processing</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Refund credited to original payment method (UPI, card, bank account)</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Hygiene products and opened software are non-returnable</span></li>
-          </ul>
-        </article>
-
-        {/* Refund */}
-        <article className="rounded-3xl border border-border bg-gradient-card p-7">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="h-10 w-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glow">
-              <Package className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <h2 className="font-display font-bold text-2xl">Refund Policy</h2>
-          </div>
-          <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Refund Review:</strong> Defective, damaged, or wrong-item cases are reviewed by support</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Return Condition:</strong> Missing accessories or damage may affect eligibility</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>COD refund method and timeline are confirmed by support</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Prepaid orders refunded to original payment source</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Shipping charges are non-refundable unless item is defective</span></li>
-          </ul>
-        </article>
-
-        {/* Product coverage */}
-        <article className="rounded-3xl border border-border bg-gradient-card p-7">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="h-10 w-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glow">
-              <ShieldCheck className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <h2 className="font-display font-bold text-2xl">Product Coverage</h2>
-          </div>
-          <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span><strong className="text-foreground">Coverage Varies</strong> by product, supplier, and brand policy</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Eligible manufacturing-defect cases are reviewed by support</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Physical damage, water damage, and misuse are not covered</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Claim timelines depend on product inspection and supplier response</span></li>
-            <li className="flex gap-2"><span className="text-primary font-bold">•</span> <span>Brand coverage, where applicable, follows the brand's own terms</span></li>
-          </ul>
-        </article>
-      </section>
-
-      {/* Contact for returns */}
-      <section className="container pb-24">
-        <div className="rounded-3xl border border-primary/20 bg-primary/5 p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow flex-shrink-0">
-            <Phone className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-display font-bold text-xl mb-1">Need to initiate a return?</h3>
-            <p className="text-sm text-muted-foreground">
-              Contact our support team with your order details. We'll guide you through the applicable process.
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              We focus on safe, secure, and fast fulfillment. All shipments come with full tracking nodes sent straight to your communication channels once dispatched.
             </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <a
-              href="mailto:support@luxtronics.in"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow hover:shadow-glow-pink transition-all"
-            >
-              Email Support
-            </a>
-            <a
-              href="https://wa.me/919266433722?text=I%20want%20to%20initiate%20a%20return"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold hover:border-primary/40 transition-all"
-            >
-              WhatsApp
-            </a>
-          </div>
+
+            {/* Structured Logistics Table */}
+            <div className="overflow-x-auto rounded-xl border border-border/80 mb-4">
+              <table className="w-full text-left text-sm text-muted-foreground">
+                <thead className="bg-muted/40 text-xs text-foreground font-semibold uppercase">
+                  <tr>
+                    <th className="p-3">Region</th>
+                    <th className="p-3">Shipping Tier</th>
+                    <th className="p-3">Estimated Transit Speed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  <tr>
+                    <td className="p-3 font-medium text-foreground">India</td>
+                    <td className="p-3">Standard / Express</td>
+                    <td className="p-3">3–7 Business Days (Express available via PIN checkout)</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-medium text-foreground">Australia</td>
+                    <td className="p-3">International Standard</td>
+                    <td className="p-3">7–14 Business Days</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-medium text-foreground">New Zealand</td>
+                    <td className="p-3">International Standard</td>
+                    <td className="p-3">7–14 Business Days</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          {/* Return Policy */}
+          <article id="return-policy" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+
+              <h2 className="font-semibold text-xl text-foreground">2. Return Eligibility Matrix</h2>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+              To keep our premium standards high, returns are evaluated dynamically based on these strict conditions:
+            </p>
+            <ul className="space-y-2.5 text-sm text-muted-foreground leading-relaxed list-disc pl-5 marker:text-primary">
+              <li>Items must remain <strong className="text-foreground">completely unused</strong>, housed inside their original unsealed packaging block.</li>
+              <li>Every original asset—including manuals, protection wrappers, certificates, and peripheral accessories—must be inside the return box.</li>
+              <li>A valid, verifiable Luxtronics original invoice/receipt token is mandatory for checking order history.</li>
+              <li className="text-destructive-foreground font-medium list-none bg-destructive/10 p-2.5 rounded-lg border border-destructive/20 mt-2">
+                <strong className="text-foreground">Non-Returnable Goods:</strong> Personal hygiene products (like unsealed in-ear monitors/earbuds) and opened digital license keys or software packets cannot be returned under any conditions.
+              </li>
+            </ul>
+          </article>
+
+          {/* Refund Workflow */}
+          <article id="refund-workflow" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+
+              <h2 className="font-semibold text-xl text-foreground">3. Refund Processing & Timelines</h2>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Once your package rolls into our inspection warehouse, it goes through a physical quality assurance check. Approved refunds are fired back directly to your original channel node:
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground leading-relaxed list-disc pl-5 marker:text-primary">
+              <li><strong className="text-foreground">Prepaid Gateways (UPI, Cards, NetBanking):</strong> Sent back to the sourcing financial node within 5-7 business days post-approval.</li>
+              <li><strong className="text-foreground">Cash on Delivery (COD):</strong> Our grievance desk coordinates directly to wire the balance securely to your verified bank account or UPI address.</li>
+              <li>Original shipping fees are strictly non-refundable unless the product is certified as factory defective by our labs.</li>
+            </ul>
+          </article>
+
+          {/* Product Coverage */}
+          <article id="coverage" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+
+              <h2 className="font-semibold text-xl text-foreground">4. Manufacturer & Brand Product Coverage</h2>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Hardware coverage parameters follow individual supplier clauses and brand blueprints.
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground bg-muted/40 p-3 rounded-xl border border-border">
+              <strong className="text-foreground">Exclusion Parameters:</strong> Physical fractures, liquid corrosion, electric surges from unstable adapters, and custom technical modifications done outside authorized centers completely void any platform coverage support.
+            </p>
+          </article>
+
+          {/* Action Box: Need to initiate a return */}
+          <article id="initiate" className="scroll-mt-24 rounded-2xl border-2 border-primary/20 bg-gradient-to-b from-background to-muted/30 p-8 text-center shadow-lg">
+            <h2 className="font-display font-bold text-2xl mb-2 text-foreground">Need to initiate a return?</h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+              Contact our global support desks with your unique order identifier. We will generate your shipping slip and guide you right through the return cycle.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <a
+                href="mailto:support@luxtronics.in"
+                className="inline-flex items-center justify-center bg-primary text-primary-foreground font-medium text-sm px-6 py-3 rounded-xl hover:opacity-90 transition-all shadow-md"
+              >
+                Email Support
+              </a>
+              <a
+                href="https://wa.me/919266433722"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center border border-border bg-gradient-card text-foreground font-medium text-sm px-6 py-3 rounded-xl hover:bg-muted transition-all"
+              >
+                WhatsApp Chat
+              </a>
+            </div>
+          </article>
+
         </div>
       </section>
     </Layout>

@@ -26,14 +26,14 @@ const values = [
   },
 ];
 
-const milestones = ["Premium electronics", "Mobile parts", "Accessories", "Smart wear", "Creator gear"];
+const milestones = ["Premium Electronics", "Mobile Parts", "Tech Accessories", "Smart Wearables", "Creator Equipment"];
 
 const About = () => {
   return (
     <Layout>
       <SEO
-        title="About Luxtronics — Premium Electronics Store"
-        description="Luxtronics curates premium electronics for India, Australia and New Zealand. We bridge high-performance technology with refined lifestyle aesthetics."
+        title="Our Story & Philosophy — Luxtronics"
+        description="Discover the vision behind Luxtronics. We curate high-performance electronics, reliable replacement parts, and lifestyle tech accessories for tech enthusiasts."
         keywords="about luxtronics, premium electronics store, tech store India, electronics Australia"
         url="/about"
         structuredData={{
@@ -54,45 +54,68 @@ const About = () => {
       <main className="bg-background">
         <section className="container py-10 sm:py-12 lg:py-14">
           <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
-            <div className="rounded-2xl border border-border bg-card/85 p-6 shadow-sm backdrop-blur sm:p-8 lg:p-10">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-primary">About Luxtronics</p>
-              <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                Premium tech, selected with intention.
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Luxtronics curates electronics, parts and accessories for people who want their devices to perform well,
-                look refined and fit cleanly into everyday work, travel and lifestyle routines.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-2">
-                {milestones.map((item) => (
-                  <span key={item} className="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground">
-                    {item}
-                  </span>
-                ))}
+            <div className="rounded-2xl border border-border bg-card/85 p-6 shadow-sm backdrop-blur sm:p-8 lg:p-10 flex flex-col justify-between">
+              <div>
+                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-primary">Our Vision</p>
+                <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-5xl">
+                  Premium electronics and tech accessories, selected with intention
+                </h1>
+                <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                  Luxtronics bridges the gap between high-performance technology and modern lifestyles. We curate premium electronics, mobile parts and everyday tech accessories that combine reliable performance, refined design and practical usability for work, travel and daily life.
+                </p>
+                <div className="mt-7 flex flex-wrap gap-2">
+                  {milestones.map((item) => (
+                    <span key={item} className="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 border-t border-border/60 pt-6 mt-8 text-left">
+                  <div>
+                    <p className="text-xl font-bold text-foreground">Premium</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Electronics</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-foreground">Mobile</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Parts</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-foreground">Smart</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Accessories</p>
+                  </div>
+                </div>
               </div>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row pt-4">
                 <Link
                   to="/shop"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
                 >
                   Shop products
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
                   to="/categories"
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-muted"
                 >
-                  Explore categories
+                  Explore Tech Categories
                 </Link>
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-              <img src="/a3.jpg" alt="Premium electronics workspace" className="h-full min-h-[360px] w-full object-cover" />
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm group">
+              <img
+                src="/a3.jpg"
+                loading="eager"
+                decoding="async"
+                alt="Sleek modern tech workspace with premium gadgets curated by Luxtronics"
+                className="h-full min-h-[360px] w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
               <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/20 bg-white/12 p-5 text-white shadow-2xl backdrop-blur-xl">
                 <p className="text-xs font-semibold uppercase tracking-widest text-white/70">Our philosophy</p>
-                <p className="mt-2 font-display text-2xl font-bold leading-tight">Smart, by choice.</p>
+                <h2 className="mt-2 font-display text-2xl font-bold leading-tight">Smart, by choice.</h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/75">
                   Useful technology should feel premium before checkout and dependable long after delivery.
                 </p>
@@ -108,18 +131,40 @@ const About = () => {
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-muted text-primary">
                   <item.icon className="h-5 w-5" />
                 </div>
-                <h2 className="font-display text-lg font-bold text-foreground">{item.title}</h2>
+                <h3 className="font-display text-lg font-bold text-foreground">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.text}</p>
               </article>
             ))}
           </div>
         </section>
 
+        <section className="container pb-10">
+          <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">Why Luxtronics</p>
+            <h2 className="font-display text-3xl font-bold text-foreground">
+              Built for people who value quality over clutter
+            </h2>
+            <p className="mt-4 text-muted-foreground leading-relaxed">
+              The technology market is crowded with endless choices. Luxtronics was created to simplify discovery by focusing on
+              premium electronics, trusted accessories and device parts that deliver real value, dependable performance and refined design.
+            </p>
+            <Link
+              to="/shop"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-black bg-white px-5 py-3 text-sm font-semibold text-black transition-all duration-300 hover:bg-black hover:text-white"
+            >
+                Explore Our Collection
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+
         <section className="container pb-16 sm:pb-20 lg:pb-24">
           <div className="grid gap-6 rounded-2xl border border-border bg-card/85 p-6 shadow-sm backdrop-blur sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:p-10">
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">What we believe</p>
-              <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Electronics should feel sharp, useful and easy to choose.</h2>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">What drives us</p>
+              <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl leading-tight">
+                Electronics should feel sharp, useful and easy to choose
+              </h2>
             </div>
             <div className="space-y-5 text-sm leading-relaxed text-muted-foreground sm:text-base">
               <p>
@@ -131,14 +176,14 @@ const About = () => {
                 products around categories that matter: device parts, trusted accessories, smart wearables, audio, creator
                 tools and everyday electronics.
               </p>
-              <div className="grid gap-3 pt-2 sm:grid-cols-2">
+              <ul className="grid gap-3 pt-2 sm:grid-cols-2 list-none pl-0">
                 {["Refined catalog experience", "Useful premium accessories", "Clear product discovery", "Practical tech support"].map((item) => (
-                  <div key={item} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    {item}
-                  </div>
+                  <li key={item} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                    <span>{item}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           </div>
         </section>

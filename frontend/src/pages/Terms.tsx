@@ -1,177 +1,178 @@
+import type { MouseEvent } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 
 const Terms = () => {
+  const scrollToSection = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const termsSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Terms of Service",
+    "description": "Official terms and conditions governing the use of Luxtronics retail platforms across India, Australia, and New Zealand.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Luxtronics",
+      "url": "https://luxtronics.in"
+    }
+  };
+
   return (
     <Layout>
       <SEO
-        title="Terms of Service | Luxtronics"
-        description="Luxtronics terms of service for website use, orders, pricing, shipping, returns, product coverage, and customer responsibilities."
-        keywords="luxtronics terms, terms of service, electronics store terms"
+        title="Terms of Service"
+        description="Read the official Terms of Service for Luxtronics. Understand our regulations regarding order cancellations, secure checkouts, shipping policies, and intellectual property."
+        keywords="luxtronics terms of service, user agreement, shopping terms, ecommerce conditions, legal clauses"
         url="/terms"
+        type="article"
+        modifiedTime="2026-06-06T12:00:00+05:30"
+        structuredData={termsSchema}
       />
-      <section className="container pt-10 sm:pt-12 lg:pt-14 pb-12 sm:pb-16">
-        <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">Legal</p>
-        <h1 className="font-display font-bold text-5xl sm:text-6xl tracking-tight">
-          Terms of <span className="text-gradient">service</span>
-        </h1>
+
+      <section className="relative overflow-hidden bg-background pt-16 pb-20 border-b border-border">
+        <div className="absolute inset-0 z-0 opacity-30 bg-gradient-to-r from-purple-900/20 to-blue-900/20" />
+        <div className="container relative z-10 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div>
+            <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">Legal Guidelines</p>
+            <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-tight">
+              Terms of <span className="text-gradient">Service</span>
+            </h1>
+            <p className="mt-3 text-sm text-muted-foreground">Terms and conditions for using Luxtronics services.</p>
+            <p className="mt-2 text-xs text-muted-foreground/80">Last updated: May 15, 2026</p>
+          </div>
+          <div className="flex justify-center md:justify-end">
+            <img
+              src="/og-image.jpg"
+              alt="Luxtronics Premium Audio"
+              className="w-64 h-64 object-contain animate-pulse-slow filter drop-shadow-[0_0_30px_rgba(var(--primary),0.2)]"
+            />
+          </div>
+        </div>
       </section>
 
-      <section className="container pb-16 sm:pb-20 lg:pb-24 space-y-6">
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Acceptance of Terms</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            By accessing and using Luxtronics website and services, you accept and agree to be bound by these Terms of Service. 
-            If you do not agree to these terms, please do not use our website or services.
-          </p>
-        </article>
+      {/* Main Content & Sidebar Layout */}
+      <section className="container py-16 max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-10">
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Use of Website</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            By using this website, you agree to use it lawfully and refrain from actions that disrupt services,
-            compromise security, or violate applicable regulations. You must be at least 18 years old to make purchases 
-            on our website.
-          </p>
-        </article>
+        {/* Sticky Table of Contents */}
+        <aside className="lg:col-span-1 block">
+          <div className="sticky top-24 p-5 rounded-2xl border border-border bg-gradient-card">
+            <h3 className="font-semibold text-sm uppercase tracking-wider mb-4 text-foreground">Quick Navigation</h3>
+            <nav className="space-y-2.5 text-xs font-medium text-muted-foreground">
+              <a href="#acceptance" onClick={(e) => scrollToSection(e, "acceptance")} className="block hover:text-primary transition-colors">1. Acceptance of Terms</a>
+              <a href="#use" onClick={(e) => scrollToSection(e, "use")} className="block hover:text-primary transition-colors">2. Use of Website</a>
+              <a href="#accounts" onClick={(e) => scrollToSection(e, "accounts")} className="block hover:text-primary transition-colors">3. Account Registration</a>
+              <a href="#orders" onClick={(e) => scrollToSection(e, "orders")} className="block hover:text-primary transition-colors">4. Orders & Pricing</a>
+              <a href="#shipping" onClick={(e) => scrollToSection(e, "shipping")} className="block hover:text-primary transition-colors">5. Shipping & Delivery</a>
+              <a href="#returns" onClick={(e) => scrollToSection(e, "returns")} className="block hover:text-primary transition-colors">6. Returns & Refunds</a>
+              <a href="#intellectual" onClick={(e) => scrollToSection(e, "intellectual")} className="block hover:text-primary transition-colors">7. Intellectual Property</a>
+              <a href="#liability" onClick={(e) => scrollToSection(e, "liability")} className="block hover:text-primary transition-colors">8. Limitation of Liability</a>
+              <a href="#contact" onClick={(e) => scrollToSection(e, "contact")} className="block hover:text-primary transition-colors">9. Contact Info</a>
+            </nav>
+          </div>
+        </aside>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Cookies and Tracking Technologies</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            Our website uses cookies and similar tracking technologies to enhance your browsing experience and analyze 
-            website traffic. By using our website, you consent to the use of cookies in accordance with our Privacy Policy.
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-            We use Google Analytics to collect information about how visitors use our site. This data helps us improve 
-            our services and user experience. You can opt-out of Google Analytics tracking by installing the{" "}
-            <a 
-              href="https://tools.google.com/dlpage/gaoptout" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              Google Analytics Opt-out Browser Add-on
-            </a>.
-          </p>
-        </article>
+        {/* Policy Articles */}
+        <div className="lg:col-span-3 space-y-8 max-w-3xl">
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Account Registration</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            When you create an account with us, you must provide accurate, complete, and current information. You are 
-            responsible for maintaining the confidentiality of your account credentials and for all activities that occur 
-            under your account.
-          </p>
-        </article>
+          <article id="acceptance" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">1. Acceptance of Terms</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              By accessing and using the Luxtronics website and services, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please refrain from using our website or services.
+            </p>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Orders and Pricing</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            Product availability and pricing may change without prior notice. We reserve the right to cancel orders in
-            case of pricing errors, payment issues, or fraud risk. All prices are listed in the local currency of your 
-            selected region (INR for India, AUD for Australia, NZD for New Zealand).
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-            By placing an order, you agree to pay the total amount including product price, shipping fees, and applicable 
-            taxes. Payment is processed securely through our payment partners.
-          </p>
-        </article>
+          <article id="use" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">2. Use of Website & Cookies</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              By using this website, you agree to use it lawfully and refrain from actions that disrupt services, compromise security, or violate applicable regulations. You must be at least <span className="text-foreground font-medium">18 years old</span> to execute financial transactions on our platform.
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+              Our website uses cookies to improve browsing, analytics, and service quality. For detailed opt-out information regarding Google Analytics tracking, please consult our official{" "}
+              <a href="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</a>.
+            </p>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Shipping and Delivery</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            We ship to India, Australia, and New Zealand. Delivery times vary by location and product availability. 
-            We are not responsible for delays caused by customs, weather, or carrier issues beyond our control.
-          </p>
-        </article>
+          <article id="accounts" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">3. Account Registration & Credentials</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              When creating an account with us, you must provide valid and current information. You are responsible for keeping your login credentials confidential and for all activity under your account.
+            </p>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Returns and Refunds</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            Return eligibility depends on product type, condition, packaging, accessories, and applicable policy.
-            Refund timelines vary based on inspection outcome and payment-provider processing. Please refer to our
-            Shipping & Returns page for detailed information.
-          </p>
-        </article>
+          <article id="orders" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">4. Orders, Pricing & Local Currencies</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Product availability and pricing may change without prior notice. We reserve the right to cancel orders due to pricing errors, payment issues, processing errors, or fraud risk.
+            </p>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Product Coverage</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            Product coverage varies by item, supplier, and brand policy. Coverage or support claims must be submitted
-            with proof of purchase and are reviewed according to the applicable terms. Damage caused by misuse,
-            accidents, or unauthorized modifications may not be covered.
-          </p>
-        </article>
+            {/* Currency Mapping Box */}
+            <div className="mt-4 p-4 rounded-xl bg-muted/40 border border-border text-sm text-muted-foreground">
+              <strong className="text-foreground block mb-1">Supported Currencies by Region:</strong>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong className="text-foreground">India:</strong> INR (Indian Rupee)</li>
+                <li><strong className="text-foreground">Australia:</strong> AUD (Australian Dollar)</li>
+                <li><strong className="text-foreground">New Zealand:</strong> NZD (New Zealand Dollar)</li>
+              </ul>
+            </div>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Intellectual Property</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            All content on this website, including text, images, logos, and software, is the property of Luxtronics or 
-            its licensors and is protected by copyright and trademark laws. You may not reproduce, distribute, or create 
-            derivative works without our express written permission.
-          </p>
-        </article>
+          <article id="shipping" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">5. Shipping & Global Delivery Nodes</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We ship to India, Australia, and New Zealand. Delivery times vary by location, product availability, customs clearance, carrier performance, holidays, and circumstances outside our control.
+            </p>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Third-Party Services</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            Our website may contain links to third-party websites and services, including payment processors, shipping 
-            carriers, and analytics providers. We are not responsible for the content, privacy practices, or terms of 
-            service of these third parties. Your use of third-party services is subject to their respective terms.
-          </p>
-        </article>
+          <article id="returns" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">6. Returns, Refunds & Coverage</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Return eligibility is evaluated based on product type, condition, packaging, accessories, and supplier or brand policy. Damage caused by misuse, accidents, unauthorized modification, or improper handling may not be covered.
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              For complete details, please visit our designated{" "}
+              <a href="/shipping-returns" className="text-primary hover:underline font-medium">Shipping & Returns</a> desk page.
+            </p>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Limitation of Liability</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            We provide services on a best-effort basis and are not liable for indirect, incidental, special, or consequential 
-            damages arising from website usage, downtime, or third-party service interruptions. Our total liability shall 
-            not exceed the amount paid by you for the product or service in question.
-          </p>
-        </article>
+          <article id="intellectual" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">7. Intellectual Property & Brand Assets</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              All content on this website, including text, images, logos, software, layouts, and brand assets, is owned by Luxtronics or its licensors. You may not copy, distribute, modify, or reuse these assets without written permission.
+            </p>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Indemnification</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            You agree to indemnify and hold Luxtronics harmless from any claims, damages, losses, or expenses arising 
-            from your use of our website, violation of these terms, or infringement of any third-party rights.
-          </p>
-        </article>
+          <article id="liability" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">8. Limitation of Liability & Governing Law</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We provide services on a best-effort basis and are not liable for indirect, incidental, special, or consequential damages arising from website usage, downtime, delivery delays, or third-party service interruptions. These terms are governed by the applicable laws of your transaction region.
+            </p>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Governing Law</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            These Terms of Service are governed by the laws of the jurisdiction in which you are located (India, Australia, 
-            or New Zealand). Any disputes shall be resolved in the courts of the applicable jurisdiction.
-          </p>
-        </article>
+          <article id="contact" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
+            <h2 className="font-semibold text-xl mb-3 text-foreground">9. Contact Compliance Desk</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              For questions regarding these terms, legal notices, or service issues, contact us through these channels:
+            </p>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p><strong className="text-foreground">Email Notice:</strong>{" "}
+                <a href="mailto:support@luxtronics.in" className="text-primary hover:underline">support@luxtronics.in</a>
+              </p>
+              <p><strong className="text-foreground">Corporate Line:</strong> +91 92664 33722</p>
+              <p><strong className="text-foreground">Compliance WhatsApp Desk:</strong>{" "}
+                <a href="https://wa.me/919266433722" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  +91 92664 33722
+                </a>
+              </p>
+            </div>
+          </article>
 
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Changes to Terms</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            We reserve the right to modify these Terms of Service at any time. Changes will be effective immediately upon 
-            posting on this page. Your continued use of our website after changes are posted constitutes acceptance of the 
-            modified terms. We recommend reviewing this page periodically.
-          </p>
-        </article>
-
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <h2 className="font-semibold text-lg">Contact Information</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            If you have any questions about these Terms of Service, please contact us through our{" "}
-            <a href="/contact" className="text-primary hover:underline">Contact page</a> or email us at support@luxtronics.in
-          </p>
-        </article>
-
-        <article className="rounded-2xl border border-border bg-gradient-card p-6">
-          <p className="text-xs text-muted-foreground">
-            <strong>Last Updated:</strong> May 15, 2026
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            By using Luxtronics, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service 
-            and our Privacy Policy.
-          </p>
-        </article>
+        </div>
       </section>
     </Layout>
   );

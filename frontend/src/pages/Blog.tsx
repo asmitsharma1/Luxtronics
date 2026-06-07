@@ -103,7 +103,7 @@ const Blog = () => {
                 <BookOpen className="h-3.5 w-3.5" />
                 Luxtronics Journal
               </div>
-              <h1 className="font-display text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+              <h1 className="font-display text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-6xl">
                 Smarter buying starts here.
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/74 sm:text-lg">
@@ -158,7 +158,7 @@ const Blog = () => {
                       4 min read
                     </span>
                   </div>
-                  <h2 className="font-display text-3xl font-black leading-tight text-foreground sm:text-4xl">
+                  <h2 className="font-display text-3xl font-black leading-tight text-foreground sm:text-3xl">
                     {featured.title}
                   </h2>
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">{featured.excerpt}</p>

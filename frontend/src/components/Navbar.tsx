@@ -418,9 +418,10 @@ const Navbar = () => {
     queryFn: () => fetchStoreCategories(1, 100),
     staleTime: 1000 * 60 * 30,
   });
-  const fetchedCategories = Array.isArray(catResult?.data) ? catResult.data : [];
 
   // Top 12 categories by count (exclude uncategorized)
+  const fetchedCategories = Array.isArray(catResult?.data) ? catResult.data : [];
+
   const navCategories: StoreCategory[] = fetchedCategories
     .filter(c => String(c.name || "").toLowerCase() !== "uncategorized")
     .sort((a, b) => Number(b.count || 0) - Number(a.count || 0))
@@ -462,11 +463,13 @@ const Navbar = () => {
 
           {/* ── Logo ── */}
           <Link to="/" className="flex items-center shrink-0 group" aria-label="Luxtronics home">
-            <img
-              src="/logo.jpeg"
-              alt="Luxtronics"
-              className="h-9 w-auto sm:h-11 max-w-[145px] sm:max-w-[180px] object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-            />
+            <div className="rounded-xl bg-white p-1 shadow-sm dark:bg-white">
+              <img
+                src="/logo.jpeg"
+                alt="Luxtronics"
+                className="h-10 w-auto object-contain transition-all duration-500 group-hover:scale-[1.05] sm:h-12"
+              />
+            </div>
           </Link>
 
           {/* ── Desktop nav with Megamenu ── */}
