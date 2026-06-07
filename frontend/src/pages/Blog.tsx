@@ -3,7 +3,6 @@ import SEO from "@/components/SEO";
 import { ArrowRight, BookOpen, Calendar, Clock3, ShoppingBag, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { blogPosts } from "@/data/blog-posts";
-import { absoluteUrl, breadcrumbSchema } from "@/lib/seo";
 
 const GanChargerVisual = ({ compact = false }: { compact?: boolean }) => (
   <div className="relative flex h-full min-h-[320px] items-center justify-center overflow-hidden bg-black">
@@ -52,32 +51,20 @@ const Blog = () => {
   const tags = Array.from(new Set(blogPosts.map((post) => post.tag)));
 
   return (
-    <Layout hideBreadcrumb>
+    <Layout>
       <SEO
         title="Blog — Electronics Guides & Reviews | Luxtronics"
         description="Expert guides, buying advice and reviews on smartphones, laptops, audio, cameras and wearables from the Luxtronics team."
         keywords="electronics blog, tech guides, smartphone reviews, laptop buying guide, audio reviews"
-        url="/blog"
-        structuredData={[
-          breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Blog", path: "/blog" },
-          ]),
-          {
-            "@context": "https://schema.org",
-            "@type": "Blog",
-            "name": "Luxtronics Blog",
-            "url": absoluteUrl("/blog"),
-            "description": "Expert guides and reviews on premium electronics.",
-            "publisher": { "@type": "Organization", "name": "Luxtronics", "url": absoluteUrl("/") },
-            "blogPost": blogPosts.map((post) => ({
-              "@type": "BlogPosting",
-              "headline": post.title,
-              "url": absoluteUrl(`/blog/${post.slug}`),
-              "description": post.excerpt,
-            })),
-          },
-        ]}
+        url="https://luxtronics.in/blog"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Blog",
+          "name": "Luxtronics Blog",
+          "url": "https://luxtronics.in/blog",
+          "description": "Expert guides and reviews on premium electronics.",
+          "publisher": { "@type": "Organization", "name": "Luxtronics", "url": "https://luxtronics.in" }
+        }}
       />
 
       <main className="bg-background">

@@ -1,9 +1,9 @@
-import type { MouseEvent } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 
 const ShippingReturns = () => {
-  const scrollToSection = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
+  
+  const scrollToSection = (e, id) => {
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
@@ -11,7 +11,7 @@ const ShippingReturns = () => {
     }
   };
 
-
+ 
   const shippingSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -25,22 +25,23 @@ const ShippingReturns = () => {
   };
 
   return (
-    <Layout hideBreadcrumb>
+    <Layout>
+      {/* SEO Component Configurations */}
       <SEO
         title="Shipping & Returns Policy"
         description="Understand Luxtronics shipping timelines, international coverage to AU/NZ, return eligibility criteria, and secure refund workflows."
         keywords="luxtronics shipping, delivery time, return policy, refund status, international shipping electronics"
-        url="/shipping-returns"
+        url="https://luxtronics.in/shipping-returns"
         type="article"
         modifiedTime="2026-06-06T12:00:00+05:30"
         structuredData={shippingSchema}
       />
 
-
+     
 
       {/* Main Layout with Sticky Navigation */}
       <section className="container py-16 max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-10">
-
+        
         {/* Sticky Sidebar Navigation */}
         <aside className="lg:col-span-1 block">
           <div className="sticky top-24 p-5 rounded-2xl border border-border bg-gradient-card">
@@ -57,11 +58,11 @@ const ShippingReturns = () => {
 
         {/* Content Node */}
         <div className="lg:col-span-3 space-y-8 max-w-3xl">
-
+          
           {/* Shipping Policy */}
           <article id="shipping-policy" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-
+             
               <h2 className="font-semibold text-xl text-foreground">1. Shipping & Dispatch Policy</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
@@ -102,7 +103,7 @@ const ShippingReturns = () => {
           {/* Return Policy */}
           <article id="return-policy" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-
+             
               <h2 className="font-semibold text-xl text-foreground">2. Return Eligibility Matrix</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-3">
@@ -113,7 +114,7 @@ const ShippingReturns = () => {
               <li>Every original asset—including manuals, protection wrappers, certificates, and peripheral accessories—must be inside the return box.</li>
               <li>A valid, verifiable Luxtronics original invoice/receipt token is mandatory for checking order history.</li>
               <li className="text-destructive-foreground font-medium list-none bg-destructive/10 p-2.5 rounded-lg border border-destructive/20 mt-2">
-                <strong className="text-foreground">Non-Returnable Goods:</strong> Personal hygiene products (like unsealed in-ear monitors/earbuds) and opened digital license keys or software packets cannot be returned under any conditions.
+                🚫 <strong className="text-foreground">Non-Returnable Goods:</strong> Personal hygiene products (like unsealed in-ear monitors/earbuds) and opened digital license keys or software packets cannot be returned under any conditions.
               </li>
             </ul>
           </article>
@@ -121,7 +122,7 @@ const ShippingReturns = () => {
           {/* Refund Workflow */}
           <article id="refund-workflow" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-
+             
               <h2 className="font-semibold text-xl text-foreground">3. Refund Processing & Timelines</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -137,14 +138,14 @@ const ShippingReturns = () => {
           {/* Product Coverage */}
           <article id="coverage" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-
+         
               <h2 className="font-semibold text-xl text-foreground">4. Manufacturer & Brand Product Coverage</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Hardware coverage parameters follow individual supplier clauses and brand blueprints.
             </p>
             <p className="mt-3 text-sm text-muted-foreground bg-muted/40 p-3 rounded-xl border border-border">
-              <strong className="text-foreground">Exclusion Parameters:</strong> Physical fractures, liquid corrosion, electric surges from unstable adapters, and custom technical modifications done outside authorized centers completely void any platform coverage support.
+              ⚠️ <strong className="text-foreground">Exclusion Parameters:</strong> Physical fractures, liquid corrosion, electric surges from unstable adapters, and custom technical modifications done outside authorized centers completely void any platform coverage support.
             </p>
           </article>
 
@@ -155,19 +156,19 @@ const ShippingReturns = () => {
               Contact our global support desks with your unique order identifier. We will generate your shipping slip and guide you right through the return cycle.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
-              <a
-                href="mailto:support@luxtronics.in"
+              <a 
+                href="mailto:support@luxtronics.in" 
                 className="inline-flex items-center justify-center bg-primary text-primary-foreground font-medium text-sm px-6 py-3 rounded-xl hover:opacity-90 transition-all shadow-md"
               >
-                Email Support
+                📧 Email Support
               </a>
-              <a
-                href="https://wa.me/919266433722"
-                target="_blank"
-                rel="noopener noreferrer"
+              <a 
+                href="https://wa.me/919266433722" 
+                target="_blank" 
+                rel="noopener noreferrer" 
                 className="inline-flex items-center justify-center border border-border bg-gradient-card text-foreground font-medium text-sm px-6 py-3 rounded-xl hover:bg-muted transition-all"
               >
-                WhatsApp Chat
+                💬 WhatsApp Chat
               </a>
             </div>
           </article>

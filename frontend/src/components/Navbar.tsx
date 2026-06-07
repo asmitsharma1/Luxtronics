@@ -87,7 +87,7 @@ const CAT_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 function getCatIcon(name: string): React.ComponentType<{ className?: string }> {
-  return CAT_ICON_MAP[String(name || "").toLowerCase()] ?? Package;
+  return CAT_ICON_MAP[name.toLowerCase()] ?? Package;
 }
 
 const simpleLinks = [
@@ -169,7 +169,7 @@ function scoreSuggestion(product: Product, query: string) {
 }
 
 function categoryMatchesDepartment(category: StoreCategory, department: MegaDepartment) {
-  const text = `${category.name || ""} ${category.slug || ""} ${category.description ?? ""}`;
+  const text = `${category.name} ${category.slug} ${category.description ?? ""}`;
   return department.patterns.some((pattern) => pattern.test(text));
 }
 
@@ -188,15 +188,14 @@ const CompactCategoriesMega = ({
   categories: StoreCategory[];
   onClose: () => void;
 }) => {
-  const safeCategories = useMemo(() => (Array.isArray(categories) ? categories : []), [categories]);
   const groupedDepartments = useMemo(() => {
-    const sorted = [...safeCategories].sort((a, b) => (b.count || 0) - (a.count || 0));
+    const sorted = [...categories].sort((a, b) => (b.count || 0) - (a.count || 0));
 
     return COMPACT_DEPARTMENTS.map((department) => {
       const items = sorted.filter((category) => categoryMatchesDepartment(category, department));
       return { ...department, items };
     }).filter((department, index) => department.items.length > 0 || index < 10);
-  }, [safeCategories]);
+  }, [categories]);
 
   const [activeDepartment, setActiveDepartment] = useState(COMPACT_DEPARTMENTS[0].name);
   const active =
@@ -205,7 +204,7 @@ const CompactCategoriesMega = ({
   const activeItems =
     active?.items.length
       ? active.items
-      : safeCategories.slice(0, 24);
+      : categories.slice(0, 24);
   const columns = chunkCategories(activeItems.slice(0, 24), 8);
 
   return (
@@ -420,11 +419,9 @@ const Navbar = () => {
   });
 
   // Top 12 categories by count (exclude uncategorized)
-  const fetchedCategories = Array.isArray(catResult?.data) ? catResult.data : [];
-
-  const navCategories: StoreCategory[] = fetchedCategories
-    .filter(c => String(c.name || "").toLowerCase() !== "uncategorized")
-    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0))
+  const navCategories: StoreCategory[] = (catResult?.data ?? [])
+    .filter(c => c.name.toLowerCase() !== "uncategorized")
+    .sort((a, b) => b.count - a.count)
     .slice(0, 12);
 
   const col1 = navCategories.slice(0, 6);
@@ -462,14 +459,14 @@ const Navbar = () => {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-[68px] flex items-center justify-between gap-3">
 
           {/* ── Logo ── */}
-          <Link to="/" className="flex items-center shrink-0 group" aria-label="Luxtronics home">
-            <div className="rounded-xl bg-white p-1 shadow-sm dark:bg-white">
-              <img
-                src="/logo.jpeg"
-                alt="Luxtronics"
-                className="h-10 w-auto object-contain transition-all duration-500 group-hover:scale-[1.05] sm:h-12"
-              />
-            </div>
+          <Link to="/" className="flex items-center shrink-0 group">
+           <div className="rounded-xl bg-white dark:bg-white p-1 shadow-sm">
+            <img
+              src="/logo.jpeg"
+              alt="Luxtronics"
+              className="h-10 w-auto sm:h-12 object-contain transition-all duration-500           group-hover:scale-[1.05]"
+             />
+          </div>
           </Link>
 
           {/* ── Desktop nav with Megamenu ── */}
@@ -556,7 +553,7 @@ const Navbar = () => {
                       >
                         {key === "Categories" ? (
                           <CompactCategoriesMega
-                            categories={fetchedCategories.filter(c => String(c.name || "").toLowerCase() !== "uncategorized")}
+                            categories={(catResult?.data ?? []).filter(c => c.name.toLowerCase() !== "uncategorized")}
                             onClose={() => setActiveMega(null)}
                           />
                         ) : (
@@ -1173,15 +1170,13 @@ const SearchSuggestions = ({
   const liveQuery = query.trim() || debouncedQuery.trim();
   const smartQuery = normalizeSmartQuery(liveQuery);
 
-  const { data: rawSuggestions = [], isLoading, isError, error } = useQuery({
+  const { data: suggestions = [], isLoading, isError, error } = useQuery({
     queryKey: ["search-suggestions", smartQuery],
     queryFn: () => fetchSearchSuggestions(smartQuery),
     enabled: liveQuery.length >= 2,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
-  const suggestions = useMemo(() => (Array.isArray(rawSuggestions) ? rawSuggestions : []), [rawSuggestions]);
-  const safeCategories = useMemo(() => (Array.isArray(categories) ? categories : []), [categories]);
 
   const instantSuggestions = useMemo(() => {
     if (smartQuery.length < 2) return [];
@@ -1197,7 +1192,7 @@ const SearchSuggestions = ({
   const rankedSuggestions = useMemo(() => {
     const source = suggestions.length > 0 ? suggestions : instantSuggestions;
 
-    return (Array.isArray(source) ? source : [])
+    return [...source]
       .map((product) => ({ product, score: scoreSuggestion(product, smartQuery) }))
       .sort((a, b) => b.score - a.score)
       .map(({ product }) => product)
@@ -1205,7 +1200,7 @@ const SearchSuggestions = ({
   }, [suggestions, instantSuggestions, smartQuery]);
 
   const categoryMatches = useMemo(() => {
-    return safeCategories
+    return categories
       .map((cat) => ({
         cat,
         score: scoreTextMatch(smartQuery, [cat.name, cat.slug, cat.description], [4, 2, 1]),
@@ -1214,7 +1209,7 @@ const SearchSuggestions = ({
       .sort((a, b) => b.score - a.score || (b.cat.count ?? 0) - (a.cat.count ?? 0))
       .map(({ cat }) => cat)
       .slice(0, 3);
-  }, [safeCategories, smartQuery]);
+  }, [categories, smartQuery]);
 
   const brandMatches = useMemo(() => {
     const q = smartQuery.toLowerCase();

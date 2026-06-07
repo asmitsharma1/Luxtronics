@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Zap, Instagram, Twitter, Youtube, Facebook } from "lucide-react";
-import { absoluteUrl } from "@/lib/seo";
 
+// ── Update these URLs to your real social media pages ──────────────────────────
 const SOCIAL_LINKS = [
   { Icon: Instagram, href: "https://www.instagram.com/luxtronics.in/", label: "Instagram" },
   { Icon: Twitter,   href: "https://x.com/luxtronics",                  label: "Twitter / X" },
@@ -49,13 +49,14 @@ const PAYMENT_LOGOS = [
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-
+  
+  // Organization schema for SEO
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Luxtronics",
-    "url": absoluteUrl("/"),
-    "logo": absoluteUrl("/logo.jpeg"),
+    "url": "https://luxtronics.com",
+    "logo": "https://luxtronics.com/logo.png",
     "description": "Premium electronics curated for the next generation of creators and tech enthusiasts",
     "sameAs": [
       "https://instagram.com/luxtronics",
@@ -75,8 +76,10 @@ const Footer = () => {
 
   return (
     <footer className="relative mt-24 overflow-hidden border-t border-white/10 bg-black text-white sm:mt-32 lg:mt-40">
+      {/* Organization schema */}
+      
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
-
+      
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url("/footer.jpg")` }}
@@ -98,13 +101,19 @@ const Footer = () => {
           <p className="mb-6 max-w-sm text-sm leading-6 text-white/72">
             Premium electronics curated for the next generation of creators and tech enthusiasts.
           </p>
-          <div className="mb-6 flex flex-wrap gap-2">
-            {["Genuine Products", "Secure Payments", "Worldwide Shipping"].map((label) => (
-              <span key={label} className="rounded-full border border-white/10 px-3 py-1 text-[11px] text-white/70">
-                {label}
-              </span>
-            ))}
-          </div>
+          <div className="flex flex-wrap gap-2 mb-6">
+          <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] text-white/70">
+            Genuine Products
+          </span>
+
+          <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] text-white/70">
+           Secure Payments
+           </span>
+
+           <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] text-white/70">
+             Worldwide Shipping
+            </span>
+           </div>
           <div className="flex gap-3 flex-wrap">
             {SOCIAL_LINKS.map(({ Icon, href, label }) => (
               <a
@@ -139,43 +148,54 @@ const Footer = () => {
         ))}
         </div>
 
-        <div className="mt-5 rounded-2xl border border-white/14 bg-black/35 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gradient">Secure payments</p>
-              <p className="mt-1 text-sm font-medium text-white/74">Trusted checkout options accepted at Luxtronics.</p>
-            </div>
+        
 
-            <div className="flex flex-wrap items-center justify-start gap-2.5 sm:justify-end">
-              {PAYMENT_LOGOS.map((logo) => {
-                const isCompactLogo = logo.label === "PayU" || logo.label === "UPI";
+<div className="mt-5 rounded-2xl border border-white/14 bg-black/35 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gradient">Secure payments</p>
+      <p className="mt-1 text-sm font-medium text-white/74">Trusted checkout options accepted at Luxtronics.</p>
+    </div>
+  
+   <div className="flex flex-wrap gap-2.5 items-center justify-start sm:justify-end">
+  {PAYMENT_LOGOS.map((logo) => {
 
-                return (
-                  <div
-                    key={logo.label}
-                    className="flex h-11 w-[82px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-black/10 bg-white px-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.05)] transition-all duration-200 hover:scale-105 hover:border-white/40"
-                    title={logo.label}
-                    aria-label={logo.label}
-                  >
-                    <img
-                      src={logo.src}
-                      alt={logo.label}
-                      loading="lazy"
-                      className={`h-full w-full select-none object-contain transition-transform ${
-                        isCompactLogo ? "scale-75" : "scale-125"
-                      }`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+    const isPayU = logo.label === "PayU";
+    const isUPI = logo.label === "UPI";
+
+    return (
+      <div
+        key={logo.label}
+       
+        className="flex h-11 w-[82px] items-center justify-center rounded-xl border border-black/10 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.05)] transition-all hover:scale-105 hover:border-white/40 duration-200 shrink-0 overflow-hidden px-2"
+        title={logo.label}
+        aria-label={logo.label}
+      >
+        <img
+          src={logo.src}
+          alt={logo.label}
+          loading="lazy"
+          
+          className={`h-full w-full object-contain filter select-none transition-transform ${
+            isPayU || isUPI ? "scale-70" : "scale-[1.30]"
+          }`}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement.innerHTML = `<span class="text-[10px] font-black tracking-tight text-black">${logo.label}</span>`;
+          }}
+        />
       </div>
-
+    );
+  })}
+</div>
+  </div>
+</div>
+      </div>
+      
       <div className="relative z-10 border-t border-white/12 bg-black/14 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-[1920px] flex-col items-center justify-between gap-4 px-4 py-6 text-center text-xs font-medium text-white/62 sm:flex-row sm:gap-6 sm:px-6 sm:py-8 sm:text-left md:px-8 lg:px-12 xl:px-16">
-          <p>© {currentYear} Luxtronics. All rights reserved. Premium electronics for creators.</p>
+          <p>©️ {currentYear} Luxtronics. All rights reserved. Premium electronics for creators.</p>
+          
           <div className="flex gap-4 sm:gap-6">
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>

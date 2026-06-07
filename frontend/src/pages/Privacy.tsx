@@ -1,9 +1,9 @@
-import type { MouseEvent } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 
 const Privacy = () => {
-  const scrollToSection = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
+
+  const scrollToSection = (e, id) => {
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
@@ -11,6 +11,7 @@ const Privacy = () => {
     }
   };
 
+  // आपके SEO Component के लिए कस्टम JSON-LD Structured Data
   const privacySchema = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
@@ -31,16 +32,16 @@ const Privacy = () => {
   };
 
   return (
-    <Layout hideBreadcrumb>
-
+    <Layout>
+     
       <SEO
-        title="Privacy Policy"
+        title="Privacy Policy" 
         description="Luxtronics privacy policy. Learn how we securely handle, protect, and process your personal data across India, Australia, and New Zealand under GDPR & IT Act."
         keywords="luxtronics privacy policy, data protection, personal data, ecommerce privacy, shopping security"
-        url="/privacy"
-        type="article"
-        modifiedTime="2026-06-06T12:00:00+05:30"
-        structuredData={privacySchema}
+        url="https://luxtronics.in/privacy"
+        type="article" 
+        modifiedTime="2026-06-06T12:00:00+05:30" 
+        structuredData={privacySchema} 
       />
 
       {/* Hero Section */}
@@ -56,7 +57,7 @@ const Privacy = () => {
 
       {/* Main Content Layout */}
       <section className="container py-16 max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-10">
-
+        
         {/* Sticky Sidebar Navigation */}
         <aside className="lg:col-span-1 block">
           <div className="sticky top-24 p-5 rounded-2xl border border-border bg-gradient-card">
@@ -77,11 +78,11 @@ const Privacy = () => {
 
         {/* Content Articles */}
         <div className="lg:col-span-3 space-y-8 max-w-3xl">
-
+          
           <article id="who-we-are" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
             <h2 className="font-semibold text-xl mb-3 text-foreground">1. Who We Are & Operations</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Luxtronics (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the verified e-commerce platforms luxtronics.in, luxtronics.com.au, and luxtronics.co.nz.
+              Luxtronics (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the verified e-commerce platforms luxtronics.in, luxtronics.com.au, and luxtronics.co.nz. 
               We are an authorized electronics retailer dedicated to delivering premium gadgets and lifestyle technology to customers across India, Australia, and New Zealand.
             </p>
             <p className="mt-4 pt-3 border-t border-border/50 text-sm text-muted-foreground leading-relaxed">
@@ -93,7 +94,7 @@ const Privacy = () => {
           <article id="info-collect" className="scroll-mt-24 rounded-2xl border border-border bg-gradient-card p-6 shadow-sm">
             <h2 className="font-semibold text-xl mb-3 text-foreground">2. Information We Collect</h2>
             <p className="text-sm text-muted-foreground mb-4">We collect information to provide better services to all our users. Here is what we track:</p>
-
+            
             <div className="overflow-x-auto rounded-xl border border-border/80 mb-4">
               <table className="w-full text-left text-sm text-muted-foreground">
                 <thead className="bg-muted/40 text-xs text-foreground font-semibold uppercase">
@@ -120,7 +121,7 @@ const Privacy = () => {
             </div>
 
             <p className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg border border-dashed border-border">
-              <strong className="text-foreground">Payment Security Note:</strong> We do <strong className="text-foreground">not</strong> collect or store credit/debit card numbers on our servers. All monetary transactions are safely routed through PCI-DSS compliant secure payment gateways.
+              🛡️ <strong className="text-foreground">Payment Security Note:</strong> We do <strong className="text-foreground">not</strong> collect or store credit/debit card numbers on our servers. All monetary transactions are safely routed through PCI-DSS compliant secure payment gateways.
             </p>
           </article>
 
@@ -143,7 +144,7 @@ const Privacy = () => {
             </p>
             <div className="mt-4 space-y-3">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Google Analytics (GA4):</strong> We implement GA4 to parse user traffic trends.
+                <strong className="text-foreground">Google Analytics (GA4):</strong> We implement GA4 to parse user traffic trends. 
                 Data points remain strictly anonymized (including masked IP addresses). Google processes this traffic in absolute compliance with the{" "}
                 <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   Google Privacy Policy
@@ -154,7 +155,7 @@ const Privacy = () => {
               </p>
             </div>
             <p className="mt-4 text-xs text-muted-foreground bg-muted/20 p-3 rounded-xl">
-              You can reject Google Analytics tracking via the official{" "}
+              💡 You can easily reject Google Analytics logs via the official{" "}
               <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">
                 Google Tracking Opt-out Add-on
               </a>.
