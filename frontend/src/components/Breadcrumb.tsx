@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { absoluteUrl } from "@/lib/seo";
 
 interface BreadcrumbItem {
   label: string;
@@ -115,9 +114,9 @@ const Breadcrumb = () => {
       <div className="relative z-10 mx-auto flex min-h-[260px] max-w-[1400px] items-center px-5 py-14 sm:min-h-[310px] sm:px-8 lg:min-h-[360px] lg:px-16">
         <div className="max-w-3xl rounded-[28px] border border-white/14 bg-white/[0.075] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:p-7 lg:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/68">{banner.eyebrow}</p>
-          <h1 className="mt-3 font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+          <div className="mt-3 font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
             {currentLabel}
-          </h1>
+          </div>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72 sm:text-base">{banner.subtitle}</p>
 
           <nav
@@ -184,7 +183,7 @@ const Breadcrumb = () => {
               "@type": "ListItem",
               "position": index + 1,
               "name": item.label,
-              "item": absoluteUrl(item.href),
+              "item": `https://luxtronics.com${item.href}`,
             })),
           }),
         }}
