@@ -169,6 +169,7 @@ let productsCol = null;
 let categoriesCol = null;
 let mongoReady = false;
 let mongoLastError = null;
+let mongoInitPromise = null;
 
 async function initMongo() {
   if (!process.env.MONGODB_URI) {
@@ -191,7 +192,19 @@ async function initMongo() {
     console.error('❌ MongoDB connection failed:', err.message);
   }
 }
-initMongo();
+mongoInitPromise = initMongo();
+
+async function waitForMongoReady(maxMs = 9000) {
+  if (mongoReady) return true;
+  if (!mongoInitPromise) return false;
+
+  await Promise.race([
+    mongoInitPromise,
+    new Promise((resolve) => setTimeout(resolve, maxMs)),
+  ]);
+
+  return mongoReady;
+}
 
 async function createIndexIfPossible(collection, keys, options = {}) {
   try {
@@ -223,6 +236,41 @@ async function ensureMongoIndexes() {
     createIndexIfPossible(categoriesCol, { slug: 1 }, { unique: true }),
     createIndexIfPossible(categoriesCol, { count: -1, name: 1 }),
   ]);
+}
+
+async function deriveCategoriesFromProducts(page = 1, perPage = 100) {
+  if (!productsCol) return { categories: [], total: 0 };
+
+  const pipeline = [
+    { $unwind: '$categories' },
+    {
+      $group: {
+        _id: '$categories.slug',
+        id: { $first: '$categories.id' },
+        name: { $first: '$categories.name' },
+        slug: { $first: '$categories.slug' },
+        count: { $sum: 1 },
+        sampleImage: { $first: { $arrayElemAt: ['$images.src', 0] } },
+      },
+    },
+    { $match: { slug: { $nin: [null, '', 'uncategorized'] }, count: { $gt: 0 } } },
+    { $sort: { count: -1, name: 1 } },
+    {
+      $facet: {
+        data: [
+          { $skip: Math.max(0, (page - 1) * perPage) },
+          { $limit: perPage },
+        ],
+        meta: [{ $count: 'total' }],
+      },
+    },
+  ];
+
+  const [result] = await productsCol.aggregate(pipeline, { allowDiskUse: true }).toArray();
+  return {
+    categories: result?.data || [],
+    total: Number(result?.meta?.[0]?.total || 0),
+  };
 }
 
 function mask(str) {
@@ -660,6 +708,7 @@ app.get('/api/products', async (req, res) => {
   const perPage = Math.min(Math.max(parseInt(req.query.per_page || '50', 10), 1), 500);
   const search = req.query.search;
   const category = req.query.category;
+  await waitForMongoReady();
 
   // Public storefront reads from MongoDB. Woo fallback is opt-in only.
   if (mongoReady && productsCol) {
@@ -747,6 +796,7 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/products/slug/:slug', async (req, res) => {
   const { slug } = req.params;
+  await waitForMongoReady();
 
   // Public storefront reads from MongoDB. Woo fallback is opt-in only.
   if (mongoReady && productsCol) {
@@ -802,6 +852,7 @@ app.get('/api/products/slug/:slug', async (req, res) => {
 
 app.get('/api/products/:id', async (req, res) => {
   const { id } = req.params;
+  await waitForMongoReady();
 
   // Public storefront reads from MongoDB. Woo fallback is opt-in only.
   if (mongoReady && productsCol) {
@@ -947,6 +998,7 @@ app.get('/api/woo/categories', async (req, res) => {
 app.get('/api/categories', async (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const perPage = parseInt(req.query.per_page || '100', 10);
+  await waitForMongoReady();
 
   if (mongoReady && categoriesCol) {
     try {
@@ -967,6 +1019,22 @@ app.get('/api/categories', async (req, res) => {
       });
     } catch (err) {
       console.error('MongoDB categories error:', err.message);
+    }
+  }
+
+  if (mongoReady && productsCol) {
+    try {
+      const { categories, total } = await deriveCategoriesFromProducts(page, perPage);
+      if (categories.length > 0) {
+        return res.json({
+          success: true,
+          data: categories,
+          pagination: { page, perPage, total, totalPages: Math.ceil(total / perPage) },
+          source: 'mongodb-products',
+        });
+      }
+    } catch (err) {
+      console.error('MongoDB derived categories error:', err.message);
       if (!wooFallbackEnabled()) {
         return res.status(503).json({ success: false, error: 'Unable to load categories from MongoDB', source: 'mongodb' });
       }
