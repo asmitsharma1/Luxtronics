@@ -768,29 +768,43 @@ app.get('/api/products', async (req, res) => {
       });
     } catch (err) {
       console.error('MongoDB query error:', err.message);
-      if (!wooFallbackEnabled()) {
-        return res.status(503).json({ success: false, error: 'Unable to load products from MongoDB', source: 'mongodb' });
-      }
+      console.warn('Falling back to WooCommerce products because MongoDB query failed.');
     }
   }
 
-  if (!wooFallbackEnabled()) {
-    return res.status(503).json({ success: false, error: 'MongoDB product cache is not ready', source: 'mongodb' });
-  }
-
-  // Optional WooCommerce fallback for maintenance/dev only.
+  // Storefront fallback: if Mongo is cold/unavailable, keep the shop online via WooCommerce.
   try {
     const wooUrl = getWooUrl(req);
-    const url = `${wooUrl}/wp-json/wc/v3/products?${new URLSearchParams(req.query)}`;
+    const params = new URLSearchParams(req.query);
+    params.set('status', 'publish');
+    params.set('per_page', String(Math.min(perPage, 100)));
+    params.set('page', String(page));
+    const url = `${wooUrl}/wp-json/wc/v3/products?${params}`;
     const auth = getWooAuth(req);
 
     console.log(`Proxying to Woo: ${url}`);
     const r = await fetch(url, { headers: { 'Authorization': auth } });
-    if (!r.ok) return res.status(r.status).json({ success: false, error: 'WooCommerce API error' });
+    if (!r.ok) {
+      const text = await r.text();
+      return res.status(r.status).json({ success: false, error: 'WooCommerce API error', details: text.slice(0, 500) });
+    }
 
-    res.json({ success: true, data: await r.json(), source: 'woocommerce' });
+    const items = await r.json();
+    const total = parseInt(r.headers.get('X-WP-Total') || String(Array.isArray(items) ? items.length : 0), 10);
+    const totalPages = parseInt(r.headers.get('X-WP-TotalPages') || String(Math.ceil(total / perPage) || 1), 10);
+
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    res.json({
+      success: true,
+      data: items,
+      total,
+      pagination: { page, perPage, total, totalPages },
+      source: 'woocommerce',
+      mongoReady,
+      mongoLastError,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(503).json({ success: false, error: 'Unable to load products', details: err.message, mongoLastError });
   }
 });
 
@@ -805,17 +819,11 @@ app.get('/api/products/slug/:slug', async (req, res) => {
       if (product) return res.json({ success: true, data: product, source: 'mongodb' });
     } catch (err) {
       console.error('MongoDB slug error:', err.message);
-      if (!wooFallbackEnabled()) {
-        return res.status(503).json({ success: false, error: 'Unable to load product from MongoDB', source: 'mongodb' });
-      }
+      console.warn('Falling back to WooCommerce product lookup because MongoDB slug query failed.');
     }
   }
 
-  if (!wooFallbackEnabled()) {
-    return res.status(404).json({ success: false, error: 'Product not found in MongoDB', source: 'mongodb' });
-  }
-
-  // Optional WooCommerce fallback for maintenance/dev only.
+  // Storefront fallback: if Mongo is cold/unavailable, keep product pages online via WooCommerce.
   try {
     const wooUrl = getWooUrl(req);
     const auth = getWooAuth(req);
@@ -861,17 +869,11 @@ app.get('/api/products/:id', async (req, res) => {
       if (product) return res.json({ success: true, data: product, source: 'mongodb' });
     } catch (err) {
       console.error('MongoDB ID error:', err.message);
-      if (!wooFallbackEnabled()) {
-        return res.status(503).json({ success: false, error: 'Unable to load product from MongoDB', source: 'mongodb' });
-      }
+      console.warn('Falling back to WooCommerce product lookup because MongoDB ID query failed.');
     }
   }
 
-  if (!wooFallbackEnabled()) {
-    return res.status(404).json({ success: false, error: 'Product not found in MongoDB', source: 'mongodb' });
-  }
-
-  // Optional WooCommerce fallback for maintenance/dev only.
+  // Storefront fallback: if Mongo is cold/unavailable, keep product pages online via WooCommerce.
   try {
     const wooUrl = getWooUrl(req);
     const auth = getWooAuth(req);
@@ -1035,20 +1037,16 @@ app.get('/api/categories', async (req, res) => {
       }
     } catch (err) {
       console.error('MongoDB derived categories error:', err.message);
-      if (!wooFallbackEnabled()) {
-        return res.status(503).json({ success: false, error: 'Unable to load categories from MongoDB', source: 'mongodb' });
-      }
+      console.warn('Falling back to WooCommerce categories because MongoDB-derived categories failed.');
     }
-  }
-
-  if (!wooFallbackEnabled()) {
-    return res.status(503).json({ success: false, error: 'MongoDB category cache is not ready', source: 'mongodb' });
   }
 
   try {
     const wooUrl = getWooUrl(req);
     const params = new URLSearchParams(req.query);
     params.set('hide_empty', 'true');
+    if (!params.has('per_page')) params.set('per_page', String(Math.min(perPage, 100)));
+    if (!params.has('page')) params.set('page', String(page));
     const url = `${wooUrl}/wp-json/wc/v3/products/categories?${params}`;
     const auth = getWooAuth(req);
 
@@ -1066,9 +1064,18 @@ app.get('/api/categories', async (req, res) => {
     }
 
     const data = (await r.json()).filter((category) => Number(category.count || 0) > 0);
-    res.json({ success: true, data });
+    const total = parseInt(r.headers.get('X-WP-Total') || String(data.length), 10);
+    const totalPages = parseInt(r.headers.get('X-WP-TotalPages') || String(Math.ceil(total / perPage) || 1), 10);
+    res.json({
+      success: true,
+      data,
+      pagination: { page, perPage, total, totalPages },
+      source: 'woocommerce',
+      mongoReady,
+      mongoLastError,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(503).json({ success: false, error: 'Unable to load categories', details: err.message, mongoLastError });
   }
 });
 
