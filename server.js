@@ -288,6 +288,8 @@ const WOO_DOMAINS = {
   'default': 'https://luxtronics.luxtronics.in'
 };
 
+let wooCategoryCache = { expiresAt: 0, bySlug: new Map(), ordered: [] };
+
 function getWooUrl(req) {
   const host = req.headers.host || '';
   for (const [domain, url] of Object.entries(WOO_DOMAINS)) {
@@ -320,6 +322,59 @@ function getWooAuth(req) {
   const { key, secret } = getWooCredentials(req);
   if (!key || !secret) throw new Error('WooCommerce credentials are not configured');
   return 'Basic ' + Buffer.from(`${key}:${secret}`).toString('base64');
+}
+
+async function fetchWooCategoryMap(req) {
+  if (wooCategoryCache.expiresAt > Date.now() && wooCategoryCache.bySlug.size > 0) {
+    return wooCategoryCache;
+  }
+
+  const wooUrl = getWooUrl(req);
+  const auth = getWooAuth(req);
+  const response = await fetch(`${wooUrl}/wp-json/wc/v3/products/categories?per_page=100&hide_empty=true&orderby=count&order=desc`, {
+    headers: {
+      Authorization: auth,
+      'User-Agent': 'LuxtronicsServer/1.0',
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`WooCommerce categories ${response.status}`);
+  }
+
+  const categories = (await response.json()).filter((category) => Number(category.count || 0) > 0);
+  const bySlug = new Map();
+  for (const category of categories) {
+    bySlug.set(String(category.slug || '').toLowerCase(), category);
+  }
+
+  wooCategoryCache = {
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    bySlug,
+    ordered: categories,
+  };
+
+  return wooCategoryCache;
+}
+
+function electronicsCategoryOrder(categories) {
+  const priority = [
+    'mobile-accessories',
+    'smart-wear',
+    'wearables',
+    'security',
+    'outdoor-sports',
+    'home-garden',
+  ];
+  const bySlug = new Map(categories.map((category) => [category.slug, category]));
+  const ordered = priority.map((slug) => bySlug.get(slug)).filter(Boolean);
+  for (const category of categories) {
+    if (!priority.includes(category.slug) && category.slug !== 'uncategorized') {
+      ordered.push(category);
+    }
+  }
+  return ordered;
 }
 
 function wooFallbackEnabled() {
@@ -776,11 +831,55 @@ app.get('/api/products', async (req, res) => {
   try {
     const wooUrl = getWooUrl(req);
     const params = new URLSearchParams(req.query);
+    const categoryMap = await fetchWooCategoryMap(req);
     params.set('status', 'publish');
     params.set('per_page', String(Math.min(perPage, 100)));
     params.set('page', String(page));
+
+    if (category) {
+      const resolvedCategory = categoryMap.bySlug.get(String(category).toLowerCase());
+      if (resolvedCategory?.id) {
+        params.set('category', String(resolvedCategory.id));
+      }
+    }
+
     const url = `${wooUrl}/wp-json/wc/v3/products?${params}`;
     const auth = getWooAuth(req);
+
+    if (!search && !category && page === 1) {
+      const priorityCategories = electronicsCategoryOrder(categoryMap.ordered);
+      const batches = [];
+      const seen = new Set();
+
+      for (const priorityCategory of priorityCategories) {
+        if (batches.length >= perPage) break;
+        const priorityParams = new URLSearchParams(params);
+        priorityParams.set('category', String(priorityCategory.id));
+        priorityParams.set('per_page', String(Math.min(24, perPage - batches.length)));
+        priorityParams.set('page', '1');
+        const priorityResponse = await fetch(`${wooUrl}/wp-json/wc/v3/products?${priorityParams}`, { headers: { Authorization: auth } });
+        if (!priorityResponse.ok) continue;
+        const priorityItems = await priorityResponse.json();
+        for (const item of Array.isArray(priorityItems) ? priorityItems : []) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            batches.push(item);
+          }
+          if (batches.length >= perPage) break;
+        }
+      }
+
+      const total = categoryMap.ordered.reduce((sum, item) => sum + Number(item.count || 0), 0);
+      return res.json({
+        success: true,
+        data: batches,
+        total,
+        pagination: { page, perPage, total, totalPages: Math.ceil(total / perPage) || 1 },
+        source: 'woocommerce-priority',
+        mongoReady,
+        mongoLastError,
+      });
+    }
 
     console.log(`Proxying to Woo: ${url}`);
     const r = await fetch(url, { headers: { 'Authorization': auth } });
@@ -999,7 +1098,7 @@ app.get('/api/woo/categories', async (req, res) => {
 
 app.get('/api/categories', async (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
-  const perPage = parseInt(req.query.per_page || '100', 10);
+  const perPage = Math.min(Math.max(parseInt(req.query.per_page || '100', 10), 1), 100);
   await waitForMongoReady();
 
   if (mongoReady && categoriesCol) {
@@ -1045,8 +1144,8 @@ app.get('/api/categories', async (req, res) => {
     const wooUrl = getWooUrl(req);
     const params = new URLSearchParams(req.query);
     params.set('hide_empty', 'true');
-    if (!params.has('per_page')) params.set('per_page', String(Math.min(perPage, 100)));
-    if (!params.has('page')) params.set('page', String(page));
+    params.set('per_page', String(perPage));
+    params.set('page', String(page));
     const url = `${wooUrl}/wp-json/wc/v3/products/categories?${params}`;
     const auth = getWooAuth(req);
 

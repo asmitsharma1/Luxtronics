@@ -349,37 +349,63 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
   pagination: { page: number; perPage: number; total: number; totalPages: number };
 }> {
   console.log('[Store API] Fetching categories from Mongo cache API');
+  const safePerPage = Math.min(Math.max(perPage, 1), 100);
+
+  const normalizeCategories = (categories: StoreCategory[]) =>
+    categories
+      .map((category: StoreCategory) => ({
+        ...category,
+        name: decodeHtmlEntities(category.name),
+      }))
+      .filter((category) => Number(category.productCount ?? category.count ?? 0) > 0 && !isUncategorizedCategory(category.name));
+
+  const fetchWooFallback = async () => {
+    const fallbackResponse = await fetch(apiUrl(`/api/woo/categories?page=${page}&per_page=${safePerPage}&hide_empty=true&orderby=count&order=desc`));
+    if (!fallbackResponse.ok) {
+      throw new Error(`Woo categories failed: ${fallbackResponse.status}`);
+    }
+
+    const fallbackPayload = await fallbackResponse.json();
+    const fallbackCategories = normalizeCategories(Array.isArray(fallbackPayload) ? fallbackPayload : []);
+    return {
+      data: fallbackCategories,
+      pagination: { page, perPage: safePerPage, total: fallbackCategories.length, totalPages: 1 },
+    };
+  };
 
   try {
-    const response = await fetch(apiUrl(`/api/categories?page=${page}&per_page=${perPage}`));
+    const response = await fetch(apiUrl(`/api/categories?page=${page}&per_page=${safePerPage}`));
     
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
       console.warn('Failed to fetch categories', response.status, payload?.error || response.statusText);
-      return {
-        data: [],
-        pagination: { page, perPage, total: 0, totalPages: 1 },
-      };
+      return fetchWooFallback();
     }
 
     const payload = await response.json();
     const categories = Array.isArray(payload?.data)
-      ? payload.data.map((category: StoreCategory) => ({
-          ...category,
-          name: decodeHtmlEntities(category.name),
-        }))
+      ? normalizeCategories(payload.data)
       : [];
+
+    if (categories.length === 0) {
+      return fetchWooFallback();
+    }
     
     return {
       data: categories,
-      pagination: payload?.pagination || { page, perPage, total: categories.length, totalPages: 1 },
+      pagination: payload?.pagination || { page, perPage: safePerPage, total: categories.length, totalPages: 1 },
     };
   } catch (error) {
     console.warn('Failed to fetch categories', error);
-    return {
-      data: [],
-      pagination: { page, perPage, total: 0, totalPages: 1 },
-    };
+    try {
+      return await fetchWooFallback();
+    } catch (fallbackError) {
+      console.warn('Failed to fetch fallback Woo categories', fallbackError);
+      return {
+        data: [],
+        pagination: { page, perPage: safePerPage, total: 0, totalPages: 1 },
+      };
+    }
   }
 }
 

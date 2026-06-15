@@ -48,10 +48,19 @@ type ParentGroup = {
 const PARENT_GROUPS: ParentGroup[] = [
   { name: "Mobile Accessories", icon: Battery, description: "Universal mobile accessories and essentials", slugKeywords: ["mobile-accessories", "cable-charger", "tempered-glass", "cases", "case", "cover", "protector", "screen", "glass", "charger", "cable", "adapter", "bags-cases", "bag", "pouch", "holder", "stand", "mount", "dock", "magsafe", "airpods", "earbuds", "earphones", "headphones", "feature-phones"] },
   { name: "Smart Wear", icon: Watch, description: "Smartwatches, smart glasses and wearable technology", slugKeywords: ["wearables", "apple-watch", "huawei-watch", "garmin", "fitbit", "samsung-watch", "smart-glasses", "glasses", "eyewear"] },
-  { name: "Outdoor & Sports", icon: TreePine, description: "Camping, cycling, fishing and outdoor gear", slugKeywords: ["outdoor", "camping", "bicycle", "fishing"] },
   { name: "Consumer Electronics", icon: Tv, description: "TVs, projectors, audio and smart home devices", slugKeywords: ["consumer-electronics", "audio", "bluetooth-speakers", "projector", "android-tv", "3d-printer", "arduino", "vr", "ar", "live-equipment"] },
+  { name: "Security", icon: Shield, description: "CCTV, access control and safety electronics", slugKeywords: ["security", "camera-security", "cctv", "surveillance", "alarm", "access-control"] },
   { name: "DJI & Insta360", icon: Camera, description: "Drones, action cameras and creator accessories", slugKeywords: ["dji", "insta360", "osmo", "gopro"] },
+  { name: "Outdoor & Sports", icon: TreePine, description: "Camping, cycling, fishing and outdoor gear", slugKeywords: ["outdoor", "sport", "sports", "camping", "bicycle", "fishing"] },
+  { name: "Home & Garden", icon: Package, description: "Home organization, garden and utility products", slugKeywords: ["home-garden", "home", "garden"] },
 ];
+
+const FALLBACK_GROUP: ParentGroup = {
+  name: "More Categories",
+  icon: Package,
+  description: "Additional active categories in the store",
+  slugKeywords: [],
+};
 
 function slugify(value: string) {
   return value
@@ -68,6 +77,23 @@ function matchParent(cat: StoreCategory): number {
   return PARENT_GROUPS.findIndex((group) =>
     group.slugKeywords.some((keyword) => slug.includes(keyword) || name.includes(keyword.replace(/-/g, " "))),
   );
+}
+
+function categoryPriority(category: StoreCategory) {
+  const text = `${category.slug || ""} ${category.name || ""}`.toLowerCase();
+  if (/mobile|charger|cable|adapter|phone|case|screen|protector|airpods|earbud|headphone/.test(text)) return 0;
+  if (/smart|wear|watch|glasses|wearable/.test(text)) return 1;
+  if (/audio|speaker|electronics|projector|tv|vr|ar|dji|insta|drone|camera/.test(text)) return 2;
+  if (/security|cctv|surveillance|alarm/.test(text)) return 3;
+  if (/outdoor|sport|camping|bicycle|fishing/.test(text)) return 4;
+  if (/home|garden/.test(text)) return 5;
+  return 8;
+}
+
+function sortCategories(a: StoreCategory, b: StoreCategory) {
+  return categoryPriority(a) - categoryPriority(b)
+    || (b.productCount ?? b.count ?? 0) - (a.productCount ?? a.count ?? 0)
+    || a.name.localeCompare(b.name);
 }
 
 const SkeletonGroup = () => (
@@ -350,7 +376,7 @@ const Categories = () => {
 
   const { data: categoryResult, isLoading } = useQuery({
     queryKey: ["categories-page"],
-    queryFn: () => fetchStoreCategories(1, 200),
+    queryFn: () => fetchStoreCategories(1, 100),
     staleTime: 1000 * 60 * 30,
   });
 
@@ -371,11 +397,16 @@ const Categories = () => {
     });
 
     groups.forEach((group) => {
-      group.children.sort((a, b) => (b.productCount ?? b.count ?? 0) - (a.productCount ?? a.count ?? 0));
+      group.children.sort(sortCategories);
     });
-    unmatched.sort((a, b) => (b.productCount ?? b.count ?? 0) - (a.productCount ?? a.count ?? 0));
+    unmatched.sort(sortCategories);
 
-    return { groups, unmatched };
+    const visibleGroups = groups.filter((group) => group.children.length > 0);
+    if (unmatched.length > 0) {
+      visibleGroups.push({ group: FALLBACK_GROUP, children: unmatched });
+    }
+
+    return { groups: visibleGroups, unmatched };
   }, [allCategories]);
 
   const searchResults = useMemo(() => {
@@ -398,12 +429,12 @@ const Categories = () => {
   );
   const topCategories = useMemo(
     () => [...allCategories]
-      .sort((a, b) => (b.productCount ?? b.count ?? 0) - (a.productCount ?? a.count ?? 0))
+      .sort(sortCategories)
       .slice(0, 8),
     [allCategories],
   );
 
-  const activeGroups = grouped.groups.filter((group) => group.children.length > 0);
+  const activeGroups = grouped.groups;
   const visibleGroups = activeGroups;
   const displayGroups = useMemo(() => {
     const selected = departmentFilter === "all"
@@ -414,7 +445,7 @@ const Categories = () => {
       group,
       children: [...children].sort((a, b) => {
         if (categorySort === "az") return a.name.localeCompare(b.name);
-        return (b.productCount ?? b.count ?? 0) - (a.productCount ?? a.count ?? 0);
+        return sortCategories(a, b);
       }),
     }));
   }, [visibleGroups, categorySort, departmentFilter]);
@@ -444,7 +475,7 @@ const Categories = () => {
                 "@type": "ListItem",
                 "position": index + 1,
                 "name": category.name,
-                "url": absoluteUrl(`/shop?category=${category.slug}`),
+                "url": absoluteUrl(`/shop?cat=${encodeURIComponent(category.slug)}`),
               })),
             },
           },

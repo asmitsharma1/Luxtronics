@@ -24,6 +24,23 @@ const PRICE_RANGES: Array<{ value: PriceRange; label: string; test: (price: numb
   { value: "1000-plus", label: "1,000+", test: (price) => price > 1000 },
 ];
 
+function categoryFilterPriority(category: CategoryFilter) {
+  const text = `${category.slug || ""} ${category.name || ""}`.toLowerCase();
+  if (/mobile|charger|cable|adapter|phone|case|screen|protector|airpods|earbud|headphone/.test(text)) return 0;
+  if (/smart|wear|watch|glasses|wearable/.test(text)) return 1;
+  if (/audio|speaker|electronics|projector|tv|vr|ar|dji|insta|drone|camera/.test(text)) return 2;
+  if (/security|cctv|surveillance|alarm/.test(text)) return 3;
+  if (/outdoor|sport|camping|bicycle|fishing/.test(text)) return 4;
+  if (/home|garden/.test(text)) return 5;
+  return 8;
+}
+
+function sortCategoryFilters(a: CategoryFilter, b: CategoryFilter) {
+  return categoryFilterPriority(a) - categoryFilterPriority(b)
+    || b.count - a.count
+    || a.name.localeCompare(b.name);
+}
+
 // ─── Smart search engine ──────────────────────────────────────────────────────
 function tokenise(text: string): string[] {
   return text.toLowerCase().match(/[a-z0-9]+/g) || [];
@@ -186,7 +203,7 @@ function ShopSidebar({
   onClear: () => void;
 }) {
   const topCategories = useMemo(
-    () => [...categories].sort((a, b) => b.count - a.count).slice(0, 14),
+    () => [...categories].sort(sortCategoryFilters).slice(0, 14),
     [categories]
   );
 
@@ -312,12 +329,12 @@ const Shop = () => {
         const category = activeCat !== "all" ? activeCat : undefined;
         const [prodResult, catData] = await Promise.all([
           fetchStoreProductsPage(currentPage, PAGE_SIZE, search || undefined, category),
-          fetchStoreCategories(1, 200),
+          fetchStoreCategories(1, 100),
         ]);
         if (!mounted) return;
         const categoryList = Array.isArray(catData?.data) ? catData.data : [];
         const productList = Array.isArray(prodResult.products) ? prodResult.products : [];
-        setCategories(filterVisibleCategories(categoryList));
+        setCategories(filterVisibleCategories(categoryList).sort(sortCategoryFilters));
         setProducts(productList.map(mapStoreProductToLocalProduct));
         setTotalCount(Number(prodResult.total || 0));
         setError(null);
