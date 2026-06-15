@@ -356,11 +356,20 @@ export class ProductService {
 
     const enriched = await Promise.all(
       categories.map(async (cat) => {
-        const regex = new RegExp(cat.slug.replace(/-/g, '[\\s-]'), 'i');
+        const variants = categorySearchVariants(cat.slug || cat.name);
+        const regexes = categoryRegexes(cat.slug || cat.name);
+        const filter = {
+          $or: [
+            { 'categories.slug': { $in: variants } },
+            { 'categories.name': { $in: regexes } },
+            { category: { $in: regexes } },
+            { categorySlug: { $in: variants } },
+          ],
+        };
         const [productCount, sampleProduct] = await Promise.all([
-          prodCollection.countDocuments({ $or: [{ category: new RegExp(cat.name, 'i') }, { categorySlug: cat.slug }] }),
+          prodCollection.countDocuments(filter),
           prodCollection.findOne(
-            { $or: [{ category: new RegExp(cat.name, 'i') }, { categorySlug: cat.slug }] },
+            filter,
             { projection: { images: 1 } }
           ) as Promise<any>,
         ]);
