@@ -310,9 +310,9 @@ const Shop = () => {
         setLoading(true);
         const search = debouncedQuery.trim();
         const category = activeCat !== "all" ? activeCat : undefined;
-        const [catData, prodResult] = await Promise.all([
-          fetchStoreCategories(),
+        const [prodResult, catData] = await Promise.all([
           fetchStoreProductsPage(currentPage, PAGE_SIZE, search || undefined, category),
+          fetchStoreCategories(1, 200),
         ]);
         if (!mounted) return;
         const categoryList = Array.isArray(catData?.data) ? catData.data : [];

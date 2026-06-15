@@ -350,24 +350,37 @@ export async function fetchStoreCategories(page = 1, perPage = 20): Promise<{
 }> {
   console.log('[Store API] Fetching categories from Mongo cache API');
 
-  const response = await fetch(apiUrl(`/api/categories?page=${page}&per_page=${perPage}`));
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch categories: ${response.statusText}`);
-  }
+  try {
+    const response = await fetch(apiUrl(`/api/categories?page=${page}&per_page=${perPage}`));
+    
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      console.warn('Failed to fetch categories', response.status, payload?.error || response.statusText);
+      return {
+        data: [],
+        pagination: { page, perPage, total: 0, totalPages: 1 },
+      };
+    }
 
-  const payload = await response.json();
-  const categories = Array.isArray(payload?.data)
-    ? payload.data.map((category: StoreCategory) => ({
-        ...category,
-        name: decodeHtmlEntities(category.name),
-      }))
-    : [];
-  
-  return {
-    data: categories,
-    pagination: payload?.pagination || { page, perPage, total: categories.length, totalPages: 1 },
-  };
+    const payload = await response.json();
+    const categories = Array.isArray(payload?.data)
+      ? payload.data.map((category: StoreCategory) => ({
+          ...category,
+          name: decodeHtmlEntities(category.name),
+        }))
+      : [];
+    
+    return {
+      data: categories,
+      pagination: payload?.pagination || { page, perPage, total: categories.length, totalPages: 1 },
+    };
+  } catch (error) {
+    console.warn('Failed to fetch categories', error);
+    return {
+      data: [],
+      pagination: { page, perPage, total: 0, totalPages: 1 },
+    };
+  }
 }
 
 /**
