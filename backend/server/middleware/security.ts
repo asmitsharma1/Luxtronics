@@ -58,8 +58,38 @@ export const securityHeaders = helmet({
 });
 
 export const globalRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
+  windowMs: 60 * 1000,
+  max: (req) => {
+    if (req.method === 'GET' && /^\/api\/(products|categories|status)\b/.test(req.path)) {
+      return 2400;
+    }
+
+    if (req.method === 'GET' && req.path.startsWith('/api/')) {
+      return 900;
+    }
+
+    if (req.path.startsWith('/api/')) {
+      return 120;
+    }
+
+    return 600;
+  },
+  skip: (req) =>
+    req.method === 'GET' &&
+    (req.path.startsWith('/assets/') ||
+      req.path.startsWith('/brands/') ||
+      req.path.endsWith('.css') ||
+      req.path.endsWith('.js') ||
+      req.path.endsWith('.png') ||
+      req.path.endsWith('.jpg') ||
+      req.path.endsWith('.jpeg') ||
+      req.path.endsWith('.svg') ||
+      req.path.endsWith('.ico') ||
+      req.path.endsWith('.webmanifest') ||
+      req.path.endsWith('.csv') ||
+      req.path.endsWith('.xml') ||
+      req.path === '/robots.txt' ||
+      req.path === '/.well-known/security.txt'),
   standardHeaders: true,
   legacyHeaders: false,
   message: {

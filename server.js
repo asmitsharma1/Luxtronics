@@ -38,6 +38,46 @@ function clientIp(req) {
   return String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
 }
 
+function ratePolicy(req) {
+  const pathName = req.path || '';
+  const method = req.method || 'GET';
+
+  if (
+    method === 'GET' &&
+    (pathName.startsWith('/assets/') ||
+      pathName.startsWith('/brands/') ||
+      pathName.startsWith('/favicon') ||
+      pathName.endsWith('.css') ||
+      pathName.endsWith('.js') ||
+      pathName.endsWith('.png') ||
+      pathName.endsWith('.jpg') ||
+      pathName.endsWith('.jpeg') ||
+      pathName.endsWith('.svg') ||
+      pathName.endsWith('.ico') ||
+      pathName.endsWith('.webmanifest') ||
+      pathName.endsWith('.csv') ||
+      pathName.endsWith('.xml') ||
+      pathName === '/robots.txt' ||
+      pathName === '/.well-known/security.txt')
+  ) {
+    return null;
+  }
+
+  if (method === 'GET' && /^\/api\/(products|categories|status)\b/.test(pathName)) {
+    return { group: 'catalog-read', max: 2400, windowMs: 60 * 1000 };
+  }
+
+  if (method === 'GET' && pathName.startsWith('/api/')) {
+    return { group: 'api-read', max: 900, windowMs: 60 * 1000 };
+  }
+
+  if (pathName.startsWith('/api/')) {
+    return { group: 'api-write', max: 120, windowMs: 60 * 1000 };
+  }
+
+  return { group: 'page', max: 600, windowMs: 60 * 1000 };
+}
+
 function applySecurityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -52,15 +92,18 @@ function applySecurityHeaders(req, res, next) {
 }
 
 function securityRateLimit(req, res, next) {
+  const policy = ratePolicy(req);
+  if (!policy) {
+    return next();
+  }
+
   const now = Date.now();
-  const windowMs = 60 * 1000;
-  const max = req.path.startsWith('/api') ? 120 : 240;
-  const key = `${clientIp(req)}:${req.path.startsWith('/api') ? 'api' : 'site'}`;
-  const bucket = rateBuckets.get(key) || { count: 0, resetAt: now + windowMs };
+  const key = `${clientIp(req)}:${policy.group}`;
+  const bucket = rateBuckets.get(key) || { count: 0, resetAt: now + policy.windowMs };
 
   if (bucket.resetAt <= now) {
     bucket.count = 0;
-    bucket.resetAt = now + windowMs;
+    bucket.resetAt = now + policy.windowMs;
   }
 
   bucket.count += 1;
@@ -72,11 +115,11 @@ function securityRateLimit(req, res, next) {
     }
   }
 
-  res.setHeader('RateLimit-Limit', String(max));
-  res.setHeader('RateLimit-Remaining', String(Math.max(0, max - bucket.count)));
+  res.setHeader('RateLimit-Limit', String(policy.max));
+  res.setHeader('RateLimit-Remaining', String(Math.max(0, policy.max - bucket.count)));
   res.setHeader('RateLimit-Reset', String(Math.ceil(bucket.resetAt / 1000)));
 
-  if (bucket.count > max) {
+  if (bucket.count > policy.max) {
     return res.status(429).json({ success: false, error: 'Too many requests. Please try again shortly.' });
   }
 

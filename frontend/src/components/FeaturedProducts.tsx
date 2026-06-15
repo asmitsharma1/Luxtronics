@@ -8,22 +8,30 @@ import ProductCard from "./ProductCard";
 import { motion } from "framer-motion";
 import { scoreTextMatch } from "@/lib/smart-search";
 
+function isGanCharger(product: Product) {
+  const searchable = `${product.name} ${product.category} ${product.description} ${product.slug}`.toLowerCase();
+
+  return (
+    /\bgan\b/.test(searchable) &&
+    /(charger|adapter|wall charger|usb[-\s]?c|type[-\s]?c|pd|power)/.test(searchable)
+  );
+}
+
 function featuredScore(product: Product) {
   const searchable = `${product.name} ${product.category} ${product.description}`;
-  const ganScore = scoreTextMatch("gan charger fast wall adapter usb c", [searchable], [6]);
-  const glassesScore = scoreTextMatch("smart wear glasses wearable eyewear", [searchable], [6]);
+  const ganScore = scoreTextMatch("gan charger fast wall adapter usb c type c pd power", [searchable], [6]);
   const marketScore = (product.rating || 0) * 8 + Math.min(product.reviews || 0, 5000) / 100;
   const badgeScore = product.badge === "New" ? 40 : product.badge === "Hot" ? 25 : 0;
 
-  return Math.max(ganScore, glassesScore) + marketScore + badgeScore;
+  return ganScore + marketScore + badgeScore;
 }
 
 const FeaturedProducts = () => {
   const queryClient = useQueryClient();
 
   const { data: storeProducts = [], isLoading } = useQuery({
-    queryKey: ['products', 'featured'],
-    queryFn: () => fetchStoreProducts(1, 16),
+    queryKey: ['products', 'featured', 'gan-chargers'],
+    queryFn: () => fetchStoreProducts(1, 40, 'gan charger'),
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
@@ -39,7 +47,8 @@ const FeaturedProducts = () => {
     const rawProducts = Array.isArray(storeProducts) ? storeProducts : [];
     const source = rawProducts
       .map(mapStoreProductToLocalProduct)
-      .filter((p): p is Product => p !== null);
+      .filter((p): p is Product => p !== null)
+      .filter(isGanCharger);
 
     return [...source]
       .map((product) => ({ product, score: featuredScore(product) }))
@@ -59,11 +68,11 @@ const FeaturedProducts = () => {
             Featured
           </p>
           <h2 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl tracking-tight max-w-xl leading-tight">
-            GaN chargers & <span className="text-gradient bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-gradient">smart glasses</span>
+            Featured <span className="text-gradient bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-gradient">GaN chargers</span>
           </h2>
         </div>
         <Link
-          to="/shop?q=gan%20charger%20smart%20glasses"
+          to="/shop?q=gan%20charger"
           className="group inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors font-semibold rounded-full px-4 py-2 hover:bg-primary/10 transition-all"
         >
           View collection <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
