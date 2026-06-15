@@ -49,6 +49,19 @@ function stripHtml(value: string): string {
     .trim();
 }
 
+function decodeHtmlEntities(value: string): string {
+  return String(value || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#038;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#039;/gi, "'")
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .trim();
+}
+
 function csvField(value: unknown): string {
   return `"${String(value ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ').trim()}"`;
 }
@@ -65,14 +78,17 @@ function attr(product: FeedProduct, name: string): string {
 }
 
 function categoryName(product: FeedProduct): string {
-  return product.categories?.[0]?.name || 'Electronics';
+  return decodeHtmlEntities(product.categories?.[0]?.name || 'Electronics');
 }
 
 function googleProductCategory(product: FeedProduct): string {
   const text = `${product.name} ${categoryName(product)} ${product.categories?.[0]?.slug || ''}`.toLowerCase();
+  if (/home|garden|water tank|storage|kitchen|bathroom|household|furniture|cleaning|organizer|drawer/.test(text)) return 'Home & Garden';
+  if (/outdoor|sport|sports|camping|bicycle|cycling|fishing|hiking/.test(text)) return 'Sporting Goods > Outdoor Recreation';
+  if (/security|surveillance|cctv|alarm|access control|doorbell/.test(text)) return 'Cameras & Optics > Cameras > Security Cameras';
   if (/phone|mobile|smartphone|iphone|android/.test(text)) return 'Electronics > Communications > Telephony > Mobile Phones';
   if (/case|cover|protector|charger|cable|adapter|power bank|holder|mount/.test(text)) return 'Electronics > Electronics Accessories';
-  if (/camera|surveillance|cctv|lens|tripod/.test(text)) return 'Cameras & Optics > Cameras';
+  if (/camera|lens|tripod/.test(text)) return 'Cameras & Optics > Cameras';
   if (/headphone|earbud|earphone|speaker|audio|microphone/.test(text)) return 'Electronics > Audio';
   if (/watch|wearable|fitness band/.test(text)) return 'Electronics > Wearable Technology > Smart Watches';
   if (/laptop|notebook|keyboard|mouse|computer/.test(text)) return 'Electronics > Computers';

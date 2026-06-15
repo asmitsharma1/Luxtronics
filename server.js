@@ -619,14 +619,17 @@ function feedDescription(product) {
 }
 
 function feedCategory(product) {
-  return product.categories?.[0]?.name || 'Electronics';
+  return decodeHtmlEntities(product.categories?.[0]?.name || 'Electronics');
 }
 
 function feedGoogleCategory(product) {
   const text = `${product.name || ''} ${feedCategory(product)} ${product.categories?.[0]?.slug || ''}`.toLowerCase();
+  if (/home|garden|water tank|storage|kitchen|bathroom|household|furniture|cleaning|organizer|drawer/.test(text)) return 'Home & Garden';
+  if (/outdoor|sport|sports|camping|bicycle|cycling|fishing|hiking/.test(text)) return 'Sporting Goods > Outdoor Recreation';
+  if (/security|surveillance|cctv|alarm|access control|doorbell/.test(text)) return 'Cameras & Optics > Cameras > Security Cameras';
   if (/phone|mobile|smartphone|iphone|android/.test(text)) return 'Electronics > Communications > Telephony > Mobile Phones';
   if (/case|cover|protector|charger|cable|adapter|power bank|holder|mount/.test(text)) return 'Electronics > Electronics Accessories';
-  if (/camera|surveillance|cctv|lens|tripod/.test(text)) return 'Cameras & Optics > Cameras';
+  if (/camera|lens|tripod/.test(text)) return 'Cameras & Optics > Cameras';
   if (/headphone|earbud|earphone|speaker|audio|microphone/.test(text)) return 'Electronics > Audio';
   if (/watch|wearable|fitness band/.test(text)) return 'Electronics > Wearable Technology > Smart Watches';
   if (/laptop|notebook|keyboard|mouse|computer/.test(text)) return 'Electronics > Computers';
@@ -654,17 +657,70 @@ function feedAttr(product, name) {
   return found?.options?.[0] || found?.value || '';
 }
 
-async function fetchFeedProducts() {
-  if (!mongoReady || !productsCol) return [];
-  return productsCol
-    .find({ slug: { $exists: true, $ne: '' }, price: { $gt: 0 } })
-    .project({
-      id: 1, name: 1, slug: 1, description: 1, shortDescription: 1, short_description: 1,
-      price: 1, regularPrice: 1, regular_price: 1, stockStatus: 1, stock_status: 1,
-      sku: 1, images: 1, categories: 1, attributes: 1, weight: 1, seo: 1,
-    })
-    .limit(50000)
-    .toArray();
+async function activeWooStore(req) {
+  const categoryMap = await fetchWooCategoryMap(req);
+  return categoryMap.activeStore || getWooStoreCandidates(req)[0];
+}
+
+async function fetchWooCatalogProducts(req, { limit = 45000, fields = '' } = {}) {
+  const store = await activeWooStore(req);
+  if (!store) return [];
+
+  const products = [];
+  const auth = wooCandidateAuth(store);
+
+  for (let page = 1; page <= 500; page++) {
+    const params = new URLSearchParams({
+      per_page: '100',
+      page: String(page),
+      status: 'publish',
+      orderby: 'date',
+      order: 'desc',
+    });
+    if (fields) params.set('_fields', fields);
+
+    const response = await fetch(`${store.url}/wp-json/wc/v3/products?${params}`, {
+      headers: {
+        Authorization: auth,
+        Accept: 'application/json',
+        'User-Agent': 'LuxtronicsServer/1.0',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`WooCommerce catalog fetch failed: ${response.status} page ${page}`);
+      break;
+    }
+
+    const batch = await response.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
+
+    products.push(...batch);
+    if (batch.length < 100 || products.length >= limit) break;
+  }
+
+  return products.slice(0, limit);
+}
+
+async function fetchFeedProducts(req) {
+  if (mongoReady && productsCol) {
+    try {
+      const products = await productsCol
+        .find({ slug: { $exists: true, $ne: '' }, price: { $gt: 0 } })
+        .project({
+          id: 1, name: 1, slug: 1, description: 1, shortDescription: 1, short_description: 1,
+          price: 1, regularPrice: 1, regular_price: 1, stockStatus: 1, stock_status: 1,
+          sku: 1, images: 1, categories: 1, attributes: 1, weight: 1, seo: 1,
+        })
+        .limit(50000)
+        .toArray();
+      if (products.length > 0) return products;
+    } catch (err) {
+      console.warn('Feed MongoDB product fetch failed:', err.message);
+    }
+  }
+
+  return fetchWooCatalogProducts(req, { limit: 50000 });
 }
 
 async function fetchSitemapProducts(req) {
@@ -687,21 +743,13 @@ async function fetchSitemapProducts(req) {
   }
 
   try {
-    const wooUrl = getWooUrl(req);
-    const auth = getWooAuth(req);
-    const products = [];
-    for (let page = 1; page <= 500; page++) {
-      const url = `${wooUrl}/wp-json/wc/v3/products?per_page=100&page=${page}&status=publish`;
-      const response = await fetch(url, { headers: { Authorization: auth, Accept: 'application/json' } });
-      if (!response.ok) break;
-      const batch = await response.json();
-      if (!Array.isArray(batch) || batch.length === 0) break;
-      products.push(...batch.map((product) => ({
-        slug: product.slug,
-        lastmod: validIsoDate(product.date_modified_gmt || product.date_modified || product.modified),
-      })));
-      if (batch.length < 100 || products.length >= 45000) break;
-    }
+    const products = (await fetchWooCatalogProducts(req, {
+      limit: 45000,
+      fields: 'id,slug,date_modified_gmt,date_modified,modified',
+    })).map((product) => ({
+      slug: product.slug,
+      lastmod: validIsoDate(product.date_modified_gmt || product.date_modified || product.modified),
+    }));
     return products.filter((product) => product.slug);
   } catch (err) {
     console.warn('Sitemap WooCommerce product fetch failed:', err.message);
@@ -762,8 +810,14 @@ app.get('/debug', (req, res) => {
 });
 
 async function sendPinterestFeed(req, res) {
+  const staticFeedPath = path.join(BUILD_DIR, 'pinterest-feed.csv');
+  if (existsSync(staticFeedPath)) {
+    res.set('Cache-Control', 'public, max-age=3600');
+    return res.type('text/csv').sendFile(staticFeedPath);
+  }
+
   const host = getPublicHost(req);
-  const products = (await fetchFeedProducts()).filter((product) => feedImage(product));
+  const products = (await fetchFeedProducts(req)).filter((product) => feedImage(product));
   const header = [
     'id', 'title', 'description', 'link', 'image_link', 'additional_image_link',
     'price', 'sale_price', 'availability', 'brand', 'condition', 'product_type',
@@ -803,8 +857,14 @@ async function sendPinterestFeed(req, res) {
 app.get(['/feeds/pinterest.csv', '/pinterest-feed.csv'], sendPinterestFeed);
 
 async function sendGoogleMerchantFeed(req, res) {
+  const staticFeedPath = path.join(BUILD_DIR, 'google-merchant-feed.csv');
+  if (existsSync(staticFeedPath)) {
+    res.set('Cache-Control', 'public, max-age=3600');
+    return res.type('text/csv').sendFile(staticFeedPath);
+  }
+
   const host = getPublicHost(req);
-  const products = (await fetchFeedProducts()).filter((product) => feedImage(product));
+  const products = (await fetchFeedProducts(req)).filter((product) => feedImage(product));
   const header = [
     'id', 'title', 'description', 'link', 'image_link', 'additional_image_link',
     'availability', 'price', 'sale_price', 'condition', 'brand',
