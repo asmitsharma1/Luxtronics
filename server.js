@@ -23,6 +23,7 @@ let db = null;
 let productsCol = null;
 let categoriesCol = null;
 let mongoReady = false;
+let mongoLastError = null;
 
 async function initMongo() {
   if (!process.env.MONGODB_URI) {
@@ -47,8 +48,10 @@ async function initMongo() {
       categoriesCol.createIndex({ count: -1, name: 1 }),
     ]);
     mongoReady = true;
+    mongoLastError = null;
     console.log('✅ MongoDB connected successfully');
   } catch (err) {
+    mongoLastError = err.message;
     console.error('❌ MongoDB connection failed:', err.message);
   }
 }
@@ -104,11 +107,16 @@ function getWooAuth(req) {
 }
 
 function wooFallbackEnabled() {
-  return process.env.ENABLE_WOO_FALLBACK === 'true';
+  return process.env.ENABLE_WOO_FALLBACK !== 'false';
 }
 
 function escapeRegex(value = '') {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function productIdFromSlug(slug = '') {
+  const match = String(slug).match(/-(\d+)$/);
+  return match ? match[1] : null;
 }
 
 const PUBLIC_HOSTS = ['luxtronics.in', 'luxtronics.com.au', 'luxtronics.co.nz'];
@@ -332,6 +340,13 @@ app.get('/debug', (req, res) => {
     ok: true,
     build: BUILD_DIR,
     buildExists: existsSync(path.join(BUILD_DIR, 'index.html')),
+    mongo: {
+      ready: mongoReady,
+      hasUri: !!process.env.MONGODB_URI,
+      dbName: process.env.MONGODB_DB_NAME || 'Luxtronics',
+      lastError: mongoLastError,
+      fallbackEnabled: wooFallbackEnabled(),
+    },
     env_check: {
       FIREBASE_KEY: mask(process.env.VITE_FIREBASE_API_KEY),
       MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || 'Luxtronics',
@@ -523,10 +538,14 @@ app.get('/api/products/slug/:slug', async (req, res) => {
   try {
     const wooUrl = getWooUrl(req);
     const auth = getWooAuth(req);
-    const url = `${wooUrl}/wp-json/wc/v3/products?slug=${slug}`;
+    const productId = productIdFromSlug(slug);
+    const url = productId
+      ? `${wooUrl}/wp-json/wc/v3/products/${encodeURIComponent(productId)}`
+      : `${wooUrl}/wp-json/wc/v3/products?slug=${encodeURIComponent(slug)}`;
     const r = await fetch(url, { headers: { 'Authorization': auth } });
-    const items = await r.json();
-    const item = items[0];
+    if (!r.ok) return res.status(r.status).json({ success: false, error: 'WooCommerce API error' });
+    const body = await r.json();
+    const item = Array.isArray(body) ? body[0] : body;
 
     if (!item) return res.status(404).json({ success: false, error: 'Product not found' });
 
