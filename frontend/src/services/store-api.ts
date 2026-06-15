@@ -181,10 +181,12 @@ function resolveProductCategories(product: StoreProduct) {
   return inferred ? [inferred] : [];
 }
 
-function compactProductTitle(value: string, maxLength = 82) {
+function compactProductTitle(value: string, maxLength = 64) {
   const cleaned = decodeHtmlEntities(String(value || ''))
     .replace(/&amp;/gi, 'and')
     .replace(/\bSUNSKY\b/gi, '')
+    .replace(/\?{2,}/g, ' ')
+    .replace(/[|()[\]{}]+/g, ' ')
     .replace(/\bSKU[:\s-]*[A-Z0-9-]+\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -193,7 +195,7 @@ function compactProductTitle(value: string, maxLength = 82) {
     .split(',')
     .map((part) => part.trim())
     .filter(Boolean);
-  const primary = parts.slice(0, 2).join(', ') || cleaned;
+  const primary = parts.slice(0, 1).join(', ') || cleaned;
 
   if (primary.length <= maxLength) return primary;
   return primary.slice(0, maxLength).replace(/\s+\S*$/, '').replace(/[,\s-]+$/, '');
