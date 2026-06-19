@@ -32,7 +32,7 @@ Hostinger Server
    ```bash
    # All the variables from HOSTINGER_ENV_SETUP.md
    VITE_WOOCOMMERCE_URL_INDIA=https://luxtronics.luxtronics.in
-   VITE_WOOCOMMERCE_KEY_INDIA=ck_ed6c3544620b10f22f35f52d5cc35019ae0b3358
+   VITE_WOOCOMMERCE_KEY_INDIA=ck_REDACTED_ROTATE_THIS_KEY
    # ... etc (all variables)
    ```
 

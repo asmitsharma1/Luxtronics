@@ -308,8 +308,8 @@ git push origin main
 
 ### Manual Server Update
 ```bash
-ssh u224046696@145.79.58.114 -p 65002
-cd /home/u224046696/domains/luxtronics.in/nodejs/
+ssh REDACTED_HOSTINGER_USER@REDACTED_HOSTINGER_IP -p 65002
+cd /home/REDACTED_HOSTINGER_USER/domains/luxtronics.in/nodejs/
 # Update .env if needed
 # Restart via hPanel → Node.js → Restart
 ```
@@ -330,7 +330,7 @@ GET https://luxtronics.in/debug
 
 ### Server Logs
 ```bash
-tail -f /home/u224046696/domains/luxtronics.in/nodejs/server.log
+tail -f /home/REDACTED_HOSTINGER_USER/domains/luxtronics.in/nodejs/server.log
 ```
 
 ---

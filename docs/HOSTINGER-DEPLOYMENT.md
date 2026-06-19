@@ -59,8 +59,8 @@ Har build ke baad `dist/` folder mein ready files hongi.
 
 1. FileZilla open karo
 2. Connect to Hostinger FTP:
-   - Host: `145.79.58.114`
-   - Username: `u224046696`
+   - Host: `REDACTED_HOSTINGER_IP`
+   - Username: `REDACTED_HOSTINGER_USER`
    - Password: Your Hostinger password
    - Port: `21`
 3. Upload `dist/` folder contents to respective `public_html` directories
@@ -133,7 +133,7 @@ case $DOMAIN in
 esac
 
 # FTP upload using lftp
-lftp -u u224046696,YOUR_PASSWORD 145.79.58.114 <<EOF
+lftp -u REDACTED_HOSTINGER_USER,YOUR_PASSWORD REDACTED_HOSTINGER_IP <<EOF
 set ssl:verify-certificate no
 set sftp:auto-confirm yes
 mirror -R --delete $LOCAL_DIR $REMOTE_DIR
