@@ -4,17 +4,7 @@ import { Calendar, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { absoluteUrl, breadcrumbSchema } from "@/lib/seo";
-
-type BlogPost = {
-  _id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  tag: string;
-  date: string;
-  image?: string;
-  content: string[];
-};
+import { getFallbackBlogPost, type BlogPost } from "@/data/blog-posts";
 
 const toIsoDate = (date: string) => {
   const parsed = new Date(date);
@@ -34,9 +24,9 @@ const BlogPost = () => {
       try {
         const response = await fetch(`/api/blogs/slug/${encodeURIComponent(slug)}`);
         const json = await response.json();
-        if (active) setPost(json.success ? json.data : null);
+        if (active) setPost(json.success ? json.data : getFallbackBlogPost(slug) || null);
       } catch {
-        if (active) setPost(null);
+        if (active) setPost(getFallbackBlogPost(slug) || null);
       } finally {
         if (active) setLoading(false);
       }

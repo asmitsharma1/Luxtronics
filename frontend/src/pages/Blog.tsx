@@ -4,19 +4,7 @@ import SEO from "@/components/SEO";
 import { ArrowRight, BookOpen, Calendar, Loader2, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import FlowArt, { FlowSection } from "@/components/ui/story-scroll";
-
-type BlogPost = {
-  _id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  tag: string;
-  date: string;
-  image?: string;
-  background?: string;
-  foreground?: string;
-  content: string[];
-};
+import { fallbackBlogPosts, type BlogPost } from "@/data/blog-posts";
 
 const PALETTE = [
   { background: "#fd5200", foreground: "#ffffff" },
@@ -28,7 +16,6 @@ const PALETTE = [
 const Blog = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -38,12 +25,13 @@ const Blog = () => {
         const json = await response.json();
         if (!active) return;
         if (json.success) {
-          setPosts(json.data || []);
+          const apiPosts = json.data || [];
+          setPosts(apiPosts.length > 0 ? apiPosts : fallbackBlogPosts);
         } else {
-          setError(true);
+          setPosts(fallbackBlogPosts);
         }
       } catch {
-        if (active) setError(true);
+        if (active) setPosts(fallbackBlogPosts);
       } finally {
         if (active) setLoading(false);
       }
@@ -76,11 +64,11 @@ const Blog = () => {
         <div className="flex min-h-[60vh] items-center justify-center bg-background">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : error || posts.length === 0 ? (
+      ) : posts.length === 0 ? (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-background px-6 text-center">
           <BookOpen className="h-10 w-10 text-muted-foreground" />
           <h1 className="font-display text-2xl font-black text-foreground">
-            {error ? "Blog is unavailable right now" : "No articles published yet"}
+            No articles published yet
           </h1>
           <Link to="/shop" className="text-sm font-bold text-primary hover:underline">
             Browse the shop instead
