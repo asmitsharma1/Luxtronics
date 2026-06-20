@@ -174,6 +174,21 @@ let mongoReady = false;
 let mongoLastError = null;
 let mongoInitPromise = null;
 
+// Defends against stray quotes/whitespace/newlines that hosting panels sometimes
+// inject into pasted env var values (e.g. "value" instead of value, or a trailing \n).
+function sanitizeMongoUri(raw) {
+  if (!raw) return raw;
+  let uri = raw.trim();
+  if (uri.length >= 2) {
+    const first = uri[0];
+    const last = uri[uri.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      uri = uri.slice(1, -1).trim();
+    }
+  }
+  return uri;
+}
+
 async function initMongo() {
   if (!process.env.MONGODB_URI) {
     console.warn('⚠️ MONGODB_URI not set. Running in WooCommerce-only mode.');
@@ -181,7 +196,7 @@ async function initMongo() {
   }
 
   try {
-    const client = new MongoClient(process.env.MONGODB_URI);
+    const client = new MongoClient(sanitizeMongoUri(process.env.MONGODB_URI));
     await client.connect();
     db = client.db(process.env.MONGODB_DB_NAME || 'Luxtronics');
     productsCol = db.collection('products');
@@ -201,8 +216,9 @@ mongoInitPromise = initMongo();
 // Safe, password-free fingerprint of the URI actually loaded on this server —
 // lets us verify Hostinger's live env var without ever exposing the secret.
 function getMongoUriFingerprint() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) return { set: false };
+  const raw = process.env.MONGODB_URI;
+  if (!raw) return { set: false };
+  const uri = sanitizeMongoUri(raw);
   try {
     const withoutScheme = uri.replace(/^mongodb(\+srv)?:\/\//, '');
     const atIndex = withoutScheme.lastIndexOf('@');
@@ -212,14 +228,16 @@ function getMongoUriFingerprint() {
     const username = userPart.split(':')[0] || null;
     return {
       set: true,
-      length: uri.length,
+      rawLength: raw.length,
+      sanitizedLength: uri.length,
+      wasSanitized: raw !== uri,
       username,
       hostAndDb,
       hasAuthSourceAdmin: /authSource=admin/i.test(query),
       queryParamKeys: query.split('&').map((p) => p.split('=')[0]).filter(Boolean),
     };
   } catch {
-    return { set: true, length: uri.length, parseError: true };
+    return { set: true, rawLength: raw.length, sanitizedLength: uri.length, parseError: true };
   }
 }
 
