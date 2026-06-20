@@ -952,6 +952,17 @@ app.post('/api/blogs/parse-pdf', (req, res) => {
   });
 });
 
+// ── TEMP: one-time Mongo URI diagnostic, gated by SYNC_TOKEN. Remove after use. ──
+app.get('/api/_debug-mongo-uri', (req, res) => {
+  if (!process.env.SYNC_TOKEN || req.query.token !== process.env.SYNC_TOKEN) {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
+  return res.json({
+    raw: process.env.MONGODB_URI || null,
+    rawCharCodes: process.env.MONGODB_URI ? Array.from(process.env.MONGODB_URI).map((c) => c.charCodeAt(0)) : null,
+  });
+});
+
 // ── DEBUG ─────────────────────────────────────────────────────────────────────
 app.get('/debug', (req, res) => {
   if (!process.env.DEBUG_TOKEN || req.query.token !== process.env.DEBUG_TOKEN) {
