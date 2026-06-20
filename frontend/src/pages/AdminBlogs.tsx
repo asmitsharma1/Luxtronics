@@ -1,6 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, Edit3, Loader2, Plus, Save, Tag, Trash2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Edit3,
+  FileText,
+  ImagePlus,
+  Loader2,
+  Plus,
+  Save,
+  Tag,
+  Trash2,
+  Video,
+  X,
+} from "lucide-react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
@@ -18,6 +31,7 @@ type BlogPost = {
   tag: string;
   date: string;
   image?: string;
+  video?: string;
   background?: string;
   foreground?: string;
   content: string[];
@@ -29,6 +43,7 @@ type FormState = {
   tag: string;
   date: string;
   image: string;
+  video: string;
   background: string;
   foreground: string;
   content: string;
@@ -47,6 +62,7 @@ const EMPTY_FORM: FormState = {
   tag: "",
   date: "",
   image: "",
+  video: "",
   background: SWATCHES[0].background,
   foreground: SWATCHES[0].foreground,
   content: "",
@@ -58,6 +74,7 @@ const toFormState = (post: BlogPost): FormState => ({
   tag: post.tag,
   date: post.date,
   image: post.image || "",
+  video: post.video || "",
   background: post.background || SWATCHES[0].background,
   foreground: post.foreground || SWATCHES[0].foreground,
   content: post.content.join("\n\n"),
@@ -69,7 +86,14 @@ export default function AdminBlogs() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [importingPdf, setImportingPdf] = useState(false);
   const { toast } = useToast();
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -98,6 +122,49 @@ export default function AdminBlogs() {
     setForm(toFormState(post));
   };
 
+  const handleMediaUpload = async (file: File, kind: "image" | "video") => {
+    const setUploading = kind === "image" ? setUploadingImage : setUploadingVideo;
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/blogs/upload", { method: "POST", body });
+      const json = await response.json();
+      if (!response.ok || !json.success) throw new Error(json.error || "Upload failed");
+      setForm((f) => (kind === "image" ? { ...f, image: json.data.url } : { ...f, video: json.data.url }));
+      toast({ title: `${kind === "image" ? "Image" : "Video"} uploaded` });
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePdfImport = async (file: File) => {
+    setImportingPdf(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/blogs/parse-pdf", { method: "POST", body });
+      const json = await response.json();
+      if (!response.ok || !json.success) throw new Error(json.error || "Could not read this PDF");
+      setForm((f) => ({
+        ...f,
+        title: f.title.trim() ? f.title : json.data.suggestedTitle,
+        excerpt: f.excerpt.trim() ? f.excerpt : json.data.suggestedExcerpt,
+        content: json.data.content.join("\n\n"),
+      }));
+      toast({
+        title: `Imported ${json.data.content.length} paragraph(s) from PDF`,
+        description: "Review and edit before publishing — text-only extraction, images aren't pulled from the PDF.",
+      });
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Could not read this PDF", variant: "destructive" });
+    } finally {
+      setImportingPdf(false);
+    }
+  };
+
   const handleSave = async () => {
     const content = form.content
       .split(/\n\s*\n/)
@@ -117,6 +184,7 @@ export default function AdminBlogs() {
         tag: form.tag.trim(),
         date: form.date.trim() || undefined,
         image: form.image.trim() || undefined,
+        video: form.video.trim() || undefined,
         background: form.background,
         foreground: form.foreground,
         content,
@@ -157,6 +225,12 @@ export default function AdminBlogs() {
     }
   };
 
+  const previewContent = form.content
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const previewDividerClass = form.foreground === "#000000" ? "border-black/40" : "border-white/40";
+
   return (
     <Layout>
       <SEO title="Admin — Blog Posts" description="Admin-only blog publishing panel." url="/admin/blogs" noindex nofollow />
@@ -188,6 +262,39 @@ export default function AdminBlogs() {
               <CardTitle className="text-base">{editingId ? "Edit post" : "Create post"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-xl border border-dashed border-border bg-muted/40 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Import from PDF</p>
+                    <p className="text-xs text-muted-foreground">
+                      Pulls text into title/excerpt/content. Images aren't extracted — upload those separately below.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled={importingPdf}
+                    onClick={() => pdfInputRef.current?.click()}
+                  >
+                    {importingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                    Choose PDF
+                  </Button>
+                  <input
+                    ref={pdfInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePdfImport(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="title">Title</Label>
                 <Input
@@ -231,13 +338,78 @@ export default function AdminBlogs() {
               </div>
 
               <div>
-                <Label htmlFor="image">Image URL (optional)</Label>
-                <Input
-                  id="image"
-                  value={form.image}
-                  onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-                  placeholder="https://images.unsplash.com/..."
-                />
+                <Label htmlFor="image">Background image (optional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="image"
+                    value={form.image}
+                    onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
+                    placeholder="https://images.unsplash.com/... or upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={uploadingImage}
+                    onClick={() => imageInputRef.current?.click()}
+                    title="Upload image"
+                  >
+                    {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                  </Button>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleMediaUpload(file, "image");
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="video">Background video (optional, overrides image)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="video"
+                    value={form.video}
+                    onChange={(e) => setForm((f) => ({ ...f, video: e.target.value }))}
+                    placeholder="https://... .mp4 or upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={uploadingVideo}
+                    onClick={() => videoInputRef.current?.click()}
+                    title="Upload video"
+                  >
+                    {uploadingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
+                  </Button>
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleMediaUpload(file, "video");
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+                {form.video && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, video: "" }))}
+                    className="mt-1 text-xs font-semibold text-muted-foreground hover:text-destructive"
+                  >
+                    Remove video
+                  </button>
+                )}
               </div>
 
               <div>
@@ -288,58 +460,108 @@ export default function AdminBlogs() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Published posts ({posts.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Live preview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div
+                  className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl p-6"
+                  style={{ backgroundColor: form.background || "#000", color: form.foreground || "#fff" }}
+                >
+                  {(form.video || form.image) && (
+                    <div className="absolute inset-0">
+                      {form.video ? (
+                        <video src={form.video} muted loop autoPlay playsInline className="h-full w-full object-cover opacity-25" />
+                      ) : (
+                        <img src={form.image} alt="" className="h-full w-full object-cover opacity-25" />
+                      )}
+                      <div className="absolute inset-0" style={{ backgroundColor: form.background || "#000", opacity: 0.72 }} />
+                    </div>
+                  )}
+                  <div className="relative flex h-full flex-col">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                      {form.tag || "Tag"}
+                    </p>
+                    <hr className={`my-3 border-none border-t ${previewDividerClass}`} />
+                    <h3 className="font-display text-2xl font-bold uppercase leading-[0.95] tracking-tight">
+                      {form.title || "Your headline"}
+                    </h3>
+                    <hr className={`my-3 border-none border-t ${previewDividerClass}`} />
+                    <p className="line-clamp-3 text-sm leading-relaxed opacity-90">
+                      {form.excerpt || "Excerpt preview will appear here."}
+                    </p>
+                    <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold opacity-80">
+                        <Calendar className="h-3 w-3" />
+                        {form.date || "Today"}
+                      </span>
+                      <span className="rounded-full border border-current/30 bg-black/10 px-3 py-1.5 text-xs font-bold">
+                        Read full article
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              ) : posts.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">No posts yet. Create the first one.</p>
-              ) : (
-                <div className="space-y-3">
-                  {posts.map((post) => (
-                    <div key={post._id} className="rounded-xl border border-border bg-background/60 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-foreground">{post.title}</p>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <span className="inline-flex items-center gap-1">
-                              <Tag className="h-3 w-3" />
-                              {post.tag}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {post.date}
-                            </span>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {previewContent.length} paragraph{previewContent.length === 1 ? "" : "s"} of content ready.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Published posts ({posts.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : posts.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">No posts yet. Create the first one.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {posts.map((post) => (
+                      <div key={post._id} className="rounded-xl border border-border bg-background/60 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-foreground">{post.title}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <span className="inline-flex items-center gap-1">
+                                <Tag className="h-3 w-3" />
+                                {post.tag}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {post.date}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => startEdit(post)}>
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(post)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-1.5">
-                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => startEdit(post)}>
-                            <Edit3 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(post)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        <Link to={`/blog/${post.slug}`} target="_blank" className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">
+                          View live →
+                        </Link>
                       </div>
-                      <Link to={`/blog/${post.slug}`} target="_blank" className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">
-                        View live →
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
     </Layout>

@@ -7,8 +7,10 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
+import { PDFParse } from 'pdf-parse';
 import { initializeMongoDB } from './db/mongodb';
 import { createProductDocument, createCategoryDocument } from './models/mongo-models';
 import { validateBlogPostInput } from './models/blog-models';
@@ -126,6 +128,43 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
 
   // ── Register WooCommerce Proxy Routes ─────────────────────────────────────
   app.use('/api', createWooCommerceProxyRoutes());
+
+  // ── Blog media uploads (local disk, served statically) ───────────────────
+  const uploadsDir = path.join(projectRoot, 'uploads', 'blog');
+  mkdirSync(uploadsDir, { recursive: true });
+  app.use('/uploads', express.static(path.join(projectRoot, 'uploads'), { maxAge: '7d' }));
+
+  const blogMediaUpload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, uploadsDir),
+      filename: (_req, file, cb) => {
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-80);
+        cb(null, `${Date.now()}-${safeName}`);
+      },
+    }),
+    limits: { fileSize: 80 * 1024 * 1024 }, // 80MB, generous enough for short background videos
+    fileFilter: (_req, file, cb) => {
+      if (/^image\/|^video\//.test(file.mimetype)) return cb(null, true);
+      cb(new Error('Only image or video files are allowed'));
+    },
+  });
+
+  const pdfUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 25 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype === 'application/pdf') return cb(null, true);
+      cb(new Error('Only PDF files are allowed'));
+    },
+  });
+
+  function extractPdfParagraphs(rawText: string): string[] {
+    return rawText
+      .replace(/\f/g, '\n\n')
+      .split(/\n\s*\n/)
+      .map((block) => block.replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+  }
 
   // ── State ─────────────────────────────────────────────────────────────────
   let mongoReady = false;
@@ -500,6 +539,45 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
       const msg = err instanceof Error ? err.message : String(err);
       return res.status(500).json({ success: false, error: 'Unable to delete blog post', details: msg });
     }
+  });
+
+  // ── POST /api/blogs/upload (image or video file) ──────────────────────────────
+  app.post('/api/blogs/upload', (req, res) => {
+    blogMediaUpload.single('file')(req, res, (err: any) => {
+      if (err) return res.status(400).json({ success: false, error: err.message || 'Upload failed' });
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+      const url = `/uploads/blog/${req.file.filename}`;
+      const kind = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+      return res.status(201).json({ success: true, data: { url, kind } });
+    });
+  });
+
+  // ── POST /api/blogs/parse-pdf (text extraction only) ──────────────────────────
+  app.post('/api/blogs/parse-pdf', (req, res) => {
+    pdfUpload.single('file')(req, res, async (err: any) => {
+      if (err) return res.status(400).json({ success: false, error: err.message || 'Upload failed' });
+      if (!req.file) return res.status(400).json({ success: false, error: 'No PDF uploaded' });
+      try {
+        const parser = new PDFParse({ data: req.file.buffer });
+        const result = await parser.getText();
+        await parser.destroy();
+        const paragraphs = extractPdfParagraphs(result.text || '');
+        if (paragraphs.length === 0) {
+          return res.status(422).json({ success: false, error: 'No extractable text found in this PDF' });
+        }
+        return res.json({
+          success: true,
+          data: {
+            suggestedTitle: paragraphs[0]?.slice(0, 120) || '',
+            suggestedExcerpt: (paragraphs[1] || paragraphs[0] || '').slice(0, 220),
+            content: paragraphs,
+          },
+        });
+      } catch (parseErr) {
+        const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+        return res.status(500).json({ success: false, error: 'Unable to parse PDF', details: msg });
+      }
+    });
   });
 
   // ── POST /api/orders ────────────────────────────────────────────────────────

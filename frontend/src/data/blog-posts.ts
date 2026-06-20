@@ -6,6 +6,7 @@ export type BlogPost = {
   tag: string;
   date: string;
   image?: string;
+  video?: string;
   background?: string;
   foreground?: string;
   content: string[];

@@ -88,9 +88,23 @@ const Blog = () => {
                 aria-label={post.title}
                 style={{ backgroundColor: background, color: foreground }}
               >
-                {post.image && (
+                {(post.video || post.image) && (
                   <div className="absolute inset-0">
-                    <img src={post.image} alt="" className="h-full w-full object-cover opacity-25" />
+                    {post.video ? (
+                      <video
+                        src={post.video}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="none"
+                        poster={post.image}
+                        className="h-full w-full object-cover opacity-25"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <img src={post.image} alt="" className="h-full w-full object-cover opacity-25" />
+                    )}
                     <div className="absolute inset-0" style={{ backgroundColor: background, opacity: 0.72 }} />
                   </div>
                 )}

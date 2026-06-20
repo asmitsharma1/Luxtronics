@@ -33,3 +33,6 @@ dist-ssr
 .env.australia
 .env.newzealand
 deploy.log
+
+# user-uploaded blog media (runtime, not source — lives on the server's local disk)
+uploads/

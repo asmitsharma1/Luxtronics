@@ -106,7 +106,19 @@ const BlogPost = () => {
 
       <section className="container pb-12">
         <article className="relative overflow-hidden rounded-3xl border border-border/70 min-h-[480px]">
-          {post.image && (
+          {post.video ? (
+            <video
+              src={post.video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="none"
+              poster={post.image}
+              className="absolute inset-0 h-full w-full object-cover"
+              aria-hidden="true"
+            />
+          ) : post.image ? (
             <img
               src={post.image}
               alt={post.title}
@@ -115,7 +127,7 @@ const BlogPost = () => {
               width={1200}
               height={700}
             />
-          )}
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/54 to-black/18" />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.78)_0%,rgba(0,0,0,0.48)_52%,rgba(0,0,0,0.1)_100%)]" />
 

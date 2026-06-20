@@ -12,6 +12,7 @@ export interface MongoBlogPost {
   tag: string;
   date: string;
   image?: string;
+  video?: string;
   background?: string;
   foreground?: string;
   content: string[];
@@ -25,6 +26,7 @@ export interface BlogPostInput {
   tag: string;
   date?: string;
   image?: string;
+  video?: string;
   background?: string;
   foreground?: string;
   content: string[];

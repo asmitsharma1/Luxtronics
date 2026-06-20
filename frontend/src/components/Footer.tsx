@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Zap, Instagram, Twitter, Youtube, Facebook } from "lucide-react";
+import { Instagram, Twitter, Youtube, Facebook } from "lucide-react";
 
 // ── Update these URLs to your real social media pages ──────────────────────────
 const SOCIAL_LINKS = [
@@ -98,13 +98,12 @@ const Footer = () => {
       <div className="relative z-10 w-full py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1920px] mx-auto">
         <div className="grid grid-cols-1 gap-8 rounded-2xl border border-white/14 bg-black/35 p-6 shadow-[0_28px_90px_rgba(0,0,0,0.36)] backdrop-blur-xl sm:grid-cols-2 sm:gap-10 sm:p-8 lg:grid-cols-4 lg:gap-12 lg:p-10">
         <div className="sm:col-span-2 lg:col-span-1">
-          <Link to="/" className="flex items-center gap-2 mb-4 sm:mb-6 group">
-            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-gradient-brand flex items-center justify-center shadow-glow group-hover:scale-110 transition-transform">
-              <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" strokeWidth={2.5} />
-            </div>
-            <span className="font-display text-lg font-black tracking-tight text-white sm:text-xl lg:text-2xl">
-              Lux<span className="text-gradient">tronics</span>
-            </span>
+          <Link to="/" className="flex items-center mb-4 sm:mb-6 group">
+            <img
+              src="/logo.jpeg"
+              alt="Luxtronics"
+              className="h-10 w-auto sm:h-12 rounded-lg object-contain shadow-sm transition-transform group-hover:scale-105"
+            />
           </Link>
           <p className="mb-6 max-w-sm text-sm leading-6 text-white/72">
             Premium electronics curated for the next generation of creators and tech enthusiasts.

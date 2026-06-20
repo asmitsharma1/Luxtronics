@@ -448,13 +448,11 @@ const Navbar = () => {
 
           {/* ── Logo ── */}
           <Link to="/" className="flex items-center shrink-0 group">
-           <div className="rounded-xl bg-white dark:bg-white p-1 shadow-sm">
             <img
               src="/logo.jpeg"
               alt="Luxtronics"
-              className="h-10 w-auto sm:h-12 object-contain transition-all duration-500           group-hover:scale-[1.05]"
-             />
-          </div>
+              className="h-11 w-auto sm:h-[52px] rounded-lg object-contain shadow-sm transition-all duration-500 group-hover:scale-[1.05]"
+            />
           </Link>
 
           {/* ── Desktop nav with Megamenu ── */}
@@ -932,7 +930,7 @@ const Navbar = () => {
                   <img
                     src="/logo.jpeg"
                     alt="Luxtronics"
-                    className="h-10 w-auto max-w-[155px] object-contain"
+                    className="h-10 w-auto max-w-[155px] rounded-lg object-contain"
                   />
                 </Link>
                 <button

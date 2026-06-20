@@ -63,6 +63,7 @@ export class BlogService {
       tag: input.tag.trim(),
       date: input.date || now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       image: input.image?.trim() || undefined,
+      video: input.video?.trim() || undefined,
       background: input.background?.trim() || undefined,
       foreground: input.foreground?.trim() || undefined,
       content: input.content.map((p) => String(p || '').trim()).filter(Boolean),
@@ -91,6 +92,7 @@ export class BlogService {
     if (input.tag !== undefined) update.tag = input.tag.trim();
     if (input.date !== undefined) update.date = input.date;
     if (input.image !== undefined) update.image = input.image.trim() || undefined;
+    if (input.video !== undefined) update.video = input.video.trim() || undefined;
     if (input.background !== undefined) update.background = input.background.trim() || undefined;
     if (input.foreground !== undefined) update.foreground = input.foreground.trim() || undefined;
     if (input.content !== undefined) {

@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
+import { PDFParse } from 'pdf-parse';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -805,6 +807,79 @@ app.use((req, _res, next) => {
   next();
 });
 
+// ── Blog media uploads (local disk, served statically) ───────────────────────
+const UPLOADS_DIR = path.join(__dirname, 'uploads', 'blog');
+mkdirSync(UPLOADS_DIR, { recursive: true });
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), { maxAge: '7d' }));
+
+const blogMediaUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+    filename: (_req, file, cb) => {
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-80);
+      cb(null, `${Date.now()}-${safeName}`);
+    },
+  }),
+  limits: { fileSize: 80 * 1024 * 1024 }, // 80MB, generous enough for short background videos
+  fileFilter: (_req, file, cb) => {
+    if (/^image\/|^video\//.test(file.mimetype)) return cb(null, true);
+    cb(new Error('Only image or video files are allowed'));
+  },
+});
+
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/pdf') return cb(null, true);
+    cb(new Error('Only PDF files are allowed'));
+  },
+});
+
+function extractPdfParagraphs(rawText) {
+  return rawText
+    .replace(/\f/g, '\n\n')
+    .split(/\n\s*\n/)
+    .map((block) => block.replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+app.post('/api/blogs/upload', (req, res) => {
+  blogMediaUpload.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ success: false, error: err.message || 'Upload failed' });
+    if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+    const url = `/uploads/blog/${req.file.filename}`;
+    const kind = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+    return res.status(201).json({ success: true, data: { url, kind } });
+  });
+});
+
+app.post('/api/blogs/parse-pdf', (req, res) => {
+  pdfUpload.single('file')(req, res, async (err) => {
+    if (err) return res.status(400).json({ success: false, error: err.message || 'Upload failed' });
+    if (!req.file) return res.status(400).json({ success: false, error: 'No PDF uploaded' });
+    try {
+      const parser = new PDFParse({ data: req.file.buffer });
+      const result = await parser.getText();
+      await parser.destroy();
+      const paragraphs = extractPdfParagraphs(result.text || '');
+      if (paragraphs.length === 0) {
+        return res.status(422).json({ success: false, error: 'No extractable text found in this PDF' });
+      }
+      return res.json({
+        success: true,
+        data: {
+          suggestedTitle: paragraphs[0]?.slice(0, 120) || '',
+          suggestedExcerpt: (paragraphs[1] || paragraphs[0] || '').slice(0, 220),
+          content: paragraphs,
+        },
+      });
+    } catch (parseErr) {
+      return res.status(500).json({ success: false, error: 'Unable to parse PDF', details: parseErr.message });
+    }
+  });
+});
+
 // ── DEBUG ─────────────────────────────────────────────────────────────────────
 app.get('/debug', (req, res) => {
   if (!process.env.DEBUG_TOKEN || req.query.token !== process.env.DEBUG_TOKEN) {
@@ -1361,6 +1436,7 @@ app.post('/api/blogs', async (req, res) => {
       tag: body.tag.trim(),
       date: body.date || now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       image: body.image?.trim() || undefined,
+      video: body.video?.trim() || undefined,
       background: body.background?.trim() || undefined,
       foreground: body.foreground?.trim() || undefined,
       content,
@@ -1398,6 +1474,7 @@ app.put('/api/blogs/:id', async (req, res) => {
     if (body.tag !== undefined) update.tag = body.tag.trim();
     if (body.date !== undefined) update.date = body.date;
     if (body.image !== undefined) update.image = body.image.trim() || undefined;
+    if (body.video !== undefined) update.video = body.video.trim() || undefined;
     if (body.background !== undefined) update.background = body.background.trim() || undefined;
     if (body.foreground !== undefined) update.foreground = body.foreground.trim() || undefined;
     if (body.content !== undefined) {
