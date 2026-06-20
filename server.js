@@ -178,7 +178,10 @@ let mongoInitPromise = null;
 // inject into pasted env var values (e.g. "value" instead of value, or a trailing \n).
 function sanitizeMongoUri(raw) {
   if (!raw) return raw;
-  let uri = raw.trim();
+  // Strip control/whitespace chars (\r, \n, \t) wherever they appear — a valid
+  // connection string never legitimately contains them, but hosting panel
+  // textareas can silently inject them mid-string (e.g. right before the "@").
+  let uri = raw.replace(/[\r\n\t]+/g, '').trim();
   if (uri.length >= 2) {
     const first = uri[0];
     const last = uri[uri.length - 1];
