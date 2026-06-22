@@ -913,9 +913,41 @@ const pdfUpload = multer({
   },
 });
 
+const htmlUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (/^text\/html$/.test(file.mimetype) || /\.html?$/i.test(file.originalname)) return cb(null, true);
+    cb(new Error('Only HTML files are allowed'));
+  },
+});
+
 function extractPdfParagraphs(rawText) {
   return rawText
     .replace(/\f/g, '\n\n')
+    .split(/\n\s*\n/)
+    .map((block) => block.replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function extractHtmlTitle(html) {
+  const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+  if (titleMatch?.[1]?.trim()) return decodeHtmlEntities(titleMatch[1]).trim();
+  const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  if (h1Match?.[1]) return decodeHtmlEntities(h1Match[1].replace(/<[^>]+>/g, '')).trim();
+  return '';
+}
+
+function extractHtmlParagraphs(html) {
+  const withoutNonContent = html
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '');
+  const withParagraphBreaks = withoutNonContent
+    .replace(/<\/(p|div|li|h[1-6]|blockquote|tr)>/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, '\n\n');
+  const stripped = withParagraphBreaks.replace(/<[^>]+>/g, '');
+  return decodeHtmlEntities(stripped)
     .split(/\n\s*\n/)
     .map((block) => block.replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim())
     .filter(Boolean);
@@ -953,6 +985,31 @@ app.post('/api/blogs/parse-pdf', (req, res) => {
       });
     } catch (parseErr) {
       return res.status(500).json({ success: false, error: 'Unable to parse PDF', details: parseErr.message });
+    }
+  });
+});
+
+app.post('/api/blogs/parse-html', (req, res) => {
+  htmlUpload.single('file')(req, res, async (err) => {
+    if (err) return res.status(400).json({ success: false, error: err.message || 'Upload failed' });
+    if (!req.file) return res.status(400).json({ success: false, error: 'No HTML file uploaded' });
+    try {
+      const html = req.file.buffer.toString('utf8');
+      const paragraphs = extractHtmlParagraphs(html);
+      if (paragraphs.length === 0) {
+        return res.status(422).json({ success: false, error: 'No extractable text found in this HTML file' });
+      }
+      const suggestedTitle = extractHtmlTitle(html) || paragraphs[0]?.slice(0, 120) || '';
+      return res.json({
+        success: true,
+        data: {
+          suggestedTitle,
+          suggestedExcerpt: (paragraphs[1] || paragraphs[0] || '').slice(0, 220),
+          content: paragraphs,
+        },
+      });
+    } catch (parseErr) {
+      return res.status(500).json({ success: false, error: 'Unable to parse HTML', details: parseErr.message });
     }
   });
 });

@@ -89,11 +89,13 @@ export default function AdminBlogs() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [importingPdf, setImportingPdf] = useState(false);
+  const [importingHtml, setImportingHtml] = useState(false);
   const { toast } = useToast();
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const htmlInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -162,6 +164,31 @@ export default function AdminBlogs() {
       toast({ title: err instanceof Error ? err.message : "Could not read this PDF", variant: "destructive" });
     } finally {
       setImportingPdf(false);
+    }
+  };
+
+  const handleHtmlImport = async (file: File) => {
+    setImportingHtml(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/blogs/parse-html", { method: "POST", body });
+      const json = await response.json();
+      if (!response.ok || !json.success) throw new Error(json.error || "Could not read this HTML file");
+      setForm((f) => ({
+        ...f,
+        title: f.title.trim() ? f.title : json.data.suggestedTitle,
+        excerpt: f.excerpt.trim() ? f.excerpt : json.data.suggestedExcerpt,
+        content: json.data.content.join("\n\n"),
+      }));
+      toast({
+        title: `Imported ${json.data.content.length} paragraph(s) from HTML`,
+        description: "Review and edit before publishing — text-only extraction, images aren't pulled from the file.",
+      });
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Could not read this HTML file", variant: "destructive" });
+    } finally {
+      setImportingHtml(false);
     }
   };
 
@@ -289,6 +316,39 @@ export default function AdminBlogs() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) handlePdfImport(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-dashed border-border bg-muted/40 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Import from HTML</p>
+                    <p className="text-xs text-muted-foreground">
+                      Pulls text into title/excerpt/content. Images aren't extracted — upload those separately below.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled={importingHtml}
+                    onClick={() => htmlInputRef.current?.click()}
+                  >
+                    {importingHtml ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                    Choose HTML
+                  </Button>
+                  <input
+                    ref={htmlInputRef}
+                    type="file"
+                    accept="text/html,.html,.htm"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleHtmlImport(file);
                       e.target.value = "";
                     }}
                   />
