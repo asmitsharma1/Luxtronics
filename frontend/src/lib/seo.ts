@@ -141,9 +141,10 @@ export const getSiteUrl = () => {
   return SITE_URLS[window.location.hostname] ?? PRIMARY_SITE_URL;
 };
 
-export const absoluteUrl = (path = "/") => {
-  if (/^https?:\/\//i.test(path)) return path;
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+export const absoluteUrl = (path?: string | null) => {
+  const safePath = path || "/";
+  if (/^https?:\/\//i.test(safePath)) return safePath;
+  const normalizedPath = safePath.startsWith("/") ? safePath : `/${safePath}`;
   return `${getSiteUrl()}${normalizedPath}`;
 };
 
