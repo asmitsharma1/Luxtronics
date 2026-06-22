@@ -33,6 +33,7 @@ type BlogPost = {
   image?: string;
   video?: string;
   images?: string[];
+  bodyHtml?: string;
   background?: string;
   foreground?: string;
   content: string[];
@@ -46,6 +47,7 @@ type FormState = {
   image: string;
   video: string;
   images: string[];
+  bodyHtml: string;
   background: string;
   foreground: string;
   content: string;
@@ -66,6 +68,7 @@ const EMPTY_FORM: FormState = {
   image: "",
   video: "",
   images: [],
+  bodyHtml: "",
   background: SWATCHES[0].background,
   foreground: SWATCHES[0].foreground,
   content: "",
@@ -79,6 +82,7 @@ const toFormState = (post: BlogPost): FormState => ({
   image: post.image || "",
   video: post.video || "",
   images: post.images || [],
+  bodyHtml: post.bodyHtml || "",
   background: post.background || SWATCHES[0].background,
   foreground: post.foreground || SWATCHES[0].foreground,
   content: post.content.join("\n\n"),
@@ -211,10 +215,13 @@ export default function AdminBlogs() {
         title: f.title.trim() ? f.title : json.data.suggestedTitle,
         excerpt: f.excerpt.trim() ? f.excerpt : json.data.suggestedExcerpt,
         content: json.data.content.join("\n\n"),
+        bodyHtml: json.data.bodyHtml || "",
       }));
       toast({
-        title: `Imported ${json.data.content.length} paragraph(s) from HTML`,
-        description: "Review and edit before publishing — text-only extraction, images aren't pulled from the file.",
+        title: "Imported from HTML",
+        description: json.data.bodyHtml
+          ? "Original formatting and inline CSS will be shown as-is on the blog page. Edit the plain text fields below only if you want a fallback."
+          : "Review and edit before publishing — text-only extraction, images aren't pulled from the file.",
       });
     } catch (err) {
       toast({ title: err instanceof Error ? err.message : "Could not read this HTML file", variant: "destructive" });
@@ -229,8 +236,8 @@ export default function AdminBlogs() {
       .map((p) => p.trim())
       .filter(Boolean);
 
-    if (!form.title.trim() || !form.excerpt.trim() || !form.tag.trim() || content.length === 0) {
-      toast({ title: "Title, excerpt, tag, and content are required", variant: "destructive" });
+    if (!form.title.trim() || !form.excerpt.trim() || !form.tag.trim() || (content.length === 0 && !form.bodyHtml.trim())) {
+      toast({ title: "Title, excerpt, tag, and content (or imported HTML) are required", variant: "destructive" });
       return;
     }
 
@@ -244,6 +251,7 @@ export default function AdminBlogs() {
         image: form.image.trim() || undefined,
         video: form.video.trim() || undefined,
         images: form.images,
+        bodyHtml: form.bodyHtml.trim() || undefined,
         background: form.background,
         foreground: form.foreground,
         content,
@@ -359,7 +367,7 @@ export default function AdminBlogs() {
                   <div>
                     <p className="text-sm font-bold text-foreground">Import from HTML</p>
                     <p className="text-xs text-muted-foreground">
-                      Pulls text into title/excerpt/content. Images aren't extracted — upload those separately below.
+                      Keeps your team's original layout and inline CSS — shown as-is on the blog page.
                     </p>
                   </div>
                   <Button
@@ -385,6 +393,20 @@ export default function AdminBlogs() {
                     }}
                   />
                 </div>
+                {form.bodyHtml && (
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+                    <p className="text-xs font-semibold text-primary">
+                      Rich HTML imported — this will be shown on the blog page instead of the plain content below.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, bodyHtml: "" }))}
+                      className="shrink-0 text-xs font-semibold text-muted-foreground hover:text-destructive"
+                    >
+                      Remove, use plain text
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>

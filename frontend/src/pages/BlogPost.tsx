@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { motion, useScroll } from "framer-motion";
 import SEO from "@/components/SEO";
 import { absoluteUrl, breadcrumbSchema } from "@/lib/seo";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { getFallbackBlogPost, type BlogPost } from "@/data/blog-posts";
 
 const toIsoDate = (date: string) => {
@@ -184,8 +185,17 @@ const BlogPost = () => {
         </div>
       </section>
 
-      {/* ── Content chapters ───────────────────────────────────────────── */}
-      {chapters.map((chapter, index) => {
+      {/* ── Rich HTML content (imported from the team's own HTML/CSS) ────── */}
+      {post.bodyHtml ? (
+        <section className="container py-16 sm:py-24">
+          <div
+            className="prose prose-lg dark:prose-invert mx-auto max-w-3xl prose-headings:font-display prose-img:rounded-2xl"
+            style={{ "--tw-prose-links": accent } as React.CSSProperties}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.bodyHtml) }}
+          />
+        </section>
+      ) : (
+        chapters.map((chapter, index) => {
         const tinted = index % 2 === 1;
         const galleryImage = post.images?.[index];
         const imageOnRight = index % 2 === 1;
@@ -237,7 +247,8 @@ const BlogPost = () => {
             </div>
           </section>
         );
-      })}
+        })
+      )}
 
       {/* ── Closing CTA ─────────────────────────────────────────────────── */}
       <section

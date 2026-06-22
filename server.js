@@ -6,6 +6,21 @@ import { existsSync, readdirSync, readFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { PDFParse } from 'pdf-parse';
+import { JSDOM } from 'jsdom';
+import createDOMPurify from 'dompurify';
+
+const purifyWindow = new JSDOM('').window;
+const DOMPurify = createDOMPurify(purifyWindow);
+const BLOG_HTML_ALLOWED_TAGS = [
+  'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'img',
+  'div', 'span', 'blockquote', 'figure', 'figcaption', 'hr', 'pre', 'code',
+];
+const BLOG_HTML_ALLOWED_ATTR = ['href', 'target', 'rel', 'src', 'alt', 'class', 'style', 'width', 'height', 'colspan', 'rowspan'];
+
+function sanitizeBlogHtml(html) {
+  return DOMPurify.sanitize(html || '', { ALLOWED_TAGS: BLOG_HTML_ALLOWED_TAGS, ALLOWED_ATTR: BLOG_HTML_ALLOWED_ATTR });
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -938,6 +953,15 @@ function extractHtmlTitle(html) {
   return '';
 }
 
+function extractHtmlBody(html) {
+  const withoutNonContent = html
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '');
+  const bodyMatch = withoutNonContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  const raw = bodyMatch ? bodyMatch[1] : withoutNonContent;
+  return sanitizeBlogHtml(raw.trim());
+}
+
 function extractHtmlParagraphs(html) {
   const withoutNonContent = html
     .replace(/<head[\s\S]*?<\/head>/gi, '')
@@ -996,8 +1020,9 @@ app.post('/api/blogs/parse-html', (req, res) => {
     try {
       const html = req.file.buffer.toString('utf8');
       const paragraphs = extractHtmlParagraphs(html);
-      if (paragraphs.length === 0) {
-        return res.status(422).json({ success: false, error: 'No extractable text found in this HTML file' });
+      const bodyHtml = extractHtmlBody(html);
+      if (paragraphs.length === 0 && !bodyHtml) {
+        return res.status(422).json({ success: false, error: 'No extractable content found in this HTML file' });
       }
       const suggestedTitle = extractHtmlTitle(html) || paragraphs[0]?.slice(0, 120) || '';
       return res.json({
@@ -1006,6 +1031,7 @@ app.post('/api/blogs/parse-html', (req, res) => {
           suggestedTitle,
           suggestedExcerpt: (paragraphs[1] || paragraphs[0] || '').slice(0, 220),
           content: paragraphs,
+          bodyHtml,
         },
       });
     } catch (parseErr) {
@@ -1557,8 +1583,9 @@ app.post('/api/blogs', async (req, res) => {
   const body = req.body || {};
   const content = Array.isArray(body.content) ? body.content.map((p) => String(p || '').trim()).filter(Boolean) : [];
   const images = Array.isArray(body.images) ? body.images.map((src) => String(src || '').trim()).filter(Boolean) : [];
-  if (!body.title?.trim() || !body.excerpt?.trim() || !body.tag?.trim() || content.length === 0) {
-    return res.status(400).json({ success: false, error: 'Title, excerpt, tag and content are required' });
+  const bodyHtml = body.bodyHtml ? sanitizeBlogHtml(String(body.bodyHtml)) : '';
+  if (!body.title?.trim() || !body.excerpt?.trim() || !body.tag?.trim() || (content.length === 0 && !bodyHtml)) {
+    return res.status(400).json({ success: false, error: 'Title, excerpt, tag and content (or rich HTML) are required' });
   }
   try {
     const baseSlug = slugifyBlogTitle(body.title) || 'post';
@@ -1573,6 +1600,7 @@ app.post('/api/blogs', async (req, res) => {
       image: body.image?.trim() || undefined,
       video: body.video?.trim() || undefined,
       images,
+      bodyHtml: bodyHtml || undefined,
       background: body.background?.trim() || undefined,
       foreground: body.foreground?.trim() || undefined,
       content,
@@ -1618,6 +1646,9 @@ app.put('/api/blogs/:id', async (req, res) => {
     if (body.foreground !== undefined) update.foreground = body.foreground.trim() || undefined;
     if (body.content !== undefined) {
       update.content = Array.isArray(body.content) ? body.content.map((p) => String(p || '').trim()).filter(Boolean) : [];
+    }
+    if (body.bodyHtml !== undefined) {
+      update.bodyHtml = body.bodyHtml ? sanitizeBlogHtml(String(body.bodyHtml)) : undefined;
     }
 
     await blogPostsCol.updateOne({ _id: new ObjectId(id) }, { $set: update });

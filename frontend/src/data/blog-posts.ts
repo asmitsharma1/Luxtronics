@@ -8,6 +8,7 @@ export type BlogPost = {
   image?: string;
   video?: string;
   images?: string[];
+  bodyHtml?: string;
   background?: string;
   foreground?: string;
   content: string[];
