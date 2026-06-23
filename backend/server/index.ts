@@ -882,10 +882,38 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
       }));
     });
 
-    app.use(express.static(clientDistPath, { maxAge: '1d', etag: true }));
+    // ── KNOWN APP ROUTES vs. LEGACY WORDPRESS JUNK ─────────────────────────
+    // This domain previously ran a live WordPress + WooCommerce store. Google
+    // still has thousands of those old URLs queued (wp-admin, product filter
+    // AJAX query strings, etc). Returning 200 for all of them both wastes
+    // crawl budget and makes Google treat them as duplicates of the homepage.
+    const KNOWN_EXACT_ROUTES = new Set([
+      '/', '/shop', '/latest-arrivals', '/categories', '/cart', '/blog', '/contact', '/about', '/faq',
+      '/shipping-returns', '/payment-method', '/return-exchange', '/return-policy', '/returns', '/refund-policy',
+      '/privacy', '/terms', '/account', '/account/login', '/account/register', '/account/orders', '/account/profile',
+      '/admin', '/admin/products', '/admin/invoices', '/admin/blogs', '/invoices',
+    ]);
+    const KNOWN_ROUTE_PREFIXES = ['/product/', '/blog/'];
+    const LEGACY_WP_PATH_PATTERN = /^\/(wp-admin|wp-content|wp-json|wp-includes|wp-login\.php|xmlrpc\.php|feed|refund_returns|category|tag|author|page)\b/i;
+    const LEGACY_WP_QUERY_PATTERN = /post_type=product|filter_cat=|filter_color=|filter_brands=|shop_view=|product_cat=/i;
+
+    const isKnownAppRoute = (pathname: string) =>
+      KNOWN_EXACT_ROUTES.has(pathname) || KNOWN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+    const isLegacyWordPressJunk = (pathname: string, rawQuery?: string) =>
+      LEGACY_WP_PATH_PATTERN.test(pathname) || LEGACY_WP_QUERY_PATTERN.test(rawQuery || '');
+
+    app.use(express.static(clientDistPath, { maxAge: '1d', etag: true, index: false }));
     app.use((req, res, next) => {
       if (req.method !== 'GET' || req.path.startsWith('/api') || req.path === '/health') return next();
-      res.sendFile(path.join(clientDistPath, 'index.html'));
+
+      let statusCode = 200;
+      if (isLegacyWordPressJunk(req.path, req.url.split('?')[1])) {
+        statusCode = 410;
+      } else if (!isKnownAppRoute(req.path)) {
+        statusCode = 404;
+      }
+
+      res.status(statusCode).sendFile(path.join(clientDistPath, 'index.html'));
     });
   } else {
     app.get('/', (_req, res) => {

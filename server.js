@@ -1959,6 +1959,28 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
     }
   });
 
+  // ── KNOWN APP ROUTES vs. LEGACY WORDPRESS JUNK ─────────────────────────────
+  // This domain previously ran a live WordPress + WooCommerce store. Google
+  // still has thousands of those old URLs queued (wp-admin, product filter
+  // AJAX query strings, etc). The SPA fallback used to return 200 for all of
+  // them, which both wastes crawl budget and makes Google treat them as
+  // duplicates of the homepage — actively hurting indexing of real pages.
+  const KNOWN_EXACT_ROUTES = new Set([
+    '/', '/shop', '/latest-arrivals', '/categories', '/cart', '/blog', '/contact', '/about', '/faq',
+    '/shipping-returns', '/payment-method', '/return-exchange', '/return-policy', '/returns', '/refund-policy',
+    '/privacy', '/terms', '/account', '/account/login', '/account/register', '/account/orders', '/account/profile',
+    '/admin', '/admin/products', '/admin/invoices', '/admin/blogs', '/invoices',
+  ]);
+  const KNOWN_ROUTE_PREFIXES = ['/product/', '/blog/'];
+  const LEGACY_WP_PATH_PATTERN = /^\/(wp-admin|wp-content|wp-json|wp-includes|wp-login\.php|xmlrpc\.php|feed|refund_returns|category|tag|author|page)\b/i;
+  const LEGACY_WP_QUERY_PATTERN = /post_type=product|filter_cat=|filter_color=|filter_brands=|shop_view=|product_cat=/i;
+
+  const isKnownAppRoute = (pathname) =>
+    KNOWN_EXACT_ROUTES.has(pathname) || KNOWN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+  const isLegacyWordPressJunk = (pathname, rawQuery) =>
+    LEGACY_WP_PATH_PATTERN.test(pathname) || LEGACY_WP_QUERY_PATTERN.test(rawQuery || '');
+
   // ── SPA FALLBACK ────────────────────────────────────────────────────────────
   app.get(/(.*)/, (req, res) => {
     if (
@@ -1966,6 +1988,16 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
       req.path.startsWith('/assets') ||
       req.path === '/debug'
     ) return res.status(404).end();
+
+    // 410 Gone tells Google to stop recrawling permanently-removed legacy
+    // WordPress URLs (checked first since junk query params can land on an
+    // otherwise-known path like "/"); plain 404 covers genuine unmatched paths.
+    let statusCode = 200;
+    if (isLegacyWordPressJunk(req.path, req.url.split('?')[1])) {
+      statusCode = 410;
+    } else if (!isKnownAppRoute(req.path)) {
+      statusCode = 404;
+    }
 
     try {
       let html = readFileSync(path.join(BUILD_DIR, 'index.html'), 'utf8');
@@ -1986,7 +2018,7 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
 
       // Surrogate-Control tells LiteSpeed/CDN never to cache this HTML
       // so the injected window.__FIREBASE_CONFIG always reaches the browser
-      res.set({
+      res.status(statusCode).set({
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Surrogate-Control': 'no-store',
