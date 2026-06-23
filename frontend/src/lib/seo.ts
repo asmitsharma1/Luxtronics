@@ -79,7 +79,7 @@ export const toSchemaPrice = (value: unknown) => {
 
 export const toSchemaInteger = (value: unknown) => Math.max(0, Math.round(toPlainNumber(value)));
 
-const returnWindowDays = (countryCode: string) => (countryCode === "IN" ? 7 : 14);
+const returnWindowDays = (countryCode: string) => (countryCode === "IN" ? 7 : 5);
 
 export const merchantReturnPolicySchema = (countryCode: string) => ({
   "@type": "MerchantReturnPolicy",

@@ -16,16 +16,28 @@ const ReturnExchange = () => {
           "@type": "WebPage",
           "name": "Luxtronics Return and Exchange Policy",
           "url": "https://luxtronics.in/return-exchange",
-          "mainEntity": {
-            "@type": "MerchantReturnPolicy",
-            "applicableCountry": ["IN", "AU", "NZ"],
-            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-            "merchantReturnDays": 14,
-            "returnMethod": "https://schema.org/ReturnByMail",
-            "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility",
-            "refundType": "https://schema.org/FullRefund",
-            "merchantReturnLink": "https://luxtronics.in/return-exchange"
-          }
+          "mainEntity": [
+            {
+              "@type": "MerchantReturnPolicy",
+              "applicableCountry": ["IN"],
+              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+              "merchantReturnDays": 7,
+              "returnMethod": "https://schema.org/ReturnByMail",
+              "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility",
+              "refundType": "https://schema.org/FullRefund",
+              "merchantReturnLink": "https://luxtronics.in/return-exchange"
+            },
+            {
+              "@type": "MerchantReturnPolicy",
+              "applicableCountry": ["AU", "NZ"],
+              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+              "merchantReturnDays": 5,
+              "returnMethod": "https://schema.org/ReturnByMail",
+              "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility",
+              "refundType": "https://schema.org/FullRefund",
+              "merchantReturnLink": "https://luxtronics.in/return-exchange"
+            }
+          ]
         }}
       />
 
@@ -39,22 +51,22 @@ const ReturnExchange = () => {
         <section>
           <h3 className="mb-4 text-xl font-semibold text-neutral-950">Return Window</h3>
           <p>
-            India customers can request most returns within 7 days of delivery. Australia and New Zealand customers can request voluntary returns within 14 days of delivery. Some premium products may have product-specific windows shown on the product page.
+            India customers can request most returns within 3-7 days of delivery. Australia and New Zealand customers can request voluntary returns within 3-5 days of delivery. Some premium products may have product-specific windows shown on the product page.
           </p>
           <div className="mt-6 overflow-x-auto border-y border-neutral-200">
             <table className="w-full min-w-[620px] text-left text-sm sm:text-base">
               <tbody className="divide-y divide-neutral-200">
                 <tr>
                   <th className="w-56 py-4 pr-6 font-medium text-neutral-950">India</th>
-                  <td className="py-4">7 days from confirmed delivery for most products.</td>
+                  <td className="py-4">3-7 days from confirmed delivery for most products.</td>
                 </tr>
                 <tr>
                   <th className="py-4 pr-6 font-medium text-neutral-950">Australia</th>
-                  <td className="py-4">14 days from confirmed delivery. Australian Consumer Law rights remain unaffected.</td>
+                  <td className="py-4">3-5 days from confirmed delivery. Australian Consumer Law rights remain unaffected.</td>
                 </tr>
                 <tr>
                   <th className="py-4 pr-6 font-medium text-neutral-950">New Zealand</th>
-                  <td className="py-4">14 days from confirmed delivery. Consumer Guarantees Act rights remain unaffected.</td>
+                  <td className="py-4">3-5 days from confirmed delivery. Consumer Guarantees Act rights remain unaffected.</td>
                 </tr>
               </tbody>
             </table>
