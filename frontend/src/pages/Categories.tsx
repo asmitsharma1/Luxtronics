@@ -47,7 +47,8 @@ type ParentGroup = {
 };
 
 const PARENT_GROUPS: ParentGroup[] = [
-  { name: "Mobile Accessories", icon: Battery, description: "Universal mobile accessories and essentials", slugKeywords: ["mobile-accessories", "cable-charger", "tempered-glass", "cases", "case", "cover", "protector", "screen", "glass", "charger", "cable", "adapter", "bags-cases", "bag", "pouch", "holder", "stand", "mount", "dock", "magsafe", "airpods", "earbuds", "earphones", "headphones", "feature-phones"] },
+  { name: "Mobile Phones", icon: Smartphone, description: "Smartphones, rugged phones and feature phones", slugKeywords: ["smart-phones", "smart-phone", "smartphones", "smartphone", "mobile-phones", "feature-phones", "rugged-phone", "iphone"] },
+  { name: "Mobile Accessories", icon: Battery, description: "Universal mobile accessories and essentials", slugKeywords: ["mobile-accessories", "cable-charger", "tempered-glass", "cases", "case", "cover", "protector", "screen", "glass", "charger", "cable", "adapter", "bags-cases", "bag", "pouch", "holder", "stand", "mount", "dock", "magsafe", "airpods", "earbuds", "earphones", "headphones"] },
   { name: "Smart Wear", icon: Watch, description: "Smartwatches, smart glasses and wearable technology", slugKeywords: ["wearables", "apple-watch", "huawei-watch", "garmin", "fitbit", "samsung-watch", "smart-glasses", "glasses", "eyewear"] },
   { name: "Consumer Electronics", icon: Tv, description: "TVs, projectors, audio and smart home devices", slugKeywords: ["consumer-electronics", "audio", "bluetooth-speakers", "projector", "android-tv", "3d-printer", "arduino", "vr", "ar", "live-equipment"] },
   { name: "Security", icon: Shield, description: "CCTV, access control and safety electronics", slugKeywords: ["security", "camera-security", "cctv", "surveillance", "alarm", "access-control"] },
