@@ -7,7 +7,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { PDFParse } from 'pdf-parse';
@@ -830,6 +830,58 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
 
   if (clientDistPath) {
     console.log(`📁 Serving frontend from: ${clientDistPath}`);
+
+    // Crawlers that don't execute JavaScript (e.g. catalog/ads policy reviewers)
+    // otherwise see a blank, generic shell on every route since this is a pure
+    // CSR app. Inject real markup for a few policy pages so the raw HTTP
+    // response itself is readable, while real visitors still get the full SPA.
+    const renderStaticPage = ({ title, description, bodyHtml }: { title: string; description: string; bodyHtml: string }) => {
+      const template = readFileSync(path.join(clientDistPath, 'index.html'), 'utf-8');
+      return template
+        .replace(/<title>.*?<\/title>/s, `<title>${title}</title>`)
+        .replace(/<meta name="description" content="[^"]*"\s*\/>/, `<meta name="description" content="${description}" />`)
+        .replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`);
+    };
+
+    const returnPolicyHtml = `
+      <main style="max-width:760px;margin:0 auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.6;color:#171717">
+        <h1>Return Policy</h1>
+        <p>We want every Luxtronics order to arrive correctly and safely. If something is wrong, our team will help you with a clear return, exchange or refund process. Your statutory consumer rights under applicable law remain fully preserved.</p>
+        <h2>Return Window</h2>
+        <p>India customers can request most returns within 3-7 days of delivery. Australia and New Zealand customers can request voluntary returns within 3-5 days of delivery. Some premium products may have product-specific windows shown on the product page.</p>
+        <ul>
+          <li>India: 3-7 days from confirmed delivery for most products.</li>
+          <li>Australia: 3-5 days from confirmed delivery. Australian Consumer Law rights remain unaffected.</li>
+          <li>New Zealand: 3-5 days from confirmed delivery. Consumer Guarantees Act rights remain unaffected.</li>
+        </ul>
+        <h2>Valid Return Conditions</h2>
+        <p>Items must be unused, unactivated, unworn and in original condition. Original packaging, manuals, accessories, warranty cards, invoices, serial number labels and manufacturer seals must be intact. A Return Merchandise Authorisation number is required before sending any item back.</p>
+        <h2>Non-Returnable Items</h2>
+        <p>Opened software, activated digital licences, used consumables, damaged products caused by misuse, tampered serial labels, clearance products and products marked final sale are not eligible for voluntary returns unless defective under applicable consumer law.</p>
+        <h2>How to Initiate a Return</h2>
+        <ol>
+          <li>Email support@luxtronics.in with subject: Return Request - Order #[Your Order Number].</li>
+          <li>Include your order number, item name, reason and photos or video for defective, damaged or wrong products.</li>
+          <li>Wait for approval and RMA instructions before shipping anything back.</li>
+          <li>Pack the item securely in its original packaging and include the invoice.</li>
+        </ol>
+        <h2>Refund Timelines</h2>
+        <p>Approved refunds are initiated within 2-3 business days after inspection. India payment refunds usually take 5-7 business days, bank transfers may take 7-10 business days, and international card refunds may take 7-14 business days depending on the issuing bank.</p>
+        <h2>Return Shipping Fees</h2>
+        <p>For change-of-mind returns, the customer is responsible for return shipping and original shipping charges are non-refundable. For dead-on-arrival, defective, wrong-item or transit-damaged cases approved by Luxtronics, we cover return pickup or provide return shipping instructions at no extra cost.</p>
+        <h2>Contact for Returns</h2>
+        <p>Email <a href="mailto:support@luxtronics.in">support@luxtronics.in</a> with your order number before shipping any item back. Phone support is available at +91 92664 33722, Monday to Saturday, 10:00 AM to 6:00 PM IST.</p>
+      </main>
+    `;
+
+    app.get(['/return-policy', '/return-exchange'], (_req, res) => {
+      res.send(renderStaticPage({
+        title: 'Return Policy | Luxtronics',
+        description: 'Luxtronics return, exchange and refund policy for India, Australia and New Zealand customers.',
+        bodyHtml: returnPolicyHtml,
+      }));
+    });
+
     app.use(express.static(clientDistPath, { maxAge: '1d', etag: true }));
     app.use((req, res, next) => {
       if (req.method !== 'GET' || req.path.startsWith('/api') || req.path === '/health') return next();

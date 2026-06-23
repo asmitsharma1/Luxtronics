@@ -1889,6 +1889,76 @@ if (existsSync(path.join(BUILD_DIR, 'index.html'))) {
 
   app.use(express.static(BUILD_DIR, { index: false }));
 
+  // ── STATIC POLICY PAGES (crawlable without JS) ─────────────────────────────
+  // This is a pure CSR app, so crawlers that don't execute JavaScript (e.g.
+  // catalog/ads policy reviewers) otherwise see a blank, generic shell on
+  // every route. Inject real markup for the return-policy route so the raw
+  // HTTP response itself is readable. Real visitors still get the full SPA —
+  // React replaces this content the moment it mounts.
+  const RETURN_POLICY_HTML = `
+    <main style="max-width:760px;margin:0 auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.6;color:#171717">
+      <h1>Return Policy</h1>
+      <p>We want every Luxtronics order to arrive correctly and safely. If something is wrong, our team will help you with a clear return, exchange or refund process. Your statutory consumer rights under applicable law remain fully preserved.</p>
+      <h2>Return Window</h2>
+      <p>India customers can request most returns within 3-7 days of delivery. Australia and New Zealand customers can request voluntary returns within 3-5 days of delivery. Some premium products may have product-specific windows shown on the product page.</p>
+      <ul>
+        <li>India: 3-7 days from confirmed delivery for most products.</li>
+        <li>Australia: 3-5 days from confirmed delivery. Australian Consumer Law rights remain unaffected.</li>
+        <li>New Zealand: 3-5 days from confirmed delivery. Consumer Guarantees Act rights remain unaffected.</li>
+      </ul>
+      <h2>Valid Return Conditions</h2>
+      <p>Items must be unused, unactivated, unworn and in original condition. Original packaging, manuals, accessories, warranty cards, invoices, serial number labels and manufacturer seals must be intact. A Return Merchandise Authorisation number is required before sending any item back.</p>
+      <h2>Non-Returnable Items</h2>
+      <p>Opened software, activated digital licences, used consumables, damaged products caused by misuse, tampered serial labels, clearance products and products marked final sale are not eligible for voluntary returns unless defective under applicable consumer law.</p>
+      <h2>How to Initiate a Return</h2>
+      <ol>
+        <li>Email support@luxtronics.in with subject: Return Request - Order #[Your Order Number].</li>
+        <li>Include your order number, item name, reason and photos or video for defective, damaged or wrong products.</li>
+        <li>Wait for approval and RMA instructions before shipping anything back.</li>
+        <li>Pack the item securely in its original packaging and include the invoice.</li>
+      </ol>
+      <h2>Refund Timelines</h2>
+      <p>Approved refunds are initiated within 2-3 business days after inspection. India payment refunds usually take 5-7 business days, bank transfers may take 7-10 business days, and international card refunds may take 7-14 business days depending on the issuing bank.</p>
+      <h2>Return Shipping Fees</h2>
+      <p>For change-of-mind returns, the customer is responsible for return shipping and original shipping charges are non-refundable. For dead-on-arrival, defective, wrong-item or transit-damaged cases approved by Luxtronics, we cover return pickup or provide return shipping instructions at no extra cost.</p>
+      <h2>Contact for Returns</h2>
+      <p>Email <a href="mailto:support@luxtronics.in">support@luxtronics.in</a> with your order number before shipping any item back. Phone support is available at +91 92664 33722, Monday to Saturday, 10:00 AM to 6:00 PM IST.</p>
+    </main>
+  `;
+
+  app.get(['/return-policy', '/return-exchange'], (req, res) => {
+    try {
+      let html = readFileSync(path.join(BUILD_DIR, 'index.html'), 'utf8');
+      html = html
+        .replace(/<title>.*?<\/title>/s, '<title>Return Policy | Luxtronics</title>')
+        .replace(/<meta name="description" content="[^"]*"\s*\/>/, '<meta name="description" content="Luxtronics return, exchange and refund policy for India, Australia and New Zealand customers." />')
+        .replace('<div id="root"></div>', `<div id="root">${RETURN_POLICY_HTML}</div>`);
+
+      const fbConfig = {
+        apiKey: process.env.VITE_FIREBASE_API_KEY,
+        authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.VITE_FIREBASE_APP_ID,
+      };
+      const configScript = `<script>window.__FIREBASE_CONFIG = ${JSON.stringify(fbConfig)};</script>`;
+      html = html.replace('<head>', `<head>\n  ${configScript}`);
+
+      res.set({
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Surrogate-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      });
+      res.send(html);
+    } catch (e) {
+      console.error('Failed to serve static return-policy page:', e);
+      res.status(500).send('Internal error reading index.html');
+    }
+  });
+
   // ── SPA FALLBACK ────────────────────────────────────────────────────────────
   app.get(/(.*)/, (req, res) => {
     if (
