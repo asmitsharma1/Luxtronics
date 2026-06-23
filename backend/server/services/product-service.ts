@@ -45,7 +45,8 @@ function categoryRegexes(value: string): RegExp[] {
       .replace(/\\-/g, '[\\s-]')
       .replace(/-/g, '[\\s-]')
       .replace(/&/g, '(?:&|&amp;|and)');
-    return new RegExp(pattern, 'i');
+    // Anchored so "Smart Phone" doesn't substring-match "Smart Phones" (a distinct category).
+    return new RegExp(`^${pattern}$`, 'i');
   });
 }
 
