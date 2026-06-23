@@ -202,7 +202,17 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
   });
 
   // ── ADMIN LIVE ANALYTICS ─────────────────────────────────────────────────
+  // Client-side consent gating (isAnalyticsAllowed) stops real browsers, but
+  // a crawler running an old cached JS bundle, or any non-browser client
+  // hitting this URL directly, bypasses that entirely. This is the
+  // server-side backstop: reject self-identifying bots before doing any
+  // work, regardless of what JS they're running or whether they run JS at all.
+  const BOT_USER_AGENT_PATTERN = /bot|spider|crawl|slurp|googleother|mediapartners|facebookexternalhit|whatsapp|telegrambot/i;
+  const isBotUserAgent = (req: import('express').Request) => BOT_USER_AGENT_PATTERN.test(req.headers['user-agent'] || '');
+
   app.post('/api/analytics/events', (req, res) => {
+    if (isBotUserAgent(req)) return res.status(204).end();
+
     const event = req.body || {};
     if (!event.sessionId || !event.type) {
       return res.status(400).json({ success: false, error: 'Invalid analytics event' });
@@ -218,6 +228,8 @@ export async function setupServer(config: ServerConfig = {}): Promise<Express> {
   });
 
   app.post('/api/analytics/live', (req, res) => {
+    if (isBotUserAgent(req)) return res.status(204).end();
+
     const visitor = req.body || {};
     if (!visitor.sessionId) {
       return res.status(400).json({ success: false, error: 'Invalid live visitor heartbeat' });
