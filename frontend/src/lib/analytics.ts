@@ -467,7 +467,10 @@ export async function fetchRemoteAnalyticsEvents(): Promise<AnalyticsEvent[]> {
   }
 }
 
-export function trackAnalyticsEvent(input: Partial<AnalyticsEvent> & { type: AnalyticsEventType }) {
+export function trackAnalyticsEvent(
+  input: Partial<AnalyticsEvent> & { type: AnalyticsEventType },
+  liveOverrides?: Partial<LiveVisitor>,
+) {
   if (typeof window === "undefined") return;
 
   const traffic = getTrafficSource();
@@ -521,6 +524,7 @@ export function trackAnalyticsEvent(input: Partial<AnalyticsEvent> & { type: Ana
     currentProductName: event.productName,
     currentProductSlug: event.productSlug,
     currentProductCategory: event.productCategory,
+    ...liveOverrides,
   });
 
   window.dispatchEvent(new CustomEvent("lux-analytics-event", { detail: event }));

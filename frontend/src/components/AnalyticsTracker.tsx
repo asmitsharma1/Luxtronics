@@ -49,24 +49,28 @@ const AnalyticsTracker = () => {
   useEffect(() => {
     if (!analyticsAllowed || window.location.pathname.startsWith("/admin")) return;
 
-    trackAnalyticsEvent({
-      type: "page_view",
-      path: `${location.pathname}${location.search}`,
-      title: document.title,
-    });
-    updateLiveVisitor({
-      path: `${location.pathname}${location.search}`,
-      title: document.title,
-      section: "Page top",
-      lastAction: "Opened page",
-      scrollDepth: 0,
-    });
+    trackAnalyticsEvent(
+      {
+        type: "page_view",
+        path: `${location.pathname}${location.search}`,
+        title: document.title,
+      },
+      { section: "Page top", lastAction: "Opened page", scrollDepth: 0 },
+    );
   }, [analyticsAllowed, location.pathname, location.search]);
 
   useEffect(() => {
     if (!analyticsAllowed || window.location.pathname.startsWith("/admin")) return;
 
+    // No periodic polling here on purpose: a setInterval heartbeat costs one
+    // request per open tab per tick, scaling directly with concurrent
+    // visitors regardless of whether anyone is actually doing anything. We
+    // rely entirely on real activity (scroll, click, focus) to keep a
+    // visitor's lastSeenAt fresh; someone truly idle for 30s+ showing as
+    // "idle" in the live dashboard is correct, not a bug.
     let lastScrollDepth = 0;
+    let lastSentDepth = -1;
+    let scrollSendPending = false;
 
     const getScrollDepth = () => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -74,57 +78,38 @@ const AnalyticsTracker = () => {
       return Math.min(100, Math.max(0, Math.round((window.scrollY / maxScroll) * 100)));
     };
 
-    const heartbeat = () => {
-      const nextDepth = getScrollDepth();
-      if (nextDepth > lastScrollDepth) lastScrollDepth = nextDepth;
+    const sendUpdate = (lastAction?: string) => {
+      scrollSendPending = false;
+      if (lastScrollDepth === lastSentDepth && !lastAction) return;
+      lastSentDepth = lastScrollDepth;
       updateLiveVisitor({
         path: `${window.location.pathname}${window.location.search}`,
         title: document.title,
         scrollDepth: lastScrollDepth,
+        ...(lastAction ? { lastAction } : {}),
       });
     };
 
+    // The native "scroll" event fires dozens of times per second while
+    // scrolling, so coalesce into at most one POST every 3s — otherwise a
+    // single user scrolling down one page can fire many requests in seconds.
     const onScroll = () => {
       const nextDepth = getScrollDepth();
-      if (nextDepth > lastScrollDepth) {
-        lastScrollDepth = nextDepth;
-        updateLiveVisitor({
-          path: `${window.location.pathname}${window.location.search}`,
-          title: document.title,
-          scrollDepth: lastScrollDepth,
-          lastAction: `Scrolled ${lastScrollDepth}%`,
-        });
-      }
+      if (nextDepth > lastScrollDepth) lastScrollDepth = nextDepth;
+      if (scrollSendPending) return;
+      scrollSendPending = true;
+      window.setTimeout(() => sendUpdate(`Scrolled ${lastScrollDepth}%`), 3000);
     };
 
-    // Heartbeat keeps the visitor "active" (LIVE_ACTIVE_WINDOW is 30s server-side),
-    // so 20s gives margin without hammering /api/analytics/live every 5s per open tab.
-    let interval: number | undefined;
-    const startHeartbeat = () => {
-      if (interval) return;
-      heartbeat();
-      interval = window.setInterval(heartbeat, 20000);
-    };
-    const stopHeartbeat = () => {
-      if (!interval) return;
-      window.clearInterval(interval);
-      interval = undefined;
-    };
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") stopHeartbeat();
-      else startHeartbeat();
-    };
+    const onFocus = () => sendUpdate();
 
-    startHeartbeat();
+    sendUpdate();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("focus", heartbeat);
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onFocus);
 
     return () => {
-      stopHeartbeat();
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("focus", heartbeat);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onFocus);
     };
   }, [analyticsAllowed, location.pathname, location.search]);
 
@@ -149,16 +134,14 @@ const AnalyticsTracker = () => {
           if (seenSections.has(key)) return;
           seenSections.add(key);
 
-          trackAnalyticsEvent({
-            type: "section_view",
-            section: name.slice(0, 100),
-            path: `${window.location.pathname}${window.location.search}`,
-          });
-          updateLiveVisitor({
-            section: name.slice(0, 100),
-            lastAction: `Viewing ${name.slice(0, 80)}`,
-            path: `${window.location.pathname}${window.location.search}`,
-          });
+          trackAnalyticsEvent(
+            {
+              type: "section_view",
+              section: name.slice(0, 100),
+              path: `${window.location.pathname}${window.location.search}`,
+            },
+            { lastAction: `Viewing ${name.slice(0, 80)}` },
+          );
         });
       },
       { threshold: 0.45, rootMargin: "0px 0px -12% 0px" },
@@ -204,15 +187,14 @@ const AnalyticsTracker = () => {
       const input = form?.querySelector("input[type='search'], input[name='q']") as HTMLInputElement | null;
       if (!input?.value.trim()) return;
 
-      trackAnalyticsEvent({
-        type: "search",
-        label: input.value.trim().slice(0, 120),
-        path: `${window.location.pathname}${window.location.search}`,
-      });
-      updateLiveVisitor({
-        lastAction: `Searched "${input.value.trim().slice(0, 80)}"`,
-        path: `${window.location.pathname}${window.location.search}`,
-      });
+      trackAnalyticsEvent(
+        {
+          type: "search",
+          label: input.value.trim().slice(0, 120),
+          path: `${window.location.pathname}${window.location.search}`,
+        },
+        { lastAction: `Searched "${input.value.trim().slice(0, 80)}"` },
+      );
     };
 
     document.addEventListener("click", onClick, true);
