@@ -13,9 +13,11 @@ const toIsoDate = (date: string) => {
   return Number.isNaN(parsed.getTime()) ? date : parsed.toISOString().split("T")[0];
 };
 
-// Groups paragraphs into editorial "chapters" of 2 so long posts read as
-// distinct full-bleed sections instead of one continuous wall of text.
-const chunkParagraphs = (paragraphs: string[], size = 2) => {
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+// Groups paragraphs into editorial "chapters" of 1 so long posts read as
+// distinct full-bleed, image-first sections instead of one continuous wall of text.
+const chunkParagraphs = (paragraphs: string[], size = 1) => {
   const chunks: string[][] = [];
   for (let i = 0; i < paragraphs.length; i += size) {
     chunks.push(paragraphs.slice(i, i + size));
@@ -90,6 +92,8 @@ const BlogPost = () => {
   const accent = post.background || "#fd5200";
   const accentForeground = post.foreground || "#ffffff";
   const chapters = chunkParagraphs(post.content);
+  const articleBody = post.bodyHtml ? stripHtml(post.bodyHtml) : post.content.join(" ");
+  const wordCount = articleBody ? articleBody.split(/\s+/).filter(Boolean).length : 0;
 
   return (
     <Layout hideBreadcrumb>
@@ -115,10 +119,18 @@ const BlogPost = () => {
             "datePublished": isoDate,
             "dateModified": isoDate,
             "author": { "@type": "Organization", "name": "Luxtronics" },
-            "publisher": { "@type": "Organization", "name": "Luxtronics", "url": absoluteUrl("/") },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Luxtronics",
+              "url": absoluteUrl("/"),
+              "logo": { "@type": "ImageObject", "url": absoluteUrl("/logo.jpeg") },
+            },
             "image": post.image ? absoluteUrl(post.image) : undefined,
             "mainEntityOfPage": absoluteUrl(`/blog/${post.slug}`),
-            "url": absoluteUrl(`/blog/${post.slug}`)
+            "url": absoluteUrl(`/blog/${post.slug}`),
+            "keywords": post.tag,
+            "articleBody": articleBody || undefined,
+            "wordCount": wordCount || undefined,
           },
         ]}
       />
@@ -198,39 +210,46 @@ const BlogPost = () => {
         chapters.map((chapter, index) => {
         const tinted = index % 2 === 1;
         const galleryImage = post.images?.[index];
-        const imageOnRight = index % 2 === 1;
+
+        const sectionLabel = (
+          <div className="mb-5 flex items-center justify-center gap-4">
+            <span className="font-display text-sm font-black tracking-widest" style={{ color: accent }}>
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <span className="h-px w-16" style={{ backgroundColor: `${accent}33` }} />
+            <span className="text-xs font-medium text-muted-foreground">
+              {String(chapters.length).padStart(2, "0")}
+            </span>
+          </div>
+        );
 
         const chapterText = (
-          <div className="w-full max-w-xl">
-            <div className="mb-8 flex items-center gap-4">
-              <span className="font-display text-sm font-black tracking-widest" style={{ color: accent }}>
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span className="h-px flex-1" style={{ backgroundColor: `${accent}33` }} />
-              <span className="text-xs font-medium text-muted-foreground">
-                {String(chapters.length).padStart(2, "0")}
-              </span>
-            </div>
-            <div className="space-y-6">
-              {chapter.map((paragraph) => (
-                <p key={paragraph} className="text-lg leading-relaxed text-foreground/85 sm:text-xl">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
+          <div className="mx-auto w-full max-w-2xl space-y-4 text-center">
+            {sectionLabel}
+            {chapter.map((paragraph) => (
+              <p key={paragraph} className="text-lg leading-relaxed text-foreground/85 sm:text-xl">
+                {paragraph}
+              </p>
+            ))}
           </div>
         );
 
         if (galleryImage) {
           return (
             <section key={chapter[0]} className="border-y border-border/60">
-              <div className="container grid min-h-[70vh] items-center gap-10 py-16 sm:py-24 lg:grid-cols-2">
-                <div className={imageOnRight ? "lg:order-2" : ""}>
-                  <div className="overflow-hidden rounded-2xl border border-border/70">
-                    <img src={galleryImage} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  </div>
-                </div>
-                <div className={imageOnRight ? "lg:order-1" : "flex justify-end"}>{chapterText}</div>
+              <div className="relative h-[55vh] w-full overflow-hidden sm:h-[70vh]">
+                <img
+                  src={galleryImage}
+                  alt={`${post.title} — ${post.tag} illustration ${index + 1}`}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  width={1920}
+                  height={1080}
+                />
+              </div>
+              <div className="container py-12 sm:py-16">
+                {chapterText}
               </div>
             </section>
           );
@@ -242,7 +261,7 @@ const BlogPost = () => {
             className={tinted ? "border-y border-border/60" : ""}
             style={tinted ? { backgroundColor: `${accent}0d` } : undefined}
           >
-            <div className="container flex min-h-[60vh] flex-col items-center justify-center py-16 sm:py-24">
+            <div className="container py-12 sm:py-16">
               {chapterText}
             </div>
           </section>
