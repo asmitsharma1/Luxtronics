@@ -126,9 +126,19 @@ function securityRateLimit(req, res, next) {
   bucket.count += 1;
   rateBuckets.set(key, bucket);
 
-  if (rateBuckets.size > 5000) {
+  // Aggressive cleanup to prevent memory leaks - every 1000 requests
+  if (rateBuckets.size > 1000) {
     for (const [bucketKey, value] of rateBuckets) {
       if (value.resetAt <= now) rateBuckets.delete(bucketKey);
+    }
+    // If still too many, clear oldest 50%
+    if (rateBuckets.size > 2000) {
+      const entries = Array.from(rateBuckets.entries());
+      entries.sort((a, b) => a[1].resetAt - b[1].resetAt);
+      const toDelete = entries.slice(0, Math.floor(entries.length / 2));
+      for (const [key] of toDelete) {
+        rateBuckets.delete(key);
+      }
     }
   }
 
@@ -220,7 +230,13 @@ async function initMongo() {
   }
 
   try {
-    const client = new MongoClient(sanitizeMongoUri(process.env.MONGODB_URI));
+    const client = new MongoClient(sanitizeMongoUri(process.env.MONGODB_URI), {
+      maxPoolSize: 5, // Limit connections to save resources
+      minPoolSize: 1,
+      maxIdleTimeMS: 30000,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
     await client.connect();
     db = client.db(process.env.MONGODB_DB_NAME || 'Luxtronics');
     productsCol = db.collection('products');
@@ -233,6 +249,8 @@ async function initMongo() {
   } catch (err) {
     mongoLastError = err.message;
     console.error('❌ MongoDB connection failed:', err.message);
+    // Don't crash the server if MongoDB fails
+    mongoReady = false;
   }
 }
 mongoInitPromise = initMongo();

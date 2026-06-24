@@ -127,6 +127,7 @@ export default function AdminInvoices() {
   const [productSearch, setProductSearch] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [lines, setLines] = useState<InvoiceLine[]>([makeLine()]);
+  const [currentEditingId, setCurrentEditingId] = useState<string | null>(null); // Track if editing existing invoice
   const [form, setForm] = useState<InvoiceForm>({
     invoiceNumber: makeInvoiceNumber("proforma"),
     invoiceDate: today,
@@ -473,7 +474,7 @@ export default function AdminInvoices() {
     if (!validLines) return;
 
     const savedInvoice: SavedInvoice = {
-      id: crypto.randomUUID(),
+      id: currentEditingId || crypto.randomUUID(), // Use existing ID if editing
       invoiceType,
       invoiceNumber: form.invoiceNumber,
       customerName: form.customerName,
@@ -484,10 +485,79 @@ export default function AdminInvoices() {
       form: { ...form },
       lines: validLines.map((line) => ({ ...line })),
     };
-    persistSavedInvoices([savedInvoice, ...savedInvoices].slice(0, 25));
+
+    if (currentEditingId) {
+      // Update existing invoice
+      const updatedInvoices = savedInvoices.map((inv) => 
+        inv.id === currentEditingId ? savedInvoice : inv
+      );
+      persistSavedInvoices(updatedInvoices);
+      setCurrentEditingId(null);
+      toast({
+        title: "Invoice updated",
+        description: `${form.invoiceNumber} has been updated successfully.`,
+      });
+    } else {
+      // Create new invoice
+      persistSavedInvoices([savedInvoice, ...savedInvoices].slice(0, 25));
+      toast({
+        title: "Invoice saved",
+        description: `${form.invoiceNumber} saved in this admin browser.`,
+      });
+    }
+  };
+
+  const loadInvoiceForEditing = (invoice: SavedInvoice) => {
+    setCurrentEditingId(invoice.id);
+    setInvoiceType(invoice.invoiceType);
+    setForm({ ...invoice.form });
+    setLines([...invoice.lines]);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     toast({
-      title: "Invoice saved",
-      description: `${form.invoiceNumber} saved in this admin browser.`,
+      title: "Invoice loaded",
+      description: `${invoice.invoiceNumber} is now ready to edit. Click "Save record" to update.`,
+    });
+  };
+
+  const cancelEditing = () => {
+    setCurrentEditingId(null);
+    setForm({
+      invoiceNumber: makeInvoiceNumber(invoiceType),
+      invoiceDate: today,
+      dueDate: today,
+      sellerName: "Luxtronics",
+      sellerAddress: "Luxtronics Online Store",
+      sellerTaxId: "",
+      bankAccountName: "",
+      bankAccountNumber: "",
+      bankIfsc: "",
+      customerCompanyName: "",
+      customerName: "",
+      customerAddress: "",
+      customerTaxId: "",
+      currency: "INR",
+      notes: "Thank you for choosing Luxtronics.",
+    });
+    setLines([makeLine()]);
+    toast({
+      title: "Editing cancelled",
+      description: "Form has been reset to create a new invoice.",
+    });
+  };
+
+  const deleteInvoice = (invoiceId: string) => {
+    const invoice = savedInvoices.find((inv) => inv.id === invoiceId);
+    persistSavedInvoices(savedInvoices.filter((inv) => inv.id !== invoiceId));
+    
+    // If we're currently editing this invoice, cancel editing
+    if (currentEditingId === invoiceId) {
+      cancelEditing();
+    }
+    
+    toast({
+      title: "Invoice deleted",
+      description: invoice ? `${invoice.invoiceNumber} has been removed.` : "Invoice removed.",
     });
   };
 
@@ -503,12 +573,29 @@ export default function AdminInvoices() {
               Back to dashboard
             </Link>
             <p className="text-xs font-black uppercase tracking-[0.24em] text-primary">Admin invoice tools</p>
-            <h1 className="mt-2 font-display text-3xl font-black tracking-tight md:text-4xl">Invoice Generator</h1>
+            <h1 className="mt-2 font-display text-3xl font-black tracking-tight md:text-4xl">
+              Invoice Generator
+              {currentEditingId && (
+                <span className="ml-3 inline-flex items-center gap-2 rounded-full bg-amber-500/20 px-3 py-1 text-sm font-semibold text-amber-700 dark:text-amber-400">
+                  <ReceiptText className="h-4 w-4" />
+                  Editing Mode
+                </span>
+              )}
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Create proforma and tax invoices from WooCommerce products, then save them as PDF.
+              {currentEditingId 
+                ? "You are editing an existing invoice. Click Save to update it."
+                : "Create proforma and tax invoices from WooCommerce products, then save them as PDF."
+              }
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {currentEditingId && (
+              <Button variant="outline" className="gap-2" onClick={cancelEditing}>
+                <ArrowLeft className="h-4 w-4" />
+                Cancel editing
+              </Button>
+            )}
             <Button
               variant="outline"
               className="gap-2"
@@ -522,9 +609,9 @@ export default function AdminInvoices() {
               <FileDown className="h-4 w-4" />
               Save as PDF
             </Button>
-            <Button variant="outline" className="gap-2" onClick={saveInvoiceRecord}>
+            <Button variant={currentEditingId ? "default" : "outline"} className="gap-2" onClick={saveInvoiceRecord}>
               <Save className="h-4 w-4" />
-              Save record
+              {currentEditingId ? "Update invoice" : "Save record"}
             </Button>
           </div>
         </div>
@@ -781,34 +868,77 @@ export default function AdminInvoices() {
                 <FileDown className="h-4 w-4" />
                 Save as PDF
               </Button>
-              <Button variant="outline" className="w-full gap-2" onClick={saveInvoiceRecord}>
+              <Button 
+                variant={currentEditingId ? "default" : "outline"} 
+                className="w-full gap-2" 
+                onClick={saveInvoiceRecord}
+              >
                 <Save className="h-4 w-4" />
-                Save record
+                {currentEditingId ? "Update invoice" : "Save record"}
               </Button>
+              {currentEditingId && (
+                <Button 
+                  variant="ghost" 
+                  className="w-full gap-2" 
+                  onClick={cancelEditing}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Cancel editing
+                </Button>
+              )}
               <p className="text-xs text-muted-foreground">
-                The PDF opens in the browser print dialog. Choose Save as PDF as the destination.
+                {currentEditingId 
+                  ? "Click Update to save changes to this invoice."
+                  : "The PDF opens in the browser print dialog. Choose Save as PDF as the destination."
+                }
               </p>
               {savedInvoices.length > 0 && (
                 <div className="rounded-lg border border-border bg-background p-4">
                   <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Saved invoices</p>
                   <div className="mt-3 space-y-3">
                     {savedInvoices.slice(0, 5).map((invoice) => (
-                      <div key={invoice.id} className="rounded-md border border-border/70 p-3 text-sm">
+                      <div key={invoice.id} className="rounded-md border border-border/70 p-3 text-sm hover:border-primary/50 transition-colors">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="flex-1">
                             <p className="font-bold">{invoice.invoiceNumber}</p>
                             <p className="text-xs text-muted-foreground">
                               {invoice.customerCompanyName || invoice.customerName || "Customer"}
                             </p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {new Date(invoice.savedAt).toLocaleString("en-IN")}
+                            </p>
                           </div>
-                          <strong className="text-right">{formatMoney(invoice.total, invoice.currency)}</strong>
+                          <div className="flex flex-col items-end gap-2">
+                            <strong className="text-right">{formatMoney(invoice.total, invoice.currency)}</strong>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 gap-1 text-xs"
+                                onClick={() => loadInvoiceForEditing(invoice)}
+                              >
+                                <ReceiptText className="h-3 w-3" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs text-destructive hover:text-destructive"
+                                onClick={() => deleteInvoice(invoice.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                        <p className="mt-2 text-[11px] text-muted-foreground">
-                          {new Date(invoice.savedAt).toLocaleString("en-IN")}
-                        </p>
                       </div>
                     ))}
                   </div>
+                  {savedInvoices.length > 5 && (
+                    <p className="mt-3 text-xs text-muted-foreground text-center">
+                      Showing 5 of {savedInvoices.length} saved invoices
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
