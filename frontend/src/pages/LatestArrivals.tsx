@@ -94,7 +94,7 @@ const LatestArrivals = () => {
         <section className="relative isolate overflow-hidden border-b border-border">
           <video
             className="absolute inset-0 h-full w-full object-cover"
-            src="/v8.mp4?v=latest-arrivals"
+            src="/v8.mp4?v=20260601"
             autoPlay
             muted
             loop

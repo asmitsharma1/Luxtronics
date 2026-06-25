@@ -44,7 +44,7 @@ const AppPreloader = () => {
     >
       <video
         className="absolute inset-0 h-full w-full object-cover"
-        src="/v8.mp4?v=preloader-gan-v8-20260601"
+        src="/v8.mp4?v=20260601"
         autoPlay
         muted
         loop
