@@ -165,15 +165,22 @@ const Footer = () => {
   
    <div className="flex flex-wrap gap-2.5 items-center justify-start sm:justify-end">
   {PAYMENT_LOGOS.map((logo) => {
-
     const isPayU = logo.label === "PayU";
     const isUPI = logo.label === "UPI";
+    const isGPay = logo.label === "Google Pay";
+    const isGPayOrUPI = isGPay || isUPI;
+    
+    // Jin 4 logos me left-right lines ki dikkat hai unka group
+    const isBadBorderLogo = ["PayPal", "Mastercard", "Visa", "Apple Pay"].includes(logo.label);
 
     return (
       <div
         key={logo.label}
-       
-        className="flex h-11 w-[82px] items-center justify-center rounded-xl border border-black/10 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.05)] transition-all hover:scale-105 hover:border-white/40 duration-200 shrink-0 overflow-hidden px-2"
+        className={`flex h-9 w-[63px] items-center justify-center rounded-xl bg-white transition-all hover:scale-105 duration-200 shrink-0 overflow-hidden ${
+          isGPayOrUPI 
+            ? "border-0 shadow-none p-0" 
+            : "border border-black/10 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.05)]"
+        }`}
         title={logo.label}
         aria-label={logo.label}
       >
@@ -181,13 +188,22 @@ const Footer = () => {
           src={logo.src}
           alt={logo.label}
           loading="lazy"
-          
-          className={`h-full w-full object-contain filter select-none transition-transform ${
-            isPayU || isUPI ? "scale-70" : "scale-[1.30]"
+          className={`h-full select-none transition-transform ${
+            isGPay 
+              ? "w-full object-cover object-center scale-[1.17]" 
+              : isUPI 
+              ? "w-full object-cover object-center scale-[1.08]" 
+              : isPayU 
+              ? "w-full object-contain scale-[0.65]" 
+              : isBadBorderLogo
+              ? "w-[106%] min-w-[106%] object-cover scale-y-[0.85]" 
+              : "w-full object-contain scale-[1.30]"
           }`}
           onError={(e) => {
             e.currentTarget.style.display = 'none';
-            e.currentTarget.parentElement.innerHTML = `<span class="text-[10px] font-black tracking-tight text-black">${logo.label}</span>`;
+            if (e.currentTarget.parentElement) {
+              e.currentTarget.parentElement.innerHTML = `<span class="text-[10px] font-black tracking-tight text-black">${logo.label}</span>`;
+            }
           }}
         />
       </div>
