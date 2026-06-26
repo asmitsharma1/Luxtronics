@@ -102,7 +102,7 @@ const Footer = () => {
             />
           </Link>
           <p className="mb-6 max-w-sm text-sm leading-6 text-white/72">
-            Premium electronics curated for the next generation of creators and tech enthusiasts.
+            Premium Electronics Curated For The Next Generation Of Creators And Tech Enthusiasts.
           </p>
           <p className="mb-5 max-w-sm text-xs leading-5 text-white/55">
             Suite 2601, Tower 16, Lotus Boulevard, Sector 100, Noida 201304, Uttar Pradesh, India
