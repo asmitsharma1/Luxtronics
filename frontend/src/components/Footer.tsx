@@ -105,7 +105,7 @@ const Footer = () => {
             Premium Electronics Curated For The Next Generation Of Creators And Tech Enthusiasts.
           </p>
           <p className="mb-5 max-w-sm text-xs leading-5 text-white/55">
-            Suite 2601, Tower 16, Lotus Boulevard, Sector 100, Noida 201304, Uttar Pradesh, India
+            Suite 2601,Tower 16,Lotus Boulevard, Sector 100, Noida 201304, Uttar Pradesh, India
           </p>
           <div className="flex flex-wrap gap-2 mb-6">
           <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] text-white/70">
